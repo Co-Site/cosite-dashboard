@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { reactive, Reactive, reactiveMap } from "@conterra/reactivity-core";
+import type { LayerMenuContentRenderer } from "../ui/Toc";
 import { TocItem } from "./types";
 
 /**
@@ -24,6 +25,11 @@ export interface TocWidgetOptions {
      * True: All groups are initially collapsed.
      */
     initiallyCollapsed: boolean;
+
+    /**
+     * Additional content for the menu of a layer item.
+     */
+    layerMenuContent: LayerMenuContentRenderer | undefined;
 }
 
 /**
@@ -88,11 +94,13 @@ export class TocModel {
 export function createOptions(
     autoShowParents?: boolean | undefined,
     collapsibleGroups?: boolean | undefined,
-    isCollapsed?: boolean | undefined
+    isCollapsed?: boolean | undefined,
+    layerMenuContent?: LayerMenuContentRenderer | undefined
 ): TocWidgetOptions {
     return {
         autoShowParents: autoShowParents ?? true,
         collapsibleGroups: collapsibleGroups ?? false,
-        initiallyCollapsed: isCollapsed ?? false
+        initiallyCollapsed: isCollapsed ?? false,
+        layerMenuContent
     };
 }

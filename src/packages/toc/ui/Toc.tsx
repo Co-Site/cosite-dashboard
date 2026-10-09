@@ -3,7 +3,7 @@
 
 import { Box, Flex, Spacer, Text } from "@chakra-ui/react";
 import { BasemapSwitcher, BasemapSwitcherProps } from "@open-pioneer/basemap-switcher";
-import { MapModel, MapModelProps, useMapModelValue } from "@open-pioneer/map";
+import { AnyLayer, MapModel, MapModelProps, useMapModelValue } from "@open-pioneer/map";
 import {
     CommonComponentProps,
     SectionHeading,
@@ -12,7 +12,7 @@ import {
     useEvent
 } from "@open-pioneer/react-utils";
 import { useIntl } from "open-pioneer:react-hooks";
-import { FC, useEffect, useId, useRef } from "react";
+import { FC, ReactNode, useEffect, useId, useRef } from "react";
 import {
     createOptions,
     TocApi,
@@ -24,6 +24,11 @@ import {
 } from "../model";
 import { TopLevelLayerList } from "./LayerList/LayerList";
 import { Tools } from "./Tools";
+
+/**
+ * Renders additional content for the menu of a layer item, see {@link TocProps.layerMenuContent}.
+ */
+export type LayerMenuContentRenderer = (layer: AnyLayer) => ReactNode;
 
 /**
  * Props supported by the {@link Toc} component.
@@ -87,6 +92,19 @@ export interface TocProps extends CommonComponentProps, MapModelProps {
      * Callback that is triggered once when the Toc is disposed and unmounted.
      */
     onDisposed?: (event: TocDisposedEvent) => void;
+
+    /**
+     * Additional content for the menu (⋮) of a layer item.
+     * The content is rendered in the menu's popover below the layer's description.
+     *
+     * Return `undefined` or `null` if a layer has no additional content.
+     * The menu button is shown if the layer has a description or additional content.
+     *
+     * The function should have a stable identity (e.g. defined at module level or memoized).
+     *
+     * (Extension of the `@cosite/toc` fork.)
+     */
+    layerMenuContent?: LayerMenuContentRenderer;
 }
 
 /**
@@ -222,7 +240,9 @@ function useTocModel(props: TocProps): TocModel {
                 // oxlint-disable-next-line react/refs
                 initialProps.current.collapsibleGroups,
                 // oxlint-disable-next-line react/refs,
-                initialProps.current.initiallyCollapsed
+                initialProps.current.initiallyCollapsed,
+                // oxlint-disable-next-line react/refs
+                initialProps.current.layerMenuContent
             )
         );
     }
@@ -231,13 +251,19 @@ function useTocModel(props: TocProps): TocModel {
     useEffect(() => {
         // oxlint-disable-next-line @typescript-eslint/no-non-null-assertion
         tocModelRef.current!.updateOptions(
-            createOptions(props.autoShowParents, props.collapsibleGroups, props.initiallyCollapsed)
+            createOptions(
+                props.autoShowParents,
+                props.collapsibleGroups,
+                props.initiallyCollapsed,
+                props.layerMenuContent
+            )
         );
         // oxlint-disable-next-line react/refs
     }, [
         props.autoShowParents,
         props.collapsibleGroups,
         props.initiallyCollapsed,
+        props.layerMenuContent,
         // oxlint-disable-next-line react/refs
         tocModelRef.current.options
     ]);

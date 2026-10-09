@@ -184,3 +184,18 @@ Apache-2.0 (see `LICENSE` file)
 ## Changes in this fork
 
 - Package renamed to `@cosite/toc` (private workspace package), tests removed (they depend on upstream-internal test packages).
+- New prop `layerMenuContent(layer)`: additional content for the menu (⋮) of a layer item, rendered below the description.
+  The menu button is also shown for layers without description if they have additional content.
+  Touched files: `ui/Toc.tsx`, `model/TocModel.ts`, `ui/LayerList/LayerItem.tsx`, `ui/LayerList/LayerItemMenu.tsx`, `index.ts`.
+- Label of the menu button changed from "Layer description" to "Layer details" (`i18n/*.yaml`).
+
+### Layer menu content
+
+```tsx
+// Should have a stable identity (module level or memoized).
+function layerMenuContent(layer: AnyLayer) {
+    return layer.type === "wms" ? <MyOpacitySlider layer={layer} /> : undefined;
+}
+
+<Toc layerMenuContent={layerMenuContent} />;
+```

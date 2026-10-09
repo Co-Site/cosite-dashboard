@@ -13,5 +13,6 @@ export {
     type TocProps,
     type ToolsConfig,
     type LayerTocAttributes,
-    type ListMode
+    type ListMode,
+    type LayerMenuContentRenderer
 } from "./ui/Toc";

@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
 // SPDX-License-Identifier: Apache-2.0
 
-import { CloseButton, Icon, IconButton, Popover, Portal, Text } from "@chakra-ui/react";
+import { Box, CloseButton, Icon, IconButton, Popover, Portal, Text } from "@chakra-ui/react";
 import { Tooltip } from "@open-pioneer/chakra-snippets/tooltip";
 import { AnyLayer } from "@open-pioneer/map";
 import { PackageIntl } from "@open-pioneer/runtime";
 import { useIntl } from "open-pioneer:react-hooks";
-import { useId } from "react";
+import { ReactNode, useId } from "react";
 import { LuEllipsisVertical } from "react-icons/lu";
 import { useLoadState } from "./hooks";
 
@@ -14,10 +14,13 @@ export function LayerItemMenu(props: {
     layer: AnyLayer;
     title: string;
     description: string;
+    /** Additional content below the description (extension of the `@cosite/toc` fork). */
+    extraContent?: ReactNode;
     intl: PackageIntl;
 }) {
-    const { layer, title, description } = props;
-    const isPresent = !!description;
+    const { layer, title, description, extraContent } = props;
+    const hasExtraContent = extraContent != null && extraContent !== false;
+    const isPresent = !!description || hasExtraContent;
 
     const triggerId = useId(); // see https://chakra-ui.com/docs/components/tooltip#with-menutrigger
 
@@ -42,9 +45,16 @@ export function LayerItemMenu(props: {
                                 <Popover.Title className="toc-layer-item-details-title">
                                     {title}
                                 </Popover.Title>
-                                <Text my="2" className="toc-layer-item-details-description">
-                                    {description}
-                                </Text>
+                                {description && (
+                                    <Text my="2" className="toc-layer-item-details-description">
+                                        {description}
+                                    </Text>
+                                )}
+                                {hasExtraContent && (
+                                    <Box my="2" className="toc-layer-item-details-extra">
+                                        {extraContent}
+                                    </Box>
+                                )}
                             </Popover.Body>
                             <Popover.CloseTrigger position="absolute" top="1" right="1" asChild>
                                 <CloseButton

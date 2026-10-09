@@ -125,7 +125,13 @@ export const LayerItem = memo(function LayerItem(props: { layer: AnyLayer }): Re
                 </Checkbox.Root>
                 {problemIndicator}
                 <Spacer />
-                <LayerItemMenu layer={layer} title={title} description={description} intl={intl} />
+                <LayerItemMenu
+                    layer={layer}
+                    title={title}
+                    description={description}
+                    extraContent={tocOptions.layerMenuContent?.(layer)}
+                    intl={intl}
+                />
             </Flex>
             {hasNestedChildren && (
                 <Collapsible.Root open={expanded} className="toc-collapsible-item">

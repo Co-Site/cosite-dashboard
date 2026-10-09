@@ -13,6 +13,7 @@ import { presetFilter, TimeFilter } from "./charts/timeRange";
 import { StaDatastreamProperties } from "./dataLayers/sta";
 import { useMapClick } from "./mapClick/useMapClick";
 import { MAP_ID } from "./services";
+import { layerMenuContent } from "./toc/LayerOpacitySlider";
 
 export function DashboardApp() {
     const intl = useIntl();
@@ -87,7 +88,7 @@ function TocPanel() {
                     </SectionHeading>
                 }
             >
-                <Toc collapsibleGroups />
+                <Toc collapsibleGroups layerMenuContent={layerMenuContent} />
             </TitledSection>
         </Box>
     );
