@@ -1,0 +1,11 @@
+messages:
+  ariaLabel:
+    map: "Map. Use the arrow keys to move the map. Zoom in with the plus button and zoom out with the minus button."
+    toc: "Table of contents of the map"
+    mapTools: "Map tools"
+  tocTitle: "Layers"
+  panel:
+    title: "Analysis"
+    expand: "Expand panel"
+    collapse: "Collapse panel"
+    placeholder: "Charts will appear here after clicking into the map."

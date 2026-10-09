@@ -1,0 +1,11 @@
+messages:
+  ariaLabel:
+    map: "Karte. Mit den Pfeiltasten kannst du die Karte bewegen. Mit der Plus Taste hineinzoomen und mit der Minus Taste herauszoomen."
+    toc: "Inhaltsverzeichnis der Karte"
+    mapTools: "Kartenwerkzeuge"
+  tocTitle: "Ebenen"
+  panel:
+    title: "Auswertung"
+    expand: "Panel ausklappen"
+    collapse: "Panel einklappen"
+    placeholder: "Hier erscheinen Diagramme nach einem Klick in die Karte."
