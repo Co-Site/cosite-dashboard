@@ -32,7 +32,9 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
 | `DashboardApp.tsx` | Root-Komponente: Karte, TOC, Kartenwerkzeuge, Bottom-Panel                                                |
 | `BottomPanel.tsx`  | Einklappbares Panel unten (Chakra `Collapsible`), später für Diagramme                                    |
 | `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                             |
-| `dataLayers/`      | Datenlayer: JSON-Schema + Parser (`types.ts`), Loader, Layer-Fabrik, SensorThings-Helfer                  |
+| `dataLayers/`      | Datenlayer: JSON-Schema + Parser (`types.ts`), Loader, Layer-Fabrik, SensorThings-Helfer (`sta.ts`)       |
+| `mapClick/`        | Kartenklick: Sensorpunkt auswählen oder WMS-GetFeatureInfo im Popup                                       |
+| `charts/`          | Zeitfilter, Laden der Messwerte und Liniendiagramm (Chart.js)                                             |
 
 ## Datenlayer (`src/public/config/dataLayers.json`)
 
@@ -45,21 +47,52 @@ Die Datenlayer der Karte sind nicht im Code festgelegt, sondern stehen in einer 
 - Ist die Datei nicht erreichbar oder ungültig, startet die Karte nur mit der Basemap. Der Fehler steht in der Browser-Konsole.
   Einzelne ungültige Einträge werden mit Warnung übersprungen.
 
+### Aufbau: Kategorien und Layer
+
+`layers` ist eine Liste aus Layern und Kategorien. Eine Kategorie (`"type": "group"`) hat selbst wieder
+eine `layers`-Liste und kann beliebig verschachtelt werden. Kategorien erscheinen im TOC als einklappbare Gruppen
+und lassen sich als Ganzes ein- und ausschalten. Aktuell gibt es die Kategorien „WMS“ und „Sensoren (STA)“.
+
+Die Reihenfolge in der Datei ist die Zeichenreihenfolge: Spätere Einträge liegen auf der Karte oben
+und stehen im TOC weiter oben.
+
+```json
+{
+    "layers": [
+        {
+            "id": "wms",
+            "type": "group",
+            "name": "WMS",
+            "layers": [{ "id": "dwd-icon-t2m", "type": "wms", "...": "..." }]
+        },
+        {
+            "id": "sta",
+            "type": "group",
+            "name": "Sensoren (STA)",
+            "layers": [{ "id": "sta-ds-14", "type": "sta-datastream", "...": "..." }]
+        }
+    ]
+}
+```
+
 ### Felder
 
-| Feld          | Pflicht | Bedeutung                                                              |
-| ------------- | ------- | ---------------------------------------------------------------------- |
-| `id`          | ja      | Eindeutige ID, auch Layer-ID in der Karte                              |
-| `type`        | ja      | `wms` oder `sta-datastream`                                            |
-| `name`        | ja      | Anzeigename im TOC                                                     |
-| `description` | nein    | Beschreibung, im TOC über den Info-Button (⋮) des Layers               |
-| `endpoint`    | ja      | URL des Dienstes (WMS-Basis-URL bzw. URL des SensorThings-Datastreams) |
-| `visible`     | nein    | Initial sichtbar (Default `true`)                                      |
-| `opacity`     | nein    | Deckkraft 0–1 (Default `1`)                                            |
-| `attribution` | nein    | Quellenangabe auf der Karte                                            |
-| `wms.layers`  | bei WMS | Liste der WMS-Layernamen aus den Capabilities                          |
+| Feld                      | Pflicht     | Bedeutung                                                               |
+| ------------------------- | ----------- | ----------------------------------------------------------------------- |
+| `id`                      | ja          | Eindeutige ID (über die ganze Datei), auch Layer-ID in der Karte        |
+| `type`                    | ja          | `group`, `wms` oder `sta-datastream`                                    |
+| `name`                    | ja          | Anzeigename im TOC                                                      |
+| `description`             | nein        | Beschreibung, im TOC über den Info-Button (⋮) des Layers                |
+| `visible`                 | nein        | Initial sichtbar (Default `true`)                                       |
+| `opacity`                 | nein        | Deckkraft 0–1 (Default `1`)                                             |
+| `layers`                  | bei `group` | Enthaltene Layer und Kategorien                                         |
+| `endpoint`                | bei Layern  | URL des Dienstes (WMS-Basis-URL bzw. URL des SensorThings-Datastreams)  |
+| `attribution`             | nein        | Quellenangabe auf der Karte                                             |
+| `wms.layers`              | bei `wms`   | Liste der WMS-Layernamen aus den Capabilities                           |
+| `wms.featureInfo.enabled` | nein        | GetFeatureInfo beim Kartenklick (Default `true`)                        |
+| `wms.featureInfo.fields`  | nein        | Anzuzeigende Attribute `{ property, label?, unit? }`; ohne Angabe: alle |
 
-Beispiel:
+Beispiel WMS-Layer:
 
 ```json
 {
@@ -69,19 +102,32 @@ Beispiel:
     "description": "Vorhersage der Lufttemperatur in 2 m Höhe …",
     "endpoint": "https://maps.dwd.de/geoserver/dwd/wms",
     "opacity": 0.6,
-    "wms": { "layers": ["Icon_reg025_fd_sl_T2M"] }
+    "wms": {
+        "layers": ["Icon_reg025_fd_sl_T2M"],
+        "featureInfo": {
+            "fields": [
+                {
+                    "property": "Temperature_height_level_above_ground",
+                    "label": "Lufttemperatur 2 m",
+                    "unit": "°C"
+                },
+                { "property": "TIME", "label": "Gültig für" }
+            ]
+        }
+    }
 }
 ```
 
 ### Layertypen
 
+- **`group`** → `GroupLayer` aus `@open-pioneer/map`, Kinder werden rekursiv erzeugt.
 - **`wms`** → `WMSLayer` aus `@open-pioneer/map`. Bei genau einem WMS-Layer wird der Sublayer im TOC ausgeblendet.
 - **`sta-datastream`** → Punktlayer (`SimpleLayer` + OL-`VectorLayer`) an der Location des Things.
   Das Feature trägt u. a. `observationsUrl`, `unit` und `name` (siehe `StaDatastreamProperties` in `dataLayers/sta.ts`).
   `healthCheck` auf den Endpunkt markiert den Layer im TOC als nicht verfügbar, wenn der Dienst nicht antwortet.
 
 Jeder erzeugte Layer hat die Original-Konfiguration im Attribut `dataLayer` (`layer.attributes.dataLayer`).
-Darüber lassen sich später beim Kartenklick Typ und Endpunkt für die Diagramme ermitteln.
+Darüber findet der Kartenklick z. B. die `featureInfo`-Einstellungen eines WMS-Layers.
 
 ### Neuen Layertyp hinzufügen
 
@@ -89,6 +135,28 @@ Darüber lassen sich später beim Kartenklick Typ und Endpunkt für die Diagramm
    und in `validateEntry` die typspezifischen Felder prüfen.
 2. In `dataLayers/createDataLayer.ts` einen `case` für den neuen Typ ergänzen. TypeScript meldet fehlende Fälle.
 3. Test in `dataLayers/types.test.ts` erweitern und den Typ hier in der Doku eintragen.
+
+## Kartenklick, Popup und Diagramme
+
+`mapClick/useMapClick.tsx` hört auf Klicks in die Karte:
+
+1. **Sensorpunkt getroffen** (5 px Toleranz, Mauszeiger wird zur Hand): Der Datastream wird ausgewählt und das
+   Bottom-Panel geöffnet. Der Zustand (`datastream`, `timeFilter`, `panelOpen`) liegt in `DashboardApp.tsx`.
+2. **Sonst**: Alle sichtbaren WMS-Layer mit aktiver FeatureInfo werden per `GetFeatureInfo` (GeoJSON) abgefragt
+   (`mapClick/featureInfo.ts`). Das Ergebnis erscheint als Popup (`map.overlays`) an der Klickposition.
+   Zahlen werden lokalisiert, ISO-Zeitstempel in Ortszeit angezeigt.
+
+Im Bottom-Panel:
+
+- **Zeitfilter** (`charts/TimeRangeFilter.tsx`): Presets 24 Stunden, 7 Tage (Default), 30 Tage oder eigener Zeitraum von/bis.
+  Ungültige Eingaben (von ≥ bis) werden markiert, der letzte gültige Zeitraum bleibt aktiv.
+- **Diagramm** (`charts/DatastreamChart.tsx`, `charts/ObservationChart.tsx`): lädt die Messwerte des Datastreams im
+  Zeitraum (`fetchObservations` in `dataLayers/sta.ts`, folgt `@iot.nextLink`, max. 20.000 Werte) und zeigt sie als
+  Liniendiagramm mit Tooltip und Fadenkreuz. Lücken in den Daten bleiben als Lücke sichtbar. Darüber stehen
+  Anzahl, Min, Max und letzter Wert.
+- **Chart.js statt recharts**: Trails rendert die App im Shadow DOM. recharts sucht Portale über `document`
+  und musste dafür gepatcht werden (siehe alter Branch `origin/test/charts`). Chart.js zeichnet auf Canvas und braucht das nicht.
+- Einheiten aus der STA werden für die Anzeige übersetzt (`degC` → `°C`, siehe `displayUnit` in `dataLayers/sta.ts`).
 
 ## Services
 
