@@ -7,7 +7,11 @@ import { DashboardApp } from "./DashboardApp";
 
 const element = createCustomElement({
     component: DashboardApp,
-    appMetadata
+    appMetadata,
+    // Switch the language without restarting the app (keeps map view, selection and time filter).
+    advanced: {
+        enableLiveLocaleChanges: true
+    }
 });
 
 customElements.define("dashboard-app", element);

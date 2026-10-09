@@ -10,6 +10,7 @@
         "@open-pioneer/map": "catalog:",
         "@open-pioneer/map-navigation": "catalog:",
         "@open-pioneer/react-utils": "catalog:",
+        "@open-pioneer/reactivity": "catalog:",
         "@open-pioneer/runtime": "catalog:",
         "chart.js": "catalog:",
         "ol": "catalog:",

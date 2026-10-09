@@ -5,6 +5,8 @@ messages:
     mapTools: "Map tools"
   toc:
     transparency: "Transparency"
+  language:
+    label: "Language"
   tocTitle: "Layers"
   panel:
     title: "Analysis"

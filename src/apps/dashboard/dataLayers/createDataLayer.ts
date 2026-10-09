@@ -3,10 +3,18 @@
 
 import { LayerTocAttributes } from "@cosite/toc";
 import { createLogger } from "@open-pioneer/core";
-import { GroupLayer, Layer, LayerFactory, SimpleLayer, WMSLayer } from "@open-pioneer/map";
+import {
+    GroupLayer,
+    Layer,
+    LayerFactory,
+    MapModel,
+    SimpleLayer,
+    WMSLayer
+} from "@open-pioneer/map";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { Circle, Fill, Stroke, Style } from "ol/style";
+import { localize } from "./localizedText";
 import { createDatastreamFeature, fetchDatastream } from "./sta";
 import {
     DataLayerGroupConfig,
@@ -22,53 +30,51 @@ export const DATA_LAYER_ATTRIBUTE = "dataLayer";
 
 /**
  * Creates a map layer from a data layer configuration entry (groups are created recursively).
+ * Names and descriptions are localized for `context.language`, see {@link localizeDataLayers}.
  */
-export function createDataLayer(
-    config: DataLayerNode,
-    layerFactory: LayerFactory,
-    mapProjection: string
-): Layer {
-    const layer = createLayer(config, layerFactory, mapProjection);
+export function createDataLayer(config: DataLayerNode, context: DataLayerContext): Layer {
+    const layer = createLayer(config, context);
     if (config.opacity != null) {
         layer.olLayer.setOpacity(config.opacity);
     }
     return layer;
 }
 
-function createLayer(
-    config: DataLayerNode,
-    layerFactory: LayerFactory,
-    mapProjection: string
-): Layer {
+/** Everything needed to create layers from the configuration. */
+export interface DataLayerContext {
+    layerFactory: LayerFactory;
+    mapProjection: string;
+
+    /** Language for names and descriptions, e.g. `"de"`. */
+    language: string;
+}
+
+function createLayer(config: DataLayerNode, context: DataLayerContext): Layer {
     switch (config.type) {
         case "group":
-            return createGroupLayer(config, layerFactory, mapProjection);
+            return createGroupLayer(config, context);
         case "wms":
-            return createWmsLayer(config, layerFactory);
+            return createWmsLayer(config, context);
         case "sta-datastream":
-            return createStaDatastreamLayer(config, layerFactory, mapProjection);
+            return createStaDatastreamLayer(config, context);
     }
 }
 
-function createGroupLayer(
-    config: DataLayerGroupConfig,
-    layerFactory: LayerFactory,
-    mapProjection: string
-): Layer {
-    return layerFactory.create({
+function createGroupLayer(config: DataLayerGroupConfig, context: DataLayerContext): Layer {
+    return context.layerFactory.create({
         type: GroupLayer,
-        ...commonOptions(config),
-        layers: config.layers.map((child) => createDataLayer(child, layerFactory, mapProjection))
+        ...commonOptions(config, context),
+        layers: config.layers.map((child) => createDataLayer(child, context))
     });
 }
 
-function createWmsLayer(config: WmsDataLayerConfig, layerFactory: LayerFactory): Layer {
-    const options = commonOptions(config);
+function createWmsLayer(config: WmsDataLayerConfig, context: DataLayerContext): Layer {
+    const options = commonOptions(config, context);
     // A single WMS layer is represented by the data layer itself, no need to list it separately.
     const tocAttributes: LayerTocAttributes = {
         listMode: config.wms.layers.length === 1 ? "hide-children" : "show"
     };
-    return layerFactory.create({
+    return context.layerFactory.create({
         type: WMSLayer,
         ...options,
         attributes: { ...options.attributes, toc: tocAttributes },
@@ -82,8 +88,7 @@ function createWmsLayer(config: WmsDataLayerConfig, layerFactory: LayerFactory):
 
 function createStaDatastreamLayer(
     config: StaDatastreamLayerConfig,
-    layerFactory: LayerFactory,
-    mapProjection: string
+    { layerFactory, mapProjection, language }: DataLayerContext
 ): Layer {
     const source = new VectorSource({ attributions: config.attribution });
     fetchDatastream(config.endpoint)
@@ -104,17 +109,17 @@ function createStaDatastreamLayer(
 
     return layerFactory.create({
         type: SimpleLayer,
-        ...commonOptions(config),
+        ...commonOptions(config, { language }),
         healthCheck: config.endpoint,
         olLayer: new VectorLayer({ source, style: SENSOR_STYLE })
     });
 }
 
-function commonOptions(config: DataLayerNode) {
+function commonOptions(config: DataLayerNode, { language }: Pick<DataLayerContext, "language">) {
     return {
         id: config.id,
-        title: config.name,
-        description: config.description,
+        title: localize(config.name, language),
+        description: localize(config.description, language),
         visible: config.visible ?? true,
         attributes: { [DATA_LAYER_ATTRIBUTE]: config }
     };
@@ -127,3 +132,17 @@ const SENSOR_STYLE = new Style({
         stroke: new Stroke({ color: "#ffffff", width: 2 })
     })
 });
+
+/**
+ * Updates names and descriptions of all data layers of the map to the given language.
+ */
+export function localizeDataLayers(map: MapModel, language: string): void {
+    for (const layer of map.layers.getRecursiveLayers({ filter: "operational" })) {
+        const config = layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
+        if (!config) {
+            continue;
+        }
+        layer.setTitle(localize(config.name, language));
+        layer.setDescription(localize(config.description, language) ?? "");
+    }
+}

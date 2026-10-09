@@ -5,6 +5,8 @@ messages:
     mapTools: "Kartenwerkzeuge"
   toc:
     transparency: "Transparenz"
+  language:
+    label: "Sprache"
   tocTitle: "Ebenen"
   panel:
     title: "Auswertung"

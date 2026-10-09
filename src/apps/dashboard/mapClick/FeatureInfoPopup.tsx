@@ -2,17 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Box, CloseButton, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
+import { MapModel } from "@open-pioneer/map";
 import { PackageIntl } from "@open-pioneer/runtime";
 import { useIntl } from "open-pioneer:react-hooks";
+import { localize } from "../dataLayers/localizedText";
+import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { FeatureInfoResult, FeatureInfoValue } from "./featureInfo";
 
 export interface FeatureInfoPopupProps {
+    map: MapModel;
     /** `undefined` while loading. */
     results: FeatureInfoResult[] | undefined;
     onClose(): void;
 }
 
-export function FeatureInfoPopup({ results, onClose }: FeatureInfoPopupProps) {
+export function FeatureInfoPopup({ map, results, onClose }: FeatureInfoPopupProps) {
     const intl = useIntl();
     const hasFeatures = results?.some((result) => result.features.length > 0);
     return (
@@ -46,19 +50,21 @@ export function FeatureInfoPopup({ results, onClose }: FeatureInfoPopupProps) {
             )}
             <Stack gap={3}>
                 {results?.map((result) => (
-                    <LayerResult key={result.layerId} result={result} />
+                    <LayerResult key={result.layerId} map={map} result={result} />
                 ))}
             </Stack>
         </Box>
     );
 }
 
-function LayerResult({ result }: { result: FeatureInfoResult }) {
+function LayerResult({ map, result }: { map: MapModel; result: FeatureInfoResult }) {
     const intl = useIntl();
+    const layerTitle = useLayerTitle(map, result.layerId) ?? result.layerId;
+    const language = new Intl.Locale(intl.locale).language;
     if (result.error) {
         return (
             <Text color="fg.error">
-                {result.layerTitle}: {intl.formatMessage({ id: "featureInfo.error" })}
+                {layerTitle}: {intl.formatMessage({ id: "featureInfo.error" })}
             </Text>
         );
     }
@@ -68,13 +74,13 @@ function LayerResult({ result }: { result: FeatureInfoResult }) {
     return (
         <Box>
             <Text fontSize="sm" color="fg.muted" mb={1}>
-                {result.layerTitle}
+                {layerTitle}
             </Text>
             {result.features.map((feature) => (
                 <Box as="dl" key={feature.id} fontSize="sm">
                     {feature.values.map((value) => (
-                        <Flex key={value.label} justifyContent="space-between" gap={4}>
-                            <Text as="dt">{value.label}</Text>
+                        <Flex key={value.property} justifyContent="space-between" gap={4}>
+                            <Text as="dt">{localize(value.label, language)}</Text>
                             <Text as="dd" fontWeight="semibold" textAlign="right">
                                 {formatValue(intl, value)}
                             </Text>

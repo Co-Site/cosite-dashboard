@@ -13,11 +13,14 @@ import { presetFilter, TimeFilter } from "./charts/timeRange";
 import { StaDatastreamProperties } from "./dataLayers/sta";
 import { useMapClick } from "./mapClick/useMapClick";
 import { MAP_ID } from "./services";
+import { LanguageSelector } from "./toc/LanguageSelector";
 import { layerMenuContent } from "./toc/LayerOpacitySlider";
+import { useLocalizedDataLayers } from "./toc/useLocalizedDataLayers";
 
 export function DashboardApp() {
     const intl = useIntl();
     const { map } = useMapModel(MAP_ID);
+    useLocalizedDataLayers(map);
     const [panelOpen, setPanelOpen] = useState(true);
     const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => presetFilter("7d"));
     const [datastream, setDatastream] = useState<StaDatastreamProperties>();
@@ -83,9 +86,12 @@ function TocPanel() {
         >
             <TitledSection
                 title={
-                    <SectionHeading id={headingId} size="md" mb={2}>
-                        {intl.formatMessage({ id: "tocTitle" })}
-                    </SectionHeading>
+                    <Flex alignItems="center" justifyContent="space-between" gap={2} mb={2}>
+                        <SectionHeading id={headingId} size="md">
+                            {intl.formatMessage({ id: "tocTitle" })}
+                        </SectionHeading>
+                        <LanguageSelector />
+                    </Flex>
                 }
             >
                 <Toc collapsibleGroups layerMenuContent={layerMenuContent} />

@@ -33,6 +33,19 @@ describe("parseDataLayers", () => {
         expect(layers.map((l) => l.id)).toEqual(["ok"]);
     });
 
+    it("accepts names and descriptions per language", () => {
+        const entry = {
+            id: "a",
+            type: "sta-datastream",
+            endpoint: "https://a",
+            name: { de: "Name", en: "Name" },
+            description: { de: "Beschreibung", en: "Description" }
+        };
+        expect(parseDataLayers({ layers: [entry] })).toHaveLength(1);
+        expect(parseDataLayers({ layers: [{ ...entry, name: {} }] })).toHaveLength(0);
+        expect(parseDataLayers({ layers: [{ ...entry, description: { de: 1 } }] })).toHaveLength(0);
+    });
+
     it("validates the optional feature info configuration", () => {
         const wms = (featureInfo: unknown) => ({
             id: "wms",

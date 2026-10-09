@@ -8,6 +8,7 @@ import {
     MapConfigProviderOptions,
     SimpleLayer
 } from "@open-pioneer/map";
+import { LocaleService, ServiceOptions } from "@open-pioneer/runtime";
 import TileLayer from "ol/layer/Tile";
 import { fromLonLat } from "ol/proj";
 import OSM from "ol/source/OSM";
@@ -24,11 +25,27 @@ const PROJECTION = "EPSG:3857";
 // Cologne
 const [INITIAL_X = 0, INITIAL_Y = 0] = fromLonLat([6.9988, 50.9371], PROJECTION);
 
+interface References {
+    localeService: LocaleService;
+}
+
 export class MainMapProvider implements MapConfigProvider {
     mapId = MAP_ID;
 
+    #localeService: LocaleService;
+
+    constructor({ references }: ServiceOptions<References>) {
+        this.#localeService = references.localeService;
+    }
+
     async getMapConfig({ layerFactory }: MapConfigProviderOptions): Promise<MapConfig> {
         const dataLayers = await loadDataLayersSafe();
+        const context = {
+            layerFactory,
+            mapProjection: PROJECTION,
+            // Later language changes are applied by `useLocalizedDataLayers()`.
+            language: this.#localeService.messageLocale.language
+        };
         return {
             initialView: {
                 kind: "position",
@@ -46,7 +63,7 @@ export class MainMapProvider implements MapConfigProvider {
                     })
                 })
             ],
-            layers: dataLayers.map((config) => createDataLayer(config, layerFactory, PROJECTION))
+            layers: dataLayers.map((config) => createDataLayer(config, context))
         };
     }
 }

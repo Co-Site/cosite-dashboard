@@ -4,12 +4,12 @@
 import { AnyLayer, MapModel, WMSLayer } from "@open-pioneer/map";
 import { Coordinate } from "ol/coordinate";
 import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
+import { LocalizedText } from "../dataLayers/localizedText";
 import { DataLayerNode, FeatureInfoField } from "../dataLayers/types";
 
 /** Feature info of a single WMS layer at the clicked position. */
 export interface FeatureInfoResult {
     layerId: string;
-    layerTitle: string;
 
     /** One entry per returned feature. */
     features: FeatureInfoFeature[];
@@ -24,7 +24,9 @@ export interface FeatureInfoFeature {
 }
 
 export interface FeatureInfoValue {
-    label: string;
+    /** Name of the property in the response. */
+    property: string;
+    label: LocalizedText;
     value: unknown;
     unit?: string;
 }
@@ -63,7 +65,6 @@ export async function queryWmsFeatureInfo(
         layers.map(async (layer): Promise<FeatureInfoResult> => {
             const result: FeatureInfoResult = {
                 layerId: layer.id,
-                layerTitle: layer.title,
                 features: []
             };
             const url = layer.olSource?.getFeatureInfoUrl(coordinate, resolution, projection, {
@@ -106,11 +107,16 @@ function toValues(
     fields: FeatureInfoField[] | undefined
 ): FeatureInfoValue[] {
     if (!fields) {
-        return Object.entries(properties).map(([label, value]) => ({ label, value }));
+        return Object.entries(properties).map(([property, value]) => ({
+            property,
+            label: property,
+            value
+        }));
     }
     return fields
         .filter((field) => field.property in properties)
         .map((field) => ({
+            property: field.property,
             label: field.label ?? field.property,
             value: properties[field.property],
             unit: field.unit

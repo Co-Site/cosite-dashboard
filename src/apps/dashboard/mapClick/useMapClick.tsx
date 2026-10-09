@@ -79,13 +79,13 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
                 positioning: "bottom-center",
                 offset: [0, -12],
                 stopEvent: true,
-                content: <FeatureInfoPopup results={undefined} onClose={closePopup} />
+                content: <FeatureInfoPopup map={map} results={undefined} onClose={closePopup} />
             }));
             queryWmsFeatureInfo(map, layers, event.coordinate, request.signal)
                 .then((results) => {
                     if (!overlay.isDestroyed) {
                         overlay.setContent(
-                            <FeatureInfoPopup results={results} onClose={closePopup} />
+                            <FeatureInfoPopup map={map} results={results} onClose={closePopup} />
                         );
                     }
                 })

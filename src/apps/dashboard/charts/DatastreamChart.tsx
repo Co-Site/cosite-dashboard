@@ -3,9 +3,11 @@
 
 import { Box, Flex, Spinner, Text } from "@chakra-ui/react";
 import { createLogger, isAbortError } from "@open-pioneer/core";
+import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useMemo, useState } from "react";
 import { fetchObservations, Observation, StaDatastreamProperties } from "../dataLayers/sta";
+import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { ObservationChart } from "./ObservationChart";
 import { TimeRange } from "./timeRange";
 
@@ -44,16 +46,18 @@ export function DatastreamChart({ datastream, range }: DatastreamChartProps) {
         return () => controller.abort();
     }, [datastream.observationsUrl, range]);
 
-    const title = datastream.unit ? `${datastream.name} (${datastream.unit})` : datastream.name;
+    // Localized name from the data layer configuration; the datastream name comes from the server.
+    const map = useMapModelValue();
+    const name = useLayerTitle(map, datastream.dataLayerId) ?? datastream.name;
+    const title = datastream.unit ? `${name} (${datastream.unit})` : name;
+    const source = [datastream.name, datastream.thing].filter(Boolean).join(" · ");
     return (
         <Flex direction="column" height="100%" gap={1}>
             <Flex alignItems="baseline" gap={3} wrap="wrap">
                 <Text fontWeight="semibold">{title}</Text>
-                {datastream.thing && (
-                    <Text fontSize="sm" color="fg.muted">
-                        {datastream.thing}
-                    </Text>
-                )}
+                <Text fontSize="sm" color="fg.muted">
+                    {source}
+                </Text>
                 {state.kind === "loaded" && (
                     <Summary
                         observations={state.observations}

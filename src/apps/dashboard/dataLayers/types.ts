@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { createLogger } from "@open-pioneer/core";
+import { isLocalizedText, LocalizedText } from "./localizedText";
 
 const LOG = createLogger("dashboard:dataLayers");
 
@@ -11,10 +12,10 @@ export interface DataLayerNodeBase {
     id: string;
 
     /** Human-readable name, shown in the TOC. */
-    name: string;
+    name: LocalizedText;
 
     /** Longer description, shown as layer info in the TOC. */
-    description?: string;
+    description?: LocalizedText;
 
     /** Whether the layer is initially visible (default: `true`). */
     visible?: boolean;
@@ -57,7 +58,7 @@ export interface FeatureInfoField {
     property: string;
 
     /** Label shown in the popup (default: the property name). */
-    label?: string;
+    label?: LocalizedText;
 
     /** Unit appended to numeric values, e.g. `°C`. */
     unit?: string;
@@ -124,15 +125,19 @@ function validateEntry(entry: unknown): string | undefined {
     if (!isObject(entry)) {
         return "entry is not an object.";
     }
-    for (const key of ["id", "type", "name"]) {
+    for (const key of ["id", "type"]) {
         if (typeof entry[key] !== "string" || entry[key] === "") {
             return `missing or invalid property '${key}'.`;
         }
     }
-    for (const key of ["description", "attribution"]) {
-        if (entry[key] != null && typeof entry[key] !== "string") {
-            return `property '${key}' must be a string.`;
-        }
+    if (!isLocalizedText(entry.name) || entry.name === "") {
+        return "missing or invalid property 'name' (string or object with one string per language).";
+    }
+    if (entry.description != null && !isLocalizedText(entry.description)) {
+        return "property 'description' must be a string or an object with one string per language.";
+    }
+    if (entry.attribution != null && typeof entry.attribution !== "string") {
+        return "property 'attribution' must be a string.";
     }
     if (entry.visible != null && typeof entry.visible !== "boolean") {
         return "property 'visible' must be a boolean.";
@@ -194,7 +199,7 @@ function validateFeatureInfo(featureInfo: unknown): string | undefined {
             (field) =>
                 isObject(field) &&
                 typeof field.property === "string" &&
-                (field.label == null || typeof field.label === "string") &&
+                (field.label == null || isLocalizedText(field.label)) &&
                 (field.unit == null || typeof field.unit === "string")
         );
     return validFields
