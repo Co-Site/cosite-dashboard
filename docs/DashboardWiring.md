@@ -35,6 +35,7 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
 | `dataLayers/`      | Datenlayer: JSON-Schema + Parser (`types.ts`), Loader, Layer-Fabrik, SensorThings-Helfer (`sta.ts`)       |
 | `mapClick/`        | Kartenklick: Sensorpunkt auswählen oder WMS-GetFeatureInfo im Popup                                       |
 | `charts/`          | Zeitfilter, Laden der Messwerte und Liniendiagramm (Chart.js)                                             |
+| `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachauswahl, Übersetzung der Layernamen                        |
 
 ## Datenlayer (`src/public/config/dataLayers.json`)
 
@@ -81,8 +82,8 @@ und stehen im TOC weiter oben.
 | ------------------------- | ----------- | ----------------------------------------------------------------------- |
 | `id`                      | ja          | Eindeutige ID (über die ganze Datei), auch Layer-ID in der Karte        |
 | `type`                    | ja          | `group`, `wms` oder `sta-datastream`                                    |
-| `name`                    | ja          | Anzeigename im TOC                                                      |
-| `description`             | nein        | Beschreibung, im TOC über den Info-Button (⋮) des Layers                |
+| `name`                    | ja          | Anzeigename im TOC (Text oder pro Sprache, s. u.)                       |
+| `description`             | nein        | Beschreibung im ⋮-Menü des Layers (Text oder pro Sprache)               |
 | `visible`                 | nein        | Initial sichtbar (Default `true`)                                       |
 | `opacity`                 | nein        | Deckkraft 0–1 (Default `1`)                                             |
 | `layers`                  | bei `group` | Enthaltene Layer und Kategorien                                         |
@@ -117,6 +118,17 @@ Beispiel WMS-Layer:
     }
 }
 ```
+
+### Mehrsprachige Texte
+
+`name`, `description` und `wms.featureInfo.fields[].label` sind entweder ein einfacher Text (gilt für alle Sprachen)
+oder ein Objekt mit einem Text pro Sprache:
+
+```json
+"name": { "de": "Lufttemperatur 2 m (DWD ICON)", "en": "Air temperature 2 m (DWD ICON)" }
+```
+
+Fehlt die aktuelle Sprache, wird Englisch genommen, sonst der erste Eintrag (`dataLayers/localizedText.ts`).
 
 ### Layertypen
 
@@ -158,6 +170,28 @@ Im Bottom-Panel:
   und musste dafür gepatcht werden (siehe alter Branch `origin/test/charts`). Chart.js zeichnet auf Canvas und braucht das nicht.
 - Einheiten aus der STA werden für die Anzeige übersetzt (`degC` → `°C`, siehe `displayUnit` in `dataLayers/sta.ts`).
 
+## TOC (`@cosite/toc`, Fork)
+
+Der TOC ist ein Fork von `@open-pioneer/toc` 1.5.0 unter `src/packages/toc` (Apache-2.0, Quelle: Upstream-Tag
+`@open-pioneer/toc@1.5.0`). Grund: Das Original hat keine Erweiterungspunkte für eigene Inhalte pro Layer.
+
+- **Änderungen gegenüber Upstream** stehen in `src/packages/toc/README.md` („Changes in this fork“). Bei einem Update:
+  Upstream-Version neu übernehmen und diese Änderungen erneut einspielen.
+- **`layerMenuContent(layer)`**: Prop am `Toc`. Der Rückgabewert erscheint im ⋮-Popover eines Layers unter der Beschreibung.
+  Das Dashboard liefert dort für jeden WMS-Layer einen **Transparenz-Slider** (`toc/LayerOpacitySlider.tsx`,
+  0 % = deckend, Startwert aus `opacity` im JSON). Die Funktion sollte eine stabile Identität haben (Modulebene).
+
+## Sprache (i18n)
+
+- Unterstützte Sprachen: `de`, `en` (`build.config.mjs` → `i18n`, Texte in `i18n/*.yaml`, im TOC-Fork eigene Texte).
+- **Live-Wechsel ohne Neustart**: `advanced.enableLiveLocaleChanges` in `app.ts`. Kartenausschnitt, Auswahl und Zeitfilter bleiben erhalten.
+- **Sprachauswahl** neben „Ebenen“ im TOC (`toc/LanguageSelector.tsx`, nutzt `runtime.LocaleService`).
+- Layernamen aus dem JSON werden beim Start in der aktuellen Sprache erzeugt (`MainMapProvider` bekommt den
+  `LocaleService` injiziert) und bei jedem Wechsel per `useLocalizedDataLayers()` aktualisiert (`layer.setTitle`).
+- Popup- und Diagrammtitel lesen den Layernamen live aus der Karte (`dataLayers/useLayerTitle.ts`).
+- Daten vom Server (z. B. Datastream-Name aus der STA) werden nicht übersetzt und erscheinen klein neben dem Titel.
+- Grenze: Die nativen Datumsfelder im Zeitfilter formatieren nach der Browsersprache, nicht nach der App-Sprache.
+
 ## Services
 
 - Klasse in `services.ts` exportieren und in `build.config.mjs` registrieren:
@@ -172,12 +206,12 @@ Im Bottom-Panel:
 - In React: `useMapModel(MAP_ID)` → `<DefaultMapProvider map={map}>` → `<MapContainer>`; UI-Elemente auf der Karte per `<MapAnchor position="top-left" | ...>`.
 - Komponenten wie `<Toc />`, `<ZoomIn />` finden die Karte über den `DefaultMapProvider` automatisch.
 
-## Lokale Pakete (für später)
+## Lokale Pakete
 
+- Aktuell: `src/packages/toc` (`@cosite/toc`, siehe oben).
 - Neues Paket unter `src/packages/<name>/` mit eigener `package.json` (+ `build.config.mjs`, falls Services/i18n/Styles).
 - In der App einbinden: `"<name>": "workspace:*"` in der App-`package.json`, `pnpm install`.
-- `typedoc.config.mjs` dokumentiert alle Pakete unter `src/packages/**`. Der CI-Step `pnpm build-docs`
-  wurde entfernt, solange es keine lokalen Pakete gibt – danach wieder in `.github/workflows/test-and-build.yml` aufnehmen.
+- `typedoc.config.mjs` dokumentiert alle Pakete unter `src/packages/**` (`pnpm build-docs`, läuft auch in der CI).
 
 ## Tests
 
