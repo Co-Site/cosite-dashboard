@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { createLogger, isAbortError } from "@open-pioneer/core";
-import { MapModel, Overlay } from "@open-pioneer/map";
+import { Highlight, MapModel, Overlay } from "@open-pioneer/map";
 import { unByKey } from "ol/Observable";
 import { useEffect, useRef } from "react";
 import { getDatastreamProperties, StaDatastreamProperties } from "../dataLayers/sta";
-import { getQueryableWmsLayers, queryWmsFeatureInfo } from "./featureInfo";
+import { addClickMarker } from "./clickMarker";
+import { FeatureInfoResult, getQueryableWmsLayers, queryWmsFeatureInfo } from "./featureInfo";
 import { FeatureInfoPopup } from "./FeatureInfoPopup";
+import { getPopupMaxHeight, getPopupOffset } from "./popupPlacement";
 
 const LOG = createLogger("dashboard:useMapClick");
 
@@ -22,7 +24,8 @@ const HIT_TOLERANCE = 5;
 /**
  * Handles clicks into the map:
  * - a click on a sensor point selects its datastream (see {@link MapClickOptions.onDatastreamClick}),
- * - otherwise, WMS GetFeatureInfo results are shown in a popup.
+ * - otherwise, a marker is set at the clicked position and WMS GetFeatureInfo results
+ *   are shown in a popup next to it.
  */
 export function useMapClick(map: MapModel | undefined, options: MapClickOptions = {}) {
     const optionsRef = useRef(options);
@@ -36,12 +39,33 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
         }
 
         let popup: Overlay | undefined;
+        let marker: Highlight | undefined;
+        let popupResizeObserver: ResizeObserver | undefined;
         let pendingRequest: AbortController | undefined;
         const closePopup = () => {
             pendingRequest?.abort();
             pendingRequest = undefined;
+            popupResizeObserver?.disconnect();
+            popupResizeObserver = undefined;
             popup?.destroy();
             popup = undefined;
+            marker?.destroy();
+            marker = undefined;
+        };
+
+        // Places the popup next to the clicked position, fully visible within the map.
+        // Called again whenever the popup or the map changes its size.
+        const placePopup = () => {
+            const coordinate = popup?.currentCoordinate;
+            const size = olMap.getSize();
+            if (!popup || !coordinate || !size) {
+                return;
+            }
+            const pixel = olMap.getPixelFromCoordinate(coordinate);
+            const rect = popup.element.getBoundingClientRect();
+            if (pixel) {
+                popup.setOffset(getPopupOffset(pixel, size, [rect.width, rect.height]));
+            }
         };
 
         const olMap = map.olMap;
@@ -74,19 +98,30 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
             }
 
             const request = (pendingRequest = new AbortController());
+            const maxHeight = getPopupMaxHeight(olMap.getSize()?.[1] ?? 0);
+            const content = (results: FeatureInfoResult[] | undefined) => (
+                <FeatureInfoPopup
+                    map={map}
+                    results={results}
+                    maxHeight={maxHeight}
+                    onClose={closePopup}
+                />
+            );
+            marker = addClickMarker(map, event.coordinate);
             const overlay = (popup = map.overlays.add({
                 position: event.coordinate,
-                positioning: "bottom-center",
-                offset: [0, -12],
+                positioning: "top-left",
+                offset: getPopupOffset(event.pixel, olMap.getSize() ?? [0, 0], [0, 0]),
                 stopEvent: true,
-                content: <FeatureInfoPopup map={map} results={undefined} onClose={closePopup} />
+                content: content(undefined)
             }));
+            popupResizeObserver = new ResizeObserver(placePopup);
+            popupResizeObserver.observe(overlay.element);
+
             queryWmsFeatureInfo(map, layers, event.coordinate, request.signal)
                 .then((results) => {
                     if (!overlay.isDestroyed) {
-                        overlay.setContent(
-                            <FeatureInfoPopup map={map} results={results} onClose={closePopup} />
-                        );
+                        overlay.setContent(content(results));
                     }
                 })
                 .catch((error) => {
@@ -96,8 +131,10 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
                 });
         });
 
+        const sizeKey = olMap.on("change:size", placePopup);
+
         return () => {
-            unByKey([pointerKey, clickKey]);
+            unByKey([pointerKey, clickKey, sizeKey]);
             closePopup();
         };
     }, [map]);

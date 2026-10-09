@@ -14,10 +14,12 @@ export interface FeatureInfoPopupProps {
     map: MapModel;
     /** `undefined` while loading. */
     results: FeatureInfoResult[] | undefined;
+    /** Maximum height in pixels; the content scrolls if the popup would be larger. */
+    maxHeight: number;
     onClose(): void;
 }
 
-export function FeatureInfoPopup({ map, results, onClose }: FeatureInfoPopupProps) {
+export function FeatureInfoPopup({ map, results, maxHeight, onClose }: FeatureInfoPopupProps) {
     const intl = useIntl();
     const hasFeatures = results?.some((result) => result.features.length > 0);
     return (
@@ -29,7 +31,7 @@ export function FeatureInfoPopup({ map, results, onClose }: FeatureInfoPopupProp
             boxShadow="lg"
             minWidth="220px"
             maxWidth="320px"
-            maxHeight="300px"
+            maxHeight={`${maxHeight}px`}
         >
             {/* Header stays visible, only the content below scrolls. */}
             <Flex justifyContent="space-between" alignItems="center" gap={2} px={3} pt={3} pb={1}>
