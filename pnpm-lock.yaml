@@ -21,6 +21,9 @@ catalogs:
     '@open-pioneer/check-pnpm-duplicates':
       specifier: ^0.4.1
       version: 0.4.1
+    '@open-pioneer/core':
+      specifier: ^4.8.0
+      version: 4.8.0
     '@open-pioneer/map':
       specifier: ^1.5.0
       version: 1.5.0
@@ -268,6 +271,9 @@ importers:
       '@emotion/styled':
         specifier: 'catalog:'
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0)
+      '@open-pioneer/core':
+        specifier: 'catalog:'
+        version: 4.8.0
       '@open-pioneer/map':
         specifier: 'catalog:'
         version: 1.5.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(geotiff@3.1.0-beta.0)
