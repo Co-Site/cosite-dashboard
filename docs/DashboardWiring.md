@@ -1,6 +1,7 @@
 # Dashboard: Wie das Projekt verdrahtet ist
 
 Kurzreferenz, wie Workspace, Vite, Apps, Services und Pakete zusammenhängen.
+Warum etwas so gelöst ist und welche Alternativen es gab: [DashboardDecisions.md](./DashboardDecisions.md).
 Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/packages/sample-package`,
 `src/apps/empty`, `src/sites/empty`) wurden entfernt; sie sind auf dem Branch `main` weiterhin vorhanden.
 

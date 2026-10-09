@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Dashboard: Wie das Projekt verdrahtet ist](./DashboardWiring.md)
+- [Dashboard: Entstehung und Entscheidungen](./DashboardDecisions.md)
 - [Introduction](./Introduction.md)
 - [Getting started](./GettingStarted.md)
 - [Repository guide](./RepositoryGuide.md)
