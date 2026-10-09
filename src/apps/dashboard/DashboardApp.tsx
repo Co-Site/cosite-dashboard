@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Box, Flex } from "@chakra-ui/react";
+import { Toc } from "@cosite/toc";
 import { DefaultMapProvider, MapAnchor, MapContainer, useMapModel } from "@open-pioneer/map";
 import { InitialExtent, ZoomIn, ZoomOut } from "@open-pioneer/map-navigation";
 import { SectionHeading, TitledSection } from "@open-pioneer/react-utils";
-import { Toc } from "@open-pioneer/toc";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useId, useState } from "react";
 import { BottomPanel } from "./BottomPanel";

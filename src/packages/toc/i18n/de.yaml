@@ -1,0 +1,20 @@
+messages:
+  basemapsLabel: "Hintergrundkarten"
+  descriptionLabel: "Layer Beschreibung"
+  operationalLayerLabel: "Layer"
+  childgroupLabel: "Layergruppe {title}"
+  missingLayers: "Es sind keine Layer vorhanden."
+
+  group:
+    expand: "Gruppe {title} ausklappen"
+    collapse: "Gruppe {title} einklappen"
+
+  layerNotAvailable: "Layer nicht verfügbar"
+  childLayerNotAvailable: "Ein untergeordneter Layer ist nicht verfügbar"
+  childLayerNotAvailableDetails: "Die folgenden untergeordneten Layer sind nicht verfügbar:"
+  layerNotVisible: "Layer in diesem Maßstab nicht sichtbar"
+
+  toolsLabel: "Kartenwerkzeuge"
+  tools:
+    hideAllLayers: "Alle Karteninhalte ausblenden"
+    collapseAllGroups: "Alle Gruppen einklappen"

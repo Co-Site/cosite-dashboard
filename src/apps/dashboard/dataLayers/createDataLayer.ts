@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
 // SPDX-License-Identifier: Apache-2.0
 
+import { LayerTocAttributes } from "@cosite/toc";
 import { createLogger } from "@open-pioneer/core";
 import { GroupLayer, Layer, LayerFactory, SimpleLayer, WMSLayer } from "@open-pioneer/map";
-import { LayerTocAttributes } from "@open-pioneer/toc";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { Circle, Fill, Stroke, Style } from "ol/style";
