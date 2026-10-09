@@ -38,7 +38,29 @@ export interface WmsDataLayerConfig extends DataLayerConfigBase {
     wms: {
         /** Names of the WMS layers to request. */
         layers: string[];
+
+        /** GetFeatureInfo on map click (enabled by default). */
+        featureInfo?: WmsFeatureInfoConfig;
     };
+}
+
+export interface WmsFeatureInfoConfig {
+    /** Whether GetFeatureInfo is requested on map click (default: `true`). */
+    enabled?: boolean;
+
+    /** Properties to show in the popup (default: all properties of the response). */
+    fields?: FeatureInfoField[];
+}
+
+export interface FeatureInfoField {
+    /** Name of the property in the GetFeatureInfo response. */
+    property: string;
+
+    /** Label shown in the popup (default: the property name). */
+    label?: string;
+
+    /** Unit appended to numeric values, e.g. `°C`. */
+    unit?: string;
 }
 
 /** A single OGC SensorThings API datastream, e.g. `.../v1.1/Datastreams(14)`. */
@@ -143,13 +165,41 @@ function validateEntry(entry: unknown): string | undefined {
             ) {
                 return "wms layers require 'wms.layers' (non-empty list of layer names).";
             }
-            return undefined;
+            return validateFeatureInfo(wms.featureInfo);
         }
         case "sta-datastream":
             return undefined;
         default:
             return `unknown type '${String(entry.type)}'.`;
     }
+}
+
+function validateFeatureInfo(featureInfo: unknown): string | undefined {
+    if (featureInfo == null) {
+        return undefined;
+    }
+    if (!isObject(featureInfo)) {
+        return "'wms.featureInfo' must be an object.";
+    }
+    if (featureInfo.enabled != null && typeof featureInfo.enabled !== "boolean") {
+        return "'wms.featureInfo.enabled' must be a boolean.";
+    }
+    const fields = featureInfo.fields;
+    if (fields == null) {
+        return undefined;
+    }
+    const validFields =
+        Array.isArray(fields) &&
+        fields.every(
+            (field) =>
+                isObject(field) &&
+                typeof field.property === "string" &&
+                (field.label == null || typeof field.label === "string") &&
+                (field.unit == null || typeof field.unit === "string")
+        );
+    return validFields
+        ? undefined
+        : "'wms.featureInfo.fields' must be a list of { property, label?, unit? }.";
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

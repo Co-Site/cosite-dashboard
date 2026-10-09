@@ -15,7 +15,20 @@
                     "visible": true,
                     "opacity": 0.6,
                     "attribution": "© Deutscher Wetterdienst",
-                    "wms": { "layers": ["Icon_reg025_fd_sl_T2M"] }
+                    "wms": {
+                        "layers": ["Icon_reg025_fd_sl_T2M"],
+                        "featureInfo": {
+                            "fields": [
+                                {
+                                    "property": "Temperature_height_level_above_ground",
+                                    "label": "Lufttemperatur 2 m",
+                                    "unit": "°C"
+                                },
+                                { "property": "TIME", "label": "Gültig für" },
+                                { "property": "REFERENCE_TIME", "label": "Modelllauf" }
+                            ]
+                        }
+                    }
                 }
             ]
         },

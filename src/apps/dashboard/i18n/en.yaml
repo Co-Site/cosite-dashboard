@@ -9,3 +9,9 @@ messages:
     expand: "Expand panel"
     collapse: "Collapse panel"
     placeholder: "Charts will appear here after clicking into the map."
+  featureInfo:
+    title: "Information"
+    loading: "Loading information …"
+    empty: "No information at this location."
+    error: "Request failed."
+    close: "Close"

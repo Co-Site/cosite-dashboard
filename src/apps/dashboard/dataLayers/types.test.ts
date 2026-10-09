@@ -33,6 +33,22 @@ describe("parseDataLayers", () => {
         expect(layers.map((l) => l.id)).toEqual(["ok"]);
     });
 
+    it("validates the optional feature info configuration", () => {
+        const wms = (featureInfo: unknown) => ({
+            id: "wms",
+            type: "wms",
+            name: "WMS",
+            endpoint: "https://example.com",
+            wms: { layers: ["a"], featureInfo }
+        });
+        expect(parseDataLayers({ layers: [wms(undefined)] })).toHaveLength(1);
+        expect(
+            parseDataLayers({ layers: [wms({ fields: [{ property: "x", unit: "°C" }] })] })
+        ).toHaveLength(1);
+        expect(parseDataLayers({ layers: [wms({ enabled: "no" })] })).toHaveLength(0);
+        expect(parseDataLayers({ layers: [wms({ fields: [{ label: "x" }] })] })).toHaveLength(0);
+    });
+
     it("parses nested groups and validates their children", () => {
         const layers = parseDataLayers({
             layers: [

@@ -9,11 +9,13 @@ import { Toc } from "@open-pioneer/toc";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useId } from "react";
 import { BottomPanel } from "./BottomPanel";
+import { useMapClick } from "./mapClick/useMapClick";
 import { MAP_ID } from "./services";
 
 export function DashboardApp() {
     const intl = useIntl();
     const { map } = useMapModel(MAP_ID);
+    useMapClick(map);
 
     return (
         <Flex height="100%" direction="column" overflow="hidden">

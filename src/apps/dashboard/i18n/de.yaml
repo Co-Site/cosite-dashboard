@@ -9,3 +9,9 @@ messages:
     expand: "Panel ausklappen"
     collapse: "Panel einklappen"
     placeholder: "Hier erscheinen Diagramme nach einem Klick in die Karte."
+  featureInfo:
+    title: "Information"
+    loading: "Lade Informationen …"
+    empty: "Keine Informationen an dieser Stelle."
+    error: "Abfrage fehlgeschlagen."
+    close: "Schließen"
