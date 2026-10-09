@@ -7,15 +7,25 @@ import { InitialExtent, ZoomIn, ZoomOut } from "@open-pioneer/map-navigation";
 import { SectionHeading, TitledSection } from "@open-pioneer/react-utils";
 import { Toc } from "@open-pioneer/toc";
 import { useIntl } from "open-pioneer:react-hooks";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { BottomPanel } from "./BottomPanel";
+import { presetFilter, TimeFilter } from "./charts/timeRange";
+import { StaDatastreamProperties } from "./dataLayers/sta";
 import { useMapClick } from "./mapClick/useMapClick";
 import { MAP_ID } from "./services";
 
 export function DashboardApp() {
     const intl = useIntl();
     const { map } = useMapModel(MAP_ID);
-    useMapClick(map);
+    const [panelOpen, setPanelOpen] = useState(true);
+    const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => presetFilter("7d"));
+    const [datastream, setDatastream] = useState<StaDatastreamProperties>();
+    useMapClick(map, {
+        onDatastreamClick(clicked) {
+            setDatastream(clicked);
+            setPanelOpen(true);
+        }
+    });
 
     return (
         <Flex height="100%" direction="column" overflow="hidden">
@@ -41,7 +51,13 @@ export function DashboardApp() {
                             </MapAnchor>
                         </MapContainer>
                     </Flex>
-                    <BottomPanel />
+                    <BottomPanel
+                        open={panelOpen}
+                        onOpenChange={setPanelOpen}
+                        timeFilter={timeFilter}
+                        onTimeFilterChange={setTimeFilter}
+                        datastream={datastream}
+                    />
                 </DefaultMapProvider>
             )}
         </Flex>

@@ -40,6 +40,7 @@ catalog:
   "@emotion/react": ^11.14.0
   "@emotion/styled": ^11.14.1
   "@formatjs/intl": ^4.2.0
+  chart.js: ^4.5.1
   ol: ^10.10.0
   react-dom: &react_version ^19.3.0
   react-icons: ^5.7.0

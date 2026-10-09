@@ -8,10 +8,26 @@ messages:
     title: "Auswertung"
     expand: "Panel ausklappen"
     collapse: "Panel einklappen"
-    placeholder: "Hier erscheinen Diagramme nach einem Klick in die Karte."
+    placeholder: "Klicke auf einen Sensorpunkt in der Karte, um seine Messwerte anzuzeigen."
   featureInfo:
     title: "Information"
     loading: "Lade Informationen …"
     empty: "Keine Informationen an dieser Stelle."
     error: "Abfrage fehlgeschlagen."
     close: "Schließen"
+  timeFilter:
+    label: "Zeitraum"
+    from: "von"
+    to: "bis"
+    invalid: "„von“ muss vor „bis“ liegen."
+    preset:
+      24h: "24 Stunden"
+      7d: "7 Tage"
+      30d: "30 Tage"
+  chart:
+    loading: "Lade Messwerte …"
+    error: "Messwerte konnten nicht geladen werden."
+    empty: "Keine Messwerte im gewählten Zeitraum."
+    count: "{count, plural, one {# Messwert} other {# Messwerte}}"
+    stats: "Min {min} · Max {max} · Letzter {last}"
+    truncated: "gekürzt, bitte Zeitraum verkleinern"

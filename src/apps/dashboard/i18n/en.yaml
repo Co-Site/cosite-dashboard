@@ -8,10 +8,26 @@ messages:
     title: "Analysis"
     expand: "Expand panel"
     collapse: "Collapse panel"
-    placeholder: "Charts will appear here after clicking into the map."
+    placeholder: "Click a sensor point in the map to show its observations."
   featureInfo:
     title: "Information"
     loading: "Loading information …"
     empty: "No information at this location."
     error: "Request failed."
     close: "Close"
+  timeFilter:
+    label: "Time range"
+    from: "from"
+    to: "to"
+    invalid: "“from” must be before “to”."
+    preset:
+      24h: "24 hours"
+      7d: "7 days"
+      30d: "30 days"
+  chart:
+    loading: "Loading observations …"
+    error: "Observations could not be loaded."
+    empty: "No observations in the selected time range."
+    count: "{count, plural, one {# observation} other {# observations}}"
+    stats: "Min {min} · Max {max} · Latest {last}"
+    truncated: "truncated, please choose a shorter time range"
