@@ -14,7 +14,7 @@ import { StaDatastreamProperties } from "./dataLayers/sta";
 import { useMapClick } from "./mapClick/useMapClick";
 import { MAP_ID } from "./services";
 import { LanguageSelector } from "./toc/LanguageSelector";
-import { layerMenuContent } from "./toc/LayerOpacitySlider";
+import { layerItemContent } from "./toc/LayerOpacitySlider";
 import { useLocalizedDataLayers } from "./toc/useLocalizedDataLayers";
 
 export function DashboardApp() {
@@ -94,7 +94,7 @@ function TocPanel() {
                     </Flex>
                 }
             >
-                <Toc collapsibleGroups layerMenuContent={layerMenuContent} />
+                <Toc collapsibleGroups layerItemContent={layerItemContent} />
             </TitledSection>
         </Box>
     );

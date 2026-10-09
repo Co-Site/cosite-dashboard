@@ -26,9 +26,9 @@ import { TopLevelLayerList } from "./LayerList/LayerList";
 import { Tools } from "./Tools";
 
 /**
- * Renders additional content for the menu of a layer item, see {@link TocProps.layerMenuContent}.
+ * Renders additional content for a layer item, see {@link TocProps.layerItemContent}.
  */
-export type LayerMenuContentRenderer = (layer: AnyLayer) => ReactNode;
+export type LayerItemContentRenderer = (layer: AnyLayer) => ReactNode;
 
 /**
  * Props supported by the {@link Toc} component.
@@ -94,17 +94,16 @@ export interface TocProps extends CommonComponentProps, MapModelProps {
     onDisposed?: (event: TocDisposedEvent) => void;
 
     /**
-     * Additional content for the menu (⋮) of a layer item.
-     * The content is rendered in the menu's popover below the layer's description.
+     * Additional content for a layer item, rendered directly below the layer's title
+     * (e.g. a transparency slider).
      *
      * Return `undefined` or `null` if a layer has no additional content.
-     * The menu button is shown if the layer has a description or additional content.
      *
      * The function should have a stable identity (e.g. defined at module level or memoized).
      *
      * (Extension of the `@cosite/toc` fork.)
      */
-    layerMenuContent?: LayerMenuContentRenderer;
+    layerItemContent?: LayerItemContentRenderer;
 }
 
 /**
@@ -242,7 +241,7 @@ function useTocModel(props: TocProps): TocModel {
                 // oxlint-disable-next-line react/refs,
                 initialProps.current.initiallyCollapsed,
                 // oxlint-disable-next-line react/refs
-                initialProps.current.layerMenuContent
+                initialProps.current.layerItemContent
             )
         );
     }
@@ -255,7 +254,7 @@ function useTocModel(props: TocProps): TocModel {
                 props.autoShowParents,
                 props.collapsibleGroups,
                 props.initiallyCollapsed,
-                props.layerMenuContent
+                props.layerItemContent
             )
         );
         // oxlint-disable-next-line react/refs
@@ -263,7 +262,7 @@ function useTocModel(props: TocProps): TocModel {
         props.autoShowParents,
         props.collapsibleGroups,
         props.initiallyCollapsed,
-        props.layerMenuContent,
+        props.layerItemContent,
         // oxlint-disable-next-line react/refs
         tocModelRef.current.options
     ]);

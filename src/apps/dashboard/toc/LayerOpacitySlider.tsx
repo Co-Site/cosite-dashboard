@@ -11,9 +11,9 @@ import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
 import { DataLayerNode } from "../dataLayers/types";
 
 /**
- * Additional content for the TOC's layer menu: a transparency slider for every WMS layer.
+ * Additional content for TOC items: a transparency slider below every WMS layer.
  */
-export function layerMenuContent(layer: AnyLayer): ReactNode {
+export function layerItemContent(layer: AnyLayer): ReactNode {
     const config = layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
     if (config?.type !== "wms" || !isLayer(layer)) {
         return undefined;
@@ -31,6 +31,7 @@ export function LayerOpacitySlider({ olLayer }: { olLayer: BaseLayer }) {
     return (
         <Slider.Root
             size="sm"
+            className="layer-opacity-slider"
             min={0}
             max={100}
             step={5}
@@ -41,8 +42,10 @@ export function LayerOpacitySlider({ olLayer }: { olLayer: BaseLayer }) {
             }}
             getAriaValueText={(details) => `${details.value} %`}
         >
-            <Flex justifyContent="space-between">
-                <Slider.Label>{intl.formatMessage({ id: "toc.transparency" })}</Slider.Label>
+            <Flex justifyContent="space-between" fontSize="xs" color="fg.muted">
+                <Slider.Label fontSize="xs" fontWeight="normal">
+                    {intl.formatMessage({ id: "toc.transparency" })}
+                </Slider.Label>
                 <Slider.ValueText>{`${transparency} %`}</Slider.ValueText>
             </Flex>
             <Slider.Control>

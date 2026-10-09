@@ -63,6 +63,7 @@ export const LayerItem = memo(function LayerItem(props: { layer: AnyLayer }): Re
     );
 
     const nestedChildren = useNestedChildren(layerGroupId, title, layer, intl);
+    const itemContent = tocOptions.layerItemContent?.(layer);
     //all children hidden => do not render collapse button and child entries
     let hasNestedChildren = !!nestedChildren;
     if (allChildrenHidden || listMode === "hide-children") {
@@ -125,14 +126,21 @@ export const LayerItem = memo(function LayerItem(props: { layer: AnyLayer }): Re
                 </Checkbox.Root>
                 {problemIndicator}
                 <Spacer />
-                <LayerItemMenu
-                    layer={layer}
-                    title={title}
-                    description={description}
-                    extraContent={tocOptions.layerMenuContent?.(layer)}
-                    intl={intl}
-                />
+                <LayerItemMenu layer={layer} title={title} description={description} intl={intl} />
             </Flex>
+            {itemContent != null && itemContent !== false && (
+                <Box
+                    className="toc-layer-item-extra"
+                    /* Aligned with the title: (collapse button + gap) + checkbox control + label gap */
+                    paddingInlineStart={
+                        isCollapsible ? "calc(2.25rem + 0.5rem + 1.625rem)" : "1.625rem"
+                    }
+                    paddingInlineEnd={2}
+                    paddingBottom={2}
+                >
+                    {itemContent}
+                </Box>
+            )}
             {hasNestedChildren && (
                 <Collapsible.Root open={expanded} className="toc-collapsible-item">
                     <CollapsibleContent>{nestedChildren}</CollapsibleContent>
