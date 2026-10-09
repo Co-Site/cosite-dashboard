@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
 // SPDX-License-Identifier: Apache-2.0
 
-import { NativeSelect } from "@chakra-ui/react";
+import { SegmentGroup } from "@chakra-ui/react";
 import { createLogger } from "@open-pioneer/core";
 import { useReactiveSnapshot } from "@open-pioneer/reactivity";
 import { LocaleService } from "@open-pioneer/runtime";
@@ -9,8 +9,11 @@ import { useIntl, useService } from "open-pioneer:react-hooks";
 
 const LOG = createLogger("dashboard:LanguageSelector");
 
+/** Order of the languages in the switch. */
+const LANGUAGE_ORDER = ["en", "de"];
+
 /**
- * Select box to switch the application's language (live, without restart).
+ * Switch (EN | DE) to change the application's language (live, without restart).
  */
 export function LanguageSelector() {
     const intl = useIntl();
@@ -19,28 +22,38 @@ export function LanguageSelector() {
         () => localeService.messageLocale.language,
         [localeService]
     );
-    const languages = localeService.supportedMessageLocales.map((locale) => locale.language);
+    const languages = localeService.supportedMessageLocales
+        .map((locale) => locale.language)
+        .sort((a, b) => order(a) - order(b));
 
     return (
-        <NativeSelect.Root size="xs" width="auto">
-            <NativeSelect.Field
-                aria-label={intl.formatMessage({ id: "language.label" })}
-                value={current}
-                onChange={(event) => {
-                    localeService
-                        .changeLocale(new Intl.Locale(event.currentTarget.value))
-                        .catch((error) => LOG.error("Failed to change the language.", error));
-                }}
-            >
-                {languages.map((language) => (
-                    <option key={language} value={language}>
-                        {languageName(language)}
-                    </option>
-                ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-        </NativeSelect.Root>
+        <SegmentGroup.Root
+            size="xs"
+            aria-label={intl.formatMessage({ id: "language.label" })}
+            value={current}
+            onValueChange={(details) => {
+                if (!details.value || details.value === current) {
+                    return;
+                }
+                localeService
+                    .changeLocale(new Intl.Locale(details.value))
+                    .catch((error) => LOG.error("Failed to change the language.", error));
+            }}
+        >
+            <SegmentGroup.Indicator />
+            {languages.map((language) => (
+                <SegmentGroup.Item key={language} value={language} title={languageName(language)}>
+                    <SegmentGroup.ItemText>{language.toUpperCase()}</SegmentGroup.ItemText>
+                    <SegmentGroup.ItemHiddenInput aria-label={languageName(language)} />
+                </SegmentGroup.Item>
+            ))}
+        </SegmentGroup.Root>
     );
+}
+
+function order(language: string): number {
+    const index = LANGUAGE_ORDER.indexOf(language);
+    return index === -1 ? LANGUAGE_ORDER.length : index;
 }
 
 /** Name of the language in the language itself, e.g. "Deutsch", "English". */
