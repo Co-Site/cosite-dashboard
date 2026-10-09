@@ -1,23 +1,39 @@
 {
     "layers": [
         {
-            "id": "dwd-icon-t2m",
-            "type": "wms",
-            "name": "Lufttemperatur 2 m (DWD ICON)",
-            "description": "Vorhersage der Lufttemperatur in 2 m Höhe aus dem ICON-Modell des Deutschen Wetterdienstes.",
-            "endpoint": "https://maps.dwd.de/geoserver/dwd/wms",
-            "visible": true,
-            "opacity": 0.6,
-            "attribution": "© Deutscher Wetterdienst",
-            "wms": { "layers": ["Icon_reg025_fd_sl_T2M"] }
+            "id": "wms",
+            "type": "group",
+            "name": "WMS",
+            "description": "Kartendienste (OGC Web Map Service).",
+            "layers": [
+                {
+                    "id": "dwd-icon-t2m",
+                    "type": "wms",
+                    "name": "Lufttemperatur 2 m (DWD ICON)",
+                    "description": "Vorhersage der Lufttemperatur in 2 m Höhe aus dem ICON-Modell des Deutschen Wetterdienstes.",
+                    "endpoint": "https://maps.dwd.de/geoserver/dwd/wms",
+                    "visible": true,
+                    "opacity": 0.6,
+                    "attribution": "© Deutscher Wetterdienst",
+                    "wms": { "layers": ["Icon_reg025_fd_sl_T2M"] }
+                }
+            ]
         },
         {
-            "id": "sta-ds-14",
-            "type": "sta-datastream",
-            "name": "Bodentemperatur SMT100 (Köln-Kalk)",
-            "description": "Bodentemperatur des SMT100-Sensors am Testknoten in Köln-Kalk (SensorThings API).",
-            "endpoint": "https://cosite.thk.52north.org/sensordata/v1.1/Datastreams(14)",
-            "visible": true
+            "id": "sta",
+            "type": "group",
+            "name": "Sensoren (STA)",
+            "description": "Messdaten aus der OGC SensorThings API.",
+            "layers": [
+                {
+                    "id": "sta-ds-14",
+                    "type": "sta-datastream",
+                    "name": "Bodentemperatur SMT100 (Köln-Kalk)",
+                    "description": "Bodentemperatur des SMT100-Sensors am Testknoten in Köln-Kalk (SensorThings API).",
+                    "endpoint": "https://cosite.thk.52north.org/sensordata/v1.1/Datastreams(14)",
+                    "visible": true
+                }
+            ]
         }
     ]
 }

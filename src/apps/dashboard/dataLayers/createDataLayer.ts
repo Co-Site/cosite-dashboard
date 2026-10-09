@@ -2,24 +2,29 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { createLogger } from "@open-pioneer/core";
-import { Layer, LayerFactory, SimpleLayer, WMSLayer } from "@open-pioneer/map";
+import { GroupLayer, Layer, LayerFactory, SimpleLayer, WMSLayer } from "@open-pioneer/map";
 import { LayerTocAttributes } from "@open-pioneer/toc";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { Circle, Fill, Stroke, Style } from "ol/style";
 import { createDatastreamFeature, fetchDatastream } from "./sta";
-import { DataLayerConfig, StaDatastreamLayerConfig, WmsDataLayerConfig } from "./types";
+import {
+    DataLayerGroupConfig,
+    DataLayerNode,
+    StaDatastreamLayerConfig,
+    WmsDataLayerConfig
+} from "./types";
 
 const LOG = createLogger("dashboard:createDataLayer");
 
-/** Key of the layer attribute that holds the original {@link DataLayerConfig}. */
+/** Key of the layer attribute that holds the original {@link DataLayerNode}. */
 export const DATA_LAYER_ATTRIBUTE = "dataLayer";
 
 /**
- * Creates a map layer from a data layer configuration entry.
+ * Creates a map layer from a data layer configuration entry (groups are created recursively).
  */
 export function createDataLayer(
-    config: DataLayerConfig,
+    config: DataLayerNode,
     layerFactory: LayerFactory,
     mapProjection: string
 ): Layer {
@@ -31,16 +36,30 @@ export function createDataLayer(
 }
 
 function createLayer(
-    config: DataLayerConfig,
+    config: DataLayerNode,
     layerFactory: LayerFactory,
     mapProjection: string
 ): Layer {
     switch (config.type) {
+        case "group":
+            return createGroupLayer(config, layerFactory, mapProjection);
         case "wms":
             return createWmsLayer(config, layerFactory);
         case "sta-datastream":
             return createStaDatastreamLayer(config, layerFactory, mapProjection);
     }
+}
+
+function createGroupLayer(
+    config: DataLayerGroupConfig,
+    layerFactory: LayerFactory,
+    mapProjection: string
+): Layer {
+    return layerFactory.create({
+        type: GroupLayer,
+        ...commonOptions(config),
+        layers: config.layers.map((child) => createDataLayer(child, layerFactory, mapProjection))
+    });
 }
 
 function createWmsLayer(config: WmsDataLayerConfig, layerFactory: LayerFactory): Layer {
@@ -91,7 +110,7 @@ function createStaDatastreamLayer(
     });
 }
 
-function commonOptions(config: DataLayerConfig) {
+function commonOptions(config: DataLayerNode) {
     return {
         id: config.id,
         title: config.name,

@@ -13,7 +13,7 @@ import { fromLonLat } from "ol/proj";
 import OSM from "ol/source/OSM";
 import { createDataLayer } from "./dataLayers/createDataLayer";
 import { DATA_LAYERS_URL, loadDataLayers } from "./dataLayers/loadDataLayers";
-import { DataLayerConfig } from "./dataLayers/types";
+import { DataLayerNode } from "./dataLayers/types";
 
 const LOG = createLogger("dashboard:MainMapProvider");
 
@@ -52,7 +52,7 @@ export class MainMapProvider implements MapConfigProvider {
 }
 
 /** The map should still start (with base layers only) if the data layer configuration is broken. */
-async function loadDataLayersSafe(): Promise<DataLayerConfig[]> {
+async function loadDataLayersSafe(): Promise<DataLayerNode[]> {
     try {
         return await loadDataLayers();
     } catch (error) {

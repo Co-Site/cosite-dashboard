@@ -69,7 +69,7 @@ function TocPanel() {
                     </SectionHeading>
                 }
             >
-                <Toc />
+                <Toc collapsibleGroups />
             </TitledSection>
         </Box>
     );
