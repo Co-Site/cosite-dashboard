@@ -3,11 +3,13 @@
 
 import { Box, Flex, IconButton } from "@chakra-ui/react";
 import { SectionHeading, TitledSection } from "@open-pioneer/react-utils";
-import { Toc } from "@open-pioneer/toc";
+import { Toc, TocApi } from "@open-pioneer/toc";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useId, useRef, useState } from "react";
 import { LuLayers, LuPanelLeftClose } from "react-icons/lu";
 import { LanguageSelector } from "./LanguageSelector";
+import { layerItemContent } from "./LayerOpacitySlider";
+import { TocItemExtensions } from "./TocItemExtensions";
 
 /**
  * Panel with the TOC (basemaps and layers) and the language switch.
@@ -18,6 +20,7 @@ export function TocPanel() {
     const headingId = useId();
     const panelId = useId();
     const [open, setOpen] = useState(true);
+    const [tocApi, setTocApi] = useState<TocApi>();
 
     // Move the focus to the button that is visible after toggling.
     const openButtonRef = useRef<HTMLButtonElement>(null);
@@ -79,7 +82,12 @@ export function TocPanel() {
                         </Flex>
                     }
                 >
-                    <Toc collapsibleGroups />
+                    <Toc
+                        collapsibleGroups
+                        onReady={(event) => setTocApi(event.api)}
+                        onDisposed={() => setTocApi(undefined)}
+                    />
+                    <TocItemExtensions api={tocApi} render={layerItemContent} />
                 </TitledSection>
             </Box>
             {!open && (
