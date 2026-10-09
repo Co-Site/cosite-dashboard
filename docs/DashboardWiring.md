@@ -161,6 +161,10 @@ Darüber findet der Kartenklick z. B. die `featureInfo`-Einstellungen eines WMS-
    (`mapClick/featureInfo.ts`). Das Ergebnis erscheint als Popup (`map.overlays`) an der Klickposition.
    Zahlen werden lokalisiert, ISO-Zeitstempel in Ortszeit angezeigt. Darunter steht die **Legende** des Layers
    (`mapClick/WmsLegend.tsx`). Wird das Popup zu hoch, scrollt nur der Inhalt; Titel und ✕ bleiben sichtbar.
+   An der Klickposition erscheint ein **Marker** (`mapClick/clickMarker.ts`, über `map.highlights`). Das Popup steht
+   **neben** dem Marker, mit der Oberkante unterhalb des Klicks (am rechten Rand links davon). Passt es unten nicht hin,
+   wird es so weit hochgeschoben, dass es zwischen Analyse-Panel und Kartenoberkante ganz sichtbar ist
+   (`mapClick/popupPlacement.ts`). Die Platzierung wird neu berechnet, wenn sich die Größe von Popup oder Karte ändert.
 
 **Legenden-URL:** Bevorzugt aus den Capabilities (`sublayer.legend`), sonst eine Standard-`GetLegendGraphic`-Anfrage.
 Hintergrund: `@open-pioneer/map` 1.5.0 fragt die Capabilities fest mit `LANGUAGE=ger` an, der DWD-GeoServer antwortet
