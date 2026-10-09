@@ -181,6 +181,10 @@ Der TOC ist ein Fork von `@open-pioneer/toc` 1.5.0 unter `src/packages/toc` (Apa
   Das Dashboard liefert dort für jeden WMS-Layer einen **Transparenz-Slider** (`toc/LayerOpacitySlider.tsx`,
   0 % = deckend, Startwert aus `opacity` im JSON). Die Funktion sollte eine stabile Identität haben (Modulebene).
   Das ⋮-Menü ist unverändert wie im Original (zeigt die Beschreibung).
+- **TOC-Panel** (`toc/TocPanel.tsx`): enthält Überschrift, Sprachumschalter und `Toc`. Es lässt sich nach links
+  einklappen, dann bleibt oben links nur ein Ebenen-Button. Das Panel liegt bewusst **nicht** in einer `MapAnchor`,
+  sondern als eigene Ebene über der Karte: `MapAnchor` schneidet Inhalte ab (`overflow: hidden`) und fängt in ihrem
+  Bereich Kartenklicks ab. Der Rahmen hat `pointer-events: none`, nur Panel und Button reagieren auf Klicks.
 
 ## Sprache (i18n)
 
