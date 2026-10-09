@@ -16,23 +16,23 @@ Jedes Element folgt demselben Schema: **Was** · **Entscheidung** · **Warum** �
 - **Arbeitsweise:** Ein Commit pro abgeschlossenem Schritt, kein Push ohne Rückfrage. Der Pre-Commit-Hook führt
   `tsc`, oxfmt und oxlint aus, jeder Schritt muss also für sich bauen.
 
-| #   | Element                                                               | Schwierigkeit |
-| --- | --------------------------------------------------------------------- | ------------- |
-| 1   | [Aufräumen des Starters](#1-aufräumen-des-starters)                   | 🟢            |
-| 2   | [App-Grundgerüst](#2-app-grundgerüst)                                 | 🟢            |
-| 3   | [Build und Abhängigkeiten](#3-build-und-abhängigkeiten)               | 🟡            |
-| 4   | [Datenlayer-Konfiguration (JSON)](#4-datenlayer-konfiguration-json)   | 🟡            |
-| 5   | [Datenquellen](#5-datenquellen)                                       | 🟡            |
-| 6   | [Kategorien im TOC](#6-kategorien-untergruppen-im-toc)                | 🟢            |
-| 7   | [FeatureInfo-Popup](#7-featureinfo-popup)                             | 🟡            |
-| 8   | [Diagramme und Zeitfilter](#8-diagramme-und-zeitfilter)               | 🟡            |
-| 9   | [TOC-Fork und Transparenz-Slider](#9-toc-fork-und-transparenz-slider) | 🔴            |
-| 10  | [Mehrsprachigkeit](#10-mehrsprachigkeit)                              | 🟡            |
-| 11  | [Einklappbares TOC-Panel](#11-einklappbares-toc-panel)                | 🔴            |
-| 12  | [WMS-Legende](#12-wms-legende)                                        | 🔴            |
-| 13  | [Popup-Platzierung und Marker](#13-popup-platzierung-und-marker)      | 🟡            |
-| 14  | [Testen](#14-testen)                                                  | 🟢            |
-| 15  | [Offene Punkte](#15-offene-punkte-und-ideen)                          |               |
+| #   | Element                                                                             | Schwierigkeit |
+| --- | ----------------------------------------------------------------------------------- | ------------- |
+| 1   | [Aufräumen des Starters](#1-aufräumen-des-starters)                                 | 🟢            |
+| 2   | [App-Grundgerüst](#2-app-grundgerüst)                                               | 🟢            |
+| 3   | [Build und Abhängigkeiten](#3-build-und-abhängigkeiten)                             | 🟡            |
+| 4   | [Datenlayer-Konfiguration (JSON)](#4-datenlayer-konfiguration-json)                 | 🟡            |
+| 5   | [Datenquellen](#5-datenquellen)                                                     | 🟡            |
+| 6   | [Kategorien im TOC](#6-kategorien-untergruppen-im-toc)                              | 🟢            |
+| 7   | [FeatureInfo-Popup](#7-featureinfo-popup)                                           | 🟡            |
+| 8   | [Diagramme und Zeitfilter](#8-diagramme-und-zeitfilter)                             | 🟡            |
+| 9   | [TOC-Erweiterung und Transparenz-Slider](#9-toc-erweiterung-und-transparenz-slider) | 🔴            |
+| 10  | [Mehrsprachigkeit](#10-mehrsprachigkeit)                                            | 🟡            |
+| 11  | [Einklappbares TOC-Panel](#11-einklappbares-toc-panel)                              | 🔴            |
+| 12  | [WMS-Legende](#12-wms-legende)                                                      | 🔴            |
+| 13  | [Popup-Platzierung und Marker](#13-popup-platzierung-und-marker)                    | 🟡            |
+| 14  | [Testen](#14-testen)                                                                | 🟢            |
+| 15  | [Offene Punkte](#15-offene-punkte-und-ideen)                                        |               |
 
 Alle Commits auf `dashboard` (2026-10-09, älteste zuerst):
 
@@ -65,6 +65,13 @@ Alle Commits auf `dashboard` (2026-10-09, älteste zuerst):
 | `74b09ed` | Marker an der Klickposition, Popup daneben                  |
 | `2fc058c` | Doku: Marker und Popup-Platzierung                          |
 
+Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne TOC-Fork, siehe Abschnitt 9):
+
+| Commit    | Inhalt                                                      |
+| --------- | ----------------------------------------------------------- |
+| `22b279a` | TOC-Fork entfernt, Original `@open-pioneer/toc` eingebunden |
+| `9dc52cb` | Transparenz-Slider über die öffentliche TOC-API             |
+
 ---
 
 ## 1. Aufräumen des Starters
@@ -77,7 +84,8 @@ Alle Commits auf `dashboard` (2026-10-09, älteste zuerst):
 - **Warum:** Die Samples zeigten, wie man etwas macht, waren aber kein Teil des Produkts. Die Docs sind als
   Nachschlagewerk weiter nützlich.
 - **Stolpersteine:** Ohne Pakete unter `src/packages/` hat Typedoc nichts zu dokumentieren, deshalb flog der CI-Schritt
-  `build-docs` vorübergehend raus. Mit dem TOC-Fork (Abschnitt 9) gibt es wieder ein Paket, der Schritt ist zurück.
+  `build-docs` raus. Mit dem TOC-Fork (Abschnitt 9, Branch `dashboard`) gab es wieder ein Paket und den Schritt; auf
+  `toc-native` gibt es kein lokales Paket mehr und der Schritt ist wieder entfernt.
 - **Commits:** `aa783cd`, `c81b2de`
 
 ## 2. App-Grundgerüst
@@ -179,27 +187,45 @@ Alle Commits auf `dashboard` (2026-10-09, älteste zuerst):
 - **Grenze:** Die nativen Datumsfelder formatieren nach der Browsersprache, nicht nach der App-Sprache.
 - **Commits:** `f71ec9a`
 
-## 9. TOC-Fork und Transparenz-Slider
+## 9. TOC-Erweiterung und Transparenz-Slider
 
-🔴 **Was:** Ein Transparenz-Slider für jeden WMS-Layer im TOC.
+🔴 **Was:** Ein Transparenz-Slider für jeden WMS-Layer, direkt unter dem Layernamen im TOC.
 
-- **Problem:** `@open-pioneer/toc` exportiert nur die fertige `Toc`-Komponente. Es gibt keinen Prop und keinen Slot für
-  eigene Inhalte pro Layer, auch nicht im ⋮-Menü.
+- **Problem:** `@open-pioneer/toc` bietet keinen Prop und keine Children für eigene Inhalte pro Layer. Die
+  Unterkomponenten (`LayerList`, `LayerItem`, `LayerItemMenu`) und der interne Kontext sind nicht exportiert
+  (`package.json` gibt nur `"."` frei), austauschen ließe sich ohnehin nichts.
 - **Betrachtete Wege:**
     1. Eigener TOC: volle Kontrolle, aber alle TOC-Funktionen nachbauen.
-    2. Standard-TOC behalten und den Slider per DOM-Portal in die Einträge hängen: wenig Code, aber abhängig von internen
-       CSS-Klassen und Render-Details, bricht leicht bei Updates.
+    2. Original-TOC über seine öffentliche API erweitern (DOM-Element des Eintrags + React-Portal).
     3. Slider-Bereich unter dem TOC: robust, aber nicht beim jeweiligen Layer.
     4. TOC forken und um einen Slot erweitern.
-- **Entscheidung:** Fork als lokales Paket `src/packages/toc` (`@cosite/toc`), übernommen aus dem Upstream-Tag
-  `@open-pioneer/toc@1.5.0` (Apache-2.0).
-- **Verlauf:** Auf Wunsch des Nutzers zuerst als Schnittstelle im ⋮-Menü (`layerMenuContent`). Ergebnis: Der Slider war
-  erst nach einem Klick zu sehen und wurde übersehen. Deshalb ersetzt durch `layerItemContent(layer)`: Der Slider steht
-  direkt unter dem Layernamen. Das ⋮-Menü ist wieder im Originalzustand.
-- **Risiko:** Upstream-Updates des TOC müssen von Hand nachgezogen werden. Alle Änderungen am Fork stehen in
-  `src/packages/toc/README.md` („Changes in this fork“). Die Upstream-Tests wurden nicht übernommen, weil sie interne
-  Upstream-Testpakete brauchen.
-- **Commits:** `cb6feb5`, `58c94ff`, `5c52ad7`
+    5. `pnpm patch` auf das kompilierte Paket (Mechanismus im Repo vorhanden, siehe [WaysToPatchAPackage.md](./WaysToPatchAPackage.md)).
+    6. Slot-Prop als Pull Request upstream vorschlagen.
+- **Erste Lösung (Branch `dashboard`): Fork.** `src/packages/toc` (`@cosite/toc`) aus dem Upstream-Tag
+  `@open-pioneer/toc@1.5.0` mit neuem Prop. Erst als Schnittstelle im ⋮-Menü (`layerMenuContent`), dort wurde der
+  Slider übersehen, dann `layerItemContent(layer)` direkt unter dem Titel.
+  Commits: `cb6feb5`, `58c94ff`, `5c52ad7`.
+- **Neubewertung:** Der Fork kopierte ~20 Dateien für ~50 geänderte Zeilen und muss bei jedem Upstream-Update von Hand
+  abgeglichen werden. Vorgabe danach: kein Fork, kein Patch, kein PR, die bestehende Komponente soll erweitert werden.
+  Weg 2 war beim Fork übersehen worden, weil nur Props und Unterkomponenten geprüft wurden, nicht die imperative API.
+- **Aktuelle Lösung (Branch `toc-native`): Erweiterung über die öffentliche API** (`toc/TocItemExtensions.tsx`):
+    - `Toc` liefert in `onReady` eine `TocApi`. `api.getItems()` liefert alle Einträge, jeder `TocItem` hat
+      `htmlElement`, das DOM-Element des Eintrags. Beides ist dokumentiert und **reaktiv** (`reactive()` bzw.
+      `reactiveMap`), Neu-Rendern und Entfernen von Einträgen werden also gemeldet.
+    - Angehängt wird ein eigenes `<div class="toc-layer-item-extra">` als letztes Kind von
+      `<li class="toc-layer-item layer-<id>">`. Der Slider wird per `createPortal` hineingerendert und bleibt damit Teil
+      des React-Baums der App (Chakra, i18n, Zustand).
+    - Im Browser geprüft: genau ein Slider, am Titel ausgerichtet, funktioniert nach Gruppe ein/aus, Sprachwechsel,
+      TOC-Panel ein/aus und Layer an/aus.
+- **Risiken der aktuellen Lösung:**
+    - Ein fremdes Element in einem Bereich, den der TOC selbst rendert. React lässt unbekannte Kinder in Ruhe, es ist
+      aber nicht der vorgesehene Zweck von `htmlElement` (die TOC-Doku nennt „z. B. zum Scrollen“).
+    - Inhalt nur am Ende des Eintrags: bei WMS-Layern (Sublayer ausgeblendet) direkt unter dem Titel, bei Gruppen
+      stünde er unter den Kindern. Fügt der TOC einem Eintrag später neue Kinder hinzu, landen sie hinter dem Container.
+    - Ändert Upstream das Markup, kann der Slider anders sitzen. Die API selbst ist öffentlich.
+- **Status:** Beide Varianten liegen nebeneinander (`dashboard` mit Fork, `toc-native` ohne) und werden im Team
+  diskutiert.
+- **Commits (`toc-native`):** `22b279a`, `9dc52cb`
 
 ## 10. Mehrsprachigkeit
 
@@ -300,4 +326,5 @@ Alle Commits auf `dashboard` (2026-10-09, älteste zuerst):
 - **CI-Deploy:** Der Job `deploy` in `.github/workflows/test-and-build.yml` ist noch an das Repository
   `open-pioneer/trails-starter` gebunden und läuft hier daher nie.
 - **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären.
-- **Fork-Pflege:** `@cosite/toc` bei Updates von `@open-pioneer/toc` abgleichen.
+- **TOC-Variante:** Entscheidung Fork (`dashboard`) oder API-Erweiterung (`toc-native`) im Team treffen, dann den
+  anderen Branch verwerfen.

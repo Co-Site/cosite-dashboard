@@ -185,17 +185,18 @@ Im Bottom-Panel:
   und musste dafür gepatcht werden (siehe alter Branch `origin/test/charts`). Chart.js zeichnet auf Canvas und braucht das nicht.
 - Einheiten aus der STA werden für die Anzeige übersetzt (`degC` → `°C`, siehe `displayUnit` in `dataLayers/sta.ts`).
 
-## TOC (`@cosite/toc`, Fork)
+## TOC und Transparenz-Slider
 
-Der TOC ist ein Fork von `@open-pioneer/toc` 1.5.0 unter `src/packages/toc` (Apache-2.0, Quelle: Upstream-Tag
-`@open-pioneer/toc@1.5.0`). Grund: Das Original hat keine Erweiterungspunkte für eigene Inhalte pro Layer.
+Der TOC ist das unveränderte `@open-pioneer/toc`. Eigene Inhalte pro Layer kommen über seine öffentliche API dazu
+(`toc/TocItemExtensions.tsx`):
 
-- **Änderungen gegenüber Upstream** stehen in `src/packages/toc/README.md` („Changes in this fork“). Bei einem Update:
-  Upstream-Version neu übernehmen und diese Änderungen erneut einspielen.
-- **`layerItemContent(layer)`**: Prop am `Toc`. Der Rückgabewert erscheint direkt unter dem Titel eines Layers.
-  Das Dashboard liefert dort für jeden WMS-Layer einen **Transparenz-Slider** (`toc/LayerOpacitySlider.tsx`,
-  0 % = deckend, Startwert aus `opacity` im JSON). Die Funktion sollte eine stabile Identität haben (Modulebene).
-  Das ⋮-Menü ist unverändert wie im Original (zeigt die Beschreibung).
+- `Toc` meldet in `onReady` eine `TocApi`. `TocItemExtensions` liest daraus reaktiv alle Einträge (`api.getItems()`)
+  und deren DOM-Element (`TocItem.htmlElement`).
+- Für jeden Layer ruft es `layerItemContent(layer)` auf (`toc/LayerOpacitySlider.tsx`). Kommt Inhalt zurück, wird ein
+  `<div class="toc-layer-item-extra">` ans Ende des Eintrags gehängt und der Inhalt per `createPortal` hineingerendert.
+- Das Dashboard liefert so für jeden WMS-Layer einen **Transparenz-Slider** unter dem Titel
+  (0 % = deckend, Startwert aus `opacity` im JSON).
+- Hintergrund und Risiken: [DashboardDecisions.md](./DashboardDecisions.md), Abschnitt 9.
 - **TOC-Panel** (`toc/TocPanel.tsx`): enthält Überschrift, Sprachumschalter und `Toc`. Es lässt sich nach links
   einklappen, dann bleibt oben links nur ein Ebenen-Button. Das Panel liegt bewusst **nicht** in einer `MapAnchor`,
   sondern als eigene Ebene über der Karte: `MapAnchor` schneidet Inhalte ab (`overflow: hidden`) und fängt in ihrem
@@ -203,7 +204,7 @@ Der TOC ist ein Fork von `@open-pioneer/toc` 1.5.0 unter `src/packages/toc` (Apa
 
 ## Sprache (i18n)
 
-- Unterstützte Sprachen: `en`, `de` (`build.config.mjs` → `i18n`, Texte in `i18n/*.yaml`, im TOC-Fork eigene Texte).
+- Unterstützte Sprachen: `en`, `de` (`build.config.mjs` → `i18n`, Texte in `i18n/*.yaml`; der TOC bringt eigene Texte mit).
 - **Standardsprache Englisch**, unabhängig von der Browsersprache (`config.locale` in `app.ts`).
 - **Live-Wechsel ohne Neustart**: `advanced.enableLiveLocaleChanges` in `app.ts`. Kartenausschnitt, Auswahl und Zeitfilter bleiben erhalten.
 - **Sprachumschalter EN | DE** neben „Ebenen“ im TOC (`toc/LanguageSelector.tsx`, Chakra `SegmentGroup`, nutzt `runtime.LocaleService`).
@@ -229,10 +230,11 @@ Der TOC ist ein Fork von `@open-pioneer/toc` 1.5.0 unter `src/packages/toc` (Apa
 
 ## Lokale Pakete
 
-- Aktuell: `src/packages/toc` (`@cosite/toc`, siehe oben).
+- Aktuell gibt es keine lokalen Pakete unter `src/packages/`.
 - Neues Paket unter `src/packages/<name>/` mit eigener `package.json` (+ `build.config.mjs`, falls Services/i18n/Styles).
 - In der App einbinden: `"<name>": "workspace:*"` in der App-`package.json`, `pnpm install`.
-- `typedoc.config.mjs` dokumentiert alle Pakete unter `src/packages/**` (`pnpm build-docs`, läuft auch in der CI).
+- `typedoc.config.mjs` dokumentiert alle Pakete unter `src/packages/**`. Der CI-Schritt `pnpm build-docs` ist entfernt,
+  solange es keine lokalen Pakete gibt; danach wieder in `.github/workflows/test-and-build.yml` aufnehmen.
 
 ## Tests
 
