@@ -32,6 +32,63 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
 | `DashboardApp.tsx` | Root-Komponente: Karte, TOC, Kartenwerkzeuge, Bottom-Panel                                                |
 | `BottomPanel.tsx`  | Einklappbares Panel unten (Chakra `Collapsible`), später für Diagramme                                    |
 | `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                             |
+| `dataLayers/`      | Datenlayer: JSON-Schema + Parser (`types.ts`), Loader, Layer-Fabrik, SensorThings-Helfer                  |
+
+## Datenlayer (`src/public/config/dataLayers.json`)
+
+Die Datenlayer der Karte sind nicht im Code festgelegt, sondern stehen in einer JSON-Datei, die die App **zur Laufzeit** lädt.
+
+- Die Datei liegt in `src/public/` (Vites `publicDir`) und wird beim Build unverändert nach `dist/www/config/dataLayers.json` kopiert.
+  Nach dem Deployment lässt sie sich auf dem Webserver ändern, ohne neu zu bauen.
+- Kein Backend: Der Browser lädt sie per `fetch` und parst sie mit `response.json()` (`dataLayers/loadDataLayers.ts`).
+- Andere Quelle (Bucket, API …): `VITE_DATA_LAYERS_URL` setzen, z. B. in `.env.local`. Der Server muss dann CORS erlauben.
+- Ist die Datei nicht erreichbar oder ungültig, startet die Karte nur mit der Basemap. Der Fehler steht in der Browser-Konsole.
+  Einzelne ungültige Einträge werden mit Warnung übersprungen.
+
+### Felder
+
+| Feld          | Pflicht | Bedeutung                                                              |
+| ------------- | ------- | ---------------------------------------------------------------------- |
+| `id`          | ja      | Eindeutige ID, auch Layer-ID in der Karte                              |
+| `type`        | ja      | `wms` oder `sta-datastream`                                            |
+| `name`        | ja      | Anzeigename im TOC                                                     |
+| `description` | nein    | Beschreibung, im TOC über den Info-Button (⋮) des Layers               |
+| `endpoint`    | ja      | URL des Dienstes (WMS-Basis-URL bzw. URL des SensorThings-Datastreams) |
+| `visible`     | nein    | Initial sichtbar (Default `true`)                                      |
+| `opacity`     | nein    | Deckkraft 0–1 (Default `1`)                                            |
+| `attribution` | nein    | Quellenangabe auf der Karte                                            |
+| `wms.layers`  | bei WMS | Liste der WMS-Layernamen aus den Capabilities                          |
+
+Beispiel:
+
+```json
+{
+    "id": "dwd-icon-t2m",
+    "type": "wms",
+    "name": "Lufttemperatur 2 m (DWD ICON)",
+    "description": "Vorhersage der Lufttemperatur in 2 m Höhe …",
+    "endpoint": "https://maps.dwd.de/geoserver/dwd/wms",
+    "opacity": 0.6,
+    "wms": { "layers": ["Icon_reg025_fd_sl_T2M"] }
+}
+```
+
+### Layertypen
+
+- **`wms`** → `WMSLayer` aus `@open-pioneer/map`. Bei genau einem WMS-Layer wird der Sublayer im TOC ausgeblendet.
+- **`sta-datastream`** → Punktlayer (`SimpleLayer` + OL-`VectorLayer`) an der Location des Things.
+  Das Feature trägt u. a. `observationsUrl`, `unit` und `name` (siehe `StaDatastreamProperties` in `dataLayers/sta.ts`).
+  `healthCheck` auf den Endpunkt markiert den Layer im TOC als nicht verfügbar, wenn der Dienst nicht antwortet.
+
+Jeder erzeugte Layer hat die Original-Konfiguration im Attribut `dataLayer` (`layer.attributes.dataLayer`).
+Darüber lassen sich später beim Kartenklick Typ und Endpunkt für die Diagramme ermitteln.
+
+### Neuen Layertyp hinzufügen
+
+1. In `dataLayers/types.ts` ein neues Interface mit eigenem `type` anlegen, in die Union `DataLayerConfig` aufnehmen
+   und in `validateEntry` die typspezifischen Felder prüfen.
+2. In `dataLayers/createDataLayer.ts` einen `case` für den neuen Typ ergänzen. TypeScript meldet fehlende Fälle.
+3. Test in `dataLayers/types.test.ts` erweitern und den Typ hier in der Doku eintragen.
 
 ## Services
 
