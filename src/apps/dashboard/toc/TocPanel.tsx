@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Box, Flex, IconButton } from "@chakra-ui/react";
-import { Toc } from "@cosite/toc";
 import { SectionHeading, TitledSection } from "@open-pioneer/react-utils";
+import { Toc } from "@open-pioneer/toc";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useId, useRef, useState } from "react";
 import { LuLayers, LuPanelLeftClose } from "react-icons/lu";
 import { LanguageSelector } from "./LanguageSelector";
-import { layerItemContent } from "./LayerOpacitySlider";
 
 /**
  * Panel with the TOC (basemaps and layers) and the language switch.
@@ -80,7 +79,7 @@ export function TocPanel() {
                         </Flex>
                     }
                 >
-                    <Toc collapsibleGroups layerItemContent={layerItemContent} />
+                    <Toc collapsibleGroups />
                 </TitledSection>
             </Box>
             {!open && (

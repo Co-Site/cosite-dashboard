@@ -6,27 +6,18 @@ settings:
 
 catalogs:
   default:
-    '@conterra/reactivity-core':
-      specifier: ^0.8.8
-      version: 0.8.8
     '@emotion/react':
       specifier: ^11.14.0
       version: 11.14.0
     '@emotion/styled':
       specifier: ^11.14.1
       version: 11.14.1
-    '@open-pioneer/basemap-switcher':
-      specifier: ^1.5.0
-      version: 1.5.0
     '@open-pioneer/build-package-cli':
       specifier: ^4.0.1
       version: 4.0.1
     '@open-pioneer/build-support':
       specifier: ^4.0.1
       version: 4.0.1
-    '@open-pioneer/chakra-snippets':
-      specifier: ^4.8.0
-      version: 4.8.0
     '@open-pioneer/check-pnpm-duplicates':
       specifier: ^0.4.1
       version: 0.4.1
@@ -48,6 +39,9 @@ catalogs:
     '@open-pioneer/runtime':
       specifier: ^4.8.0
       version: 4.8.0
+    '@open-pioneer/toc':
+      specifier: ^1.5.0
+      version: 1.5.0
     '@open-pioneer/vite-plugin-pioneer':
       specifier: ^7.0.1
       version: 7.0.1
@@ -277,9 +271,6 @@ importers:
       '@chakra-ui/react':
         specifier: 3.37.0
         version: 3.37.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@cosite/toc':
-        specifier: workspace:*
-        version: link:../../packages/toc
       '@emotion/react':
         specifier: 'catalog:'
         version: 11.14.0(@types/react@19.3.0)(react@19.3.0)
@@ -304,6 +295,9 @@ importers:
       '@open-pioneer/runtime':
         specifier: 'catalog:'
         version: 4.8.0(@types/react@19.3.0)
+      '@open-pioneer/toc':
+        specifier: 'catalog:'
+        version: 1.5.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(geotiff@3.1.0-beta.0)(react-dom@19.3.0(react@19.3.0))
       chart.js:
         specifier: 'catalog:'
         version: 4.5.1
@@ -316,45 +310,6 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.0(react@19.3.0)
-      react-icons:
-        specifier: 'catalog:'
-        version: 5.7.0(react@19.3.0)
-
-  src/packages/toc:
-    dependencies:
-      '@chakra-ui/react':
-        specifier: 3.37.0
-        version: 3.37.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@conterra/reactivity-core':
-        specifier: 'catalog:'
-        version: 0.8.8
-      '@open-pioneer/basemap-switcher':
-        specifier: 'catalog:'
-        version: 1.5.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(geotiff@3.1.0-beta.0)(react-dom@19.3.0(react@19.3.0))
-      '@open-pioneer/chakra-snippets':
-        specifier: 'catalog:'
-        version: 4.8.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))
-      '@open-pioneer/core':
-        specifier: 'catalog:'
-        version: 4.8.0
-      '@open-pioneer/map':
-        specifier: 'catalog:'
-        version: 1.5.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(geotiff@3.1.0-beta.0)
-      '@open-pioneer/react-utils':
-        specifier: 'catalog:'
-        version: 4.8.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(react-dom@19.3.0(react@19.3.0))
-      '@open-pioneer/reactivity':
-        specifier: 'catalog:'
-        version: 4.8.0
-      '@open-pioneer/runtime':
-        specifier: 'catalog:'
-        version: 4.8.0(@types/react@19.3.0)
-      ol:
-        specifier: 'catalog:'
-        version: 10.10.0
-      react:
-        specifier: 'catalog:'
-        version: 19.3.0
       react-icons:
         specifier: 'catalog:'
         version: 5.7.0(react@19.3.0)
@@ -863,6 +818,9 @@ packages:
 
   '@open-pioneer/runtime@4.8.0':
     resolution: {integrity: sha512-/8itJRjRsNfMgdLK5wdH5dyUZ5m5NRkJVCtmqqVqNpS5a0KIP92jYsRUVH0BwYY7yz48qk8WTGeaaeJSMJY3nA==}
+
+  '@open-pioneer/toc@1.5.0':
+    resolution: {integrity: sha512-8RhPmEUIym1G7+2/z118dGjltpxQGKBAFXbduEvl9J0myz699nsuR25THna1lX1A/q4XFffnHGUY9RNelSWCpQ==}
 
   '@open-pioneer/vite-plugin-pioneer@7.0.1':
     resolution: {integrity: sha512-rKB+caikN/mBXH5QRZt5TTzXfEUy3uFHhzr/Wtep9CjTW4L/HWV2EP9VmJI3atjJnLAYKcuv+qBcgoakuoA1sQ==}
@@ -4165,6 +4123,26 @@ snapshots:
       react-dom: 19.3.0(react@19.3.0)
     transitivePeerDependencies:
       - '@types/react'
+
+  '@open-pioneer/toc@1.5.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(geotiff@3.1.0-beta.0)(react-dom@19.3.0(react@19.3.0))':
+    dependencies:
+      '@chakra-ui/react': 3.37.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@conterra/reactivity-core': 0.8.8
+      '@open-pioneer/basemap-switcher': 1.5.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(geotiff@3.1.0-beta.0)(react-dom@19.3.0(react@19.3.0))
+      '@open-pioneer/chakra-snippets': 4.8.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))
+      '@open-pioneer/core': 4.8.0
+      '@open-pioneer/map': 1.5.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(geotiff@3.1.0-beta.0)
+      '@open-pioneer/react-utils': 4.8.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(react-dom@19.3.0(react@19.3.0))
+      '@open-pioneer/reactivity': 4.8.0
+      '@open-pioneer/runtime': 4.8.0(@types/react@19.3.0)
+      ol: 10.10.0
+      react: 19.3.0
+      react-icons: 5.7.0(react@19.3.0)
+    transitivePeerDependencies:
+      - '@emotion/react'
+      - '@types/react'
+      - geotiff
+      - react-dom
 
   '@open-pioneer/vite-plugin-pioneer@7.0.1(@open-pioneer/runtime@4.8.0(@types/react@19.3.0))(rollup@4.63.2)(sass@1.104.0)(supports-color@7.2.0)(vite@8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(sass@1.104.0)(tsx@4.23.13)(yaml@2.9.0))':
     dependencies:

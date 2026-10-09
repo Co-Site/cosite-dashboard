@@ -3,7 +3,6 @@
     "private": true,
     "dependencies": {
         "@chakra-ui/react": "catalog:",
-        "@cosite/toc": "workspace:*",
         "@emotion/react": "catalog:",
         "@emotion/styled": "catalog:",
         "@open-pioneer/core": "catalog:",
@@ -12,6 +11,7 @@
         "@open-pioneer/react-utils": "catalog:",
         "@open-pioneer/reactivity": "catalog:",
         "@open-pioneer/runtime": "catalog:",
+        "@open-pioneer/toc": "catalog:",
         "chart.js": "catalog:",
         "ol": "catalog:",
         "react": "catalog:",
