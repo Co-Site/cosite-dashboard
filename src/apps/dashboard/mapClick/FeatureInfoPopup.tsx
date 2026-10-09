@@ -21,18 +21,18 @@ export function FeatureInfoPopup({ map, results, onClose }: FeatureInfoPopupProp
     const intl = useIntl();
     const hasFeatures = results?.some((result) => result.features.length > 0);
     return (
-        <Box
+        <Flex
+            direction="column"
             backgroundColor="white"
             borderWidth="1px"
             borderRadius="lg"
             boxShadow="lg"
-            padding={3}
             minWidth="220px"
             maxWidth="320px"
             maxHeight="300px"
-            overflowY="auto"
         >
-            <Flex justifyContent="space-between" alignItems="center" mb={1} gap={2}>
+            {/* Header stays visible, only the content below scrolls. */}
+            <Flex justifyContent="space-between" alignItems="center" gap={2} px={3} pt={3} pb={1}>
                 <Text fontWeight="bold">{intl.formatMessage({ id: "featureInfo.title" })}</Text>
                 <CloseButton
                     size="2xs"
@@ -40,21 +40,23 @@ export function FeatureInfoPopup({ map, results, onClose }: FeatureInfoPopupProp
                     onClick={onClose}
                 />
             </Flex>
-            {!results && (
-                <Flex gap={2} alignItems="center">
-                    <Spinner size="sm" />
-                    <Text>{intl.formatMessage({ id: "featureInfo.loading" })}</Text>
-                </Flex>
-            )}
-            {results && !hasFeatures && (
-                <Text color="fg.muted">{intl.formatMessage({ id: "featureInfo.empty" })}</Text>
-            )}
-            <Stack gap={3}>
-                {results?.map((result) => (
-                    <LayerResult key={result.layerId} map={map} result={result} />
-                ))}
-            </Stack>
-        </Box>
+            <Box px={3} pb={3} overflowY="auto" minHeight={0}>
+                {!results && (
+                    <Flex gap={2} alignItems="center">
+                        <Spinner size="sm" />
+                        <Text>{intl.formatMessage({ id: "featureInfo.loading" })}</Text>
+                    </Flex>
+                )}
+                {results && !hasFeatures && (
+                    <Text color="fg.muted">{intl.formatMessage({ id: "featureInfo.empty" })}</Text>
+                )}
+                <Stack gap={3}>
+                    {results?.map((result) => (
+                        <LayerResult key={result.layerId} map={map} result={result} />
+                    ))}
+                </Stack>
+            </Box>
+        </Flex>
     );
 }
 
