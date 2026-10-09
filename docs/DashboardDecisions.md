@@ -223,6 +223,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - Inhalt nur am Ende des Eintrags: bei WMS-Layern (Sublayer ausgeblendet) direkt unter dem Titel, bei Gruppen
       stünde er unter den Kindern. Fügt der TOC einem Eintrag später neue Kinder hinzu, landen sie hinter dem Container.
     - Ändert Upstream das Markup, kann der Slider anders sitzen. Die API selbst ist öffentlich.
+- **Ausführliche Begründung** für die Team-Diskussion: [TocExtensionDecision.md](./TocExtensionDecision.md).
 - **Status:** Beide Varianten liegen nebeneinander (`dashboard` mit Fork, `toc-native` ohne) und werden im Team
   diskutiert.
 - **Commits (`toc-native`):** `22b279a`, `9dc52cb`

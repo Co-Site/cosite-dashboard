@@ -4,6 +4,7 @@
 
 - [Dashboard: Wie das Projekt verdrahtet ist](./DashboardWiring.md)
 - [Dashboard: Entstehung und Entscheidungen](./DashboardDecisions.md)
+- [TOC-Erweiterung: Fork oder öffentliche API?](./TocExtensionDecision.md)
 - [Introduction](./Introduction.md)
 - [Getting started](./GettingStarted.md)
 - [Repository guide](./RepositoryGuide.md)
