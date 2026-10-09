@@ -4,6 +4,8 @@ messages:
     toc: "Inhaltsverzeichnis der Karte"
     mapTools: "Kartenwerkzeuge"
   toc:
+    collapse: "Ebenen ausblenden"
+    expand: "Ebenen einblenden"
     transparency: "Transparenz"
   language:
     label: "Sprache"

@@ -4,6 +4,8 @@ messages:
     toc: "Table of contents of the map"
     mapTools: "Map tools"
   toc:
+    collapse: "Hide layers"
+    expand: "Show layers"
     transparency: "Transparency"
   language:
     label: "Language"
