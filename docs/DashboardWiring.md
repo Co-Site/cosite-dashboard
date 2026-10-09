@@ -78,20 +78,23 @@ und stehen im TOC weiter oben.
 
 ### Felder
 
-| Feld                      | Pflicht     | Bedeutung                                                               |
-| ------------------------- | ----------- | ----------------------------------------------------------------------- |
-| `id`                      | ja          | Eindeutige ID (über die ganze Datei), auch Layer-ID in der Karte        |
-| `type`                    | ja          | `group`, `wms` oder `sta-datastream`                                    |
-| `name`                    | ja          | Anzeigename im TOC (Text oder pro Sprache, s. u.)                       |
-| `description`             | nein        | Beschreibung im ⋮-Menü des Layers (Text oder pro Sprache)               |
-| `visible`                 | nein        | Initial sichtbar (Default `true`)                                       |
-| `opacity`                 | nein        | Deckkraft 0–1 (Default `1`)                                             |
-| `layers`                  | bei `group` | Enthaltene Layer und Kategorien                                         |
-| `endpoint`                | bei Layern  | URL des Dienstes (WMS-Basis-URL bzw. URL des SensorThings-Datastreams)  |
-| `attribution`             | nein        | Quellenangabe auf der Karte                                             |
-| `wms.layers`              | bei `wms`   | Liste der WMS-Layernamen aus den Capabilities                           |
-| `wms.featureInfo.enabled` | nein        | GetFeatureInfo beim Kartenklick (Default `true`)                        |
-| `wms.featureInfo.fields`  | nein        | Anzuzeigende Attribute `{ property, label?, unit? }`; ohne Angabe: alle |
+| Feld                      | Pflicht     | Bedeutung                                                                       |
+| ------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| `id`                      | ja          | Eindeutige ID (über die ganze Datei), auch Layer-ID in der Karte                |
+| `type`                    | ja          | `group`, `wms` oder `sta-datastream`                                            |
+| `name`                    | ja          | Anzeigename im TOC (Text oder pro Sprache, s. u.)                               |
+| `description`             | nein        | Beschreibung im ⋮-Menü des Layers (Text oder pro Sprache)                       |
+| `visible`                 | nein        | Initial sichtbar (Default `true`)                                               |
+| `opacity`                 | nein        | Deckkraft 0–1 (Default `1`)                                                     |
+| `layers`                  | bei `group` | Enthaltene Layer und Kategorien                                                 |
+| `endpoint`                | bei Layern  | URL des Dienstes (WMS-Basis-URL bzw. URL des SensorThings-Datastreams)          |
+| `attribution`             | nein        | Quellenangabe auf der Karte                                                     |
+| `wms.layers`              | bei `wms`   | Liste der WMS-Layernamen aus den Capabilities                                   |
+| `wms.featureInfo.enabled` | nein        | GetFeatureInfo beim Kartenklick (Default `true`)                                |
+| `wms.featureInfo.fields`  | nein        | Anzuzeigende Attribute `{ property, label?, unit? }`; ohne Angabe: alle         |
+| `wms.legend.enabled`      | nein        | Legende im FeatureInfo-Popup (Default `true`)                                   |
+| `wms.legend.url`          | nein        | Eigene Legenden-URL statt Capabilities/GetLegendGraphic                         |
+| `wms.legend.params`       | nein        | Zusätzliche URL-Parameter, z. B. `{ "LEGEND_OPTIONS": "columns:4;fontSize:9" }` |
 
 Beispiel WMS-Layer:
 
@@ -156,7 +159,14 @@ Darüber findet der Kartenklick z. B. die `featureInfo`-Einstellungen eines WMS-
    Bottom-Panel geöffnet. Der Zustand (`datastream`, `timeFilter`, `panelOpen`) liegt in `DashboardApp.tsx`.
 2. **Sonst**: Alle sichtbaren WMS-Layer mit aktiver FeatureInfo werden per `GetFeatureInfo` (GeoJSON) abgefragt
    (`mapClick/featureInfo.ts`). Das Ergebnis erscheint als Popup (`map.overlays`) an der Klickposition.
-   Zahlen werden lokalisiert, ISO-Zeitstempel in Ortszeit angezeigt.
+   Zahlen werden lokalisiert, ISO-Zeitstempel in Ortszeit angezeigt. Darunter steht die **Legende** des Layers
+   (`mapClick/WmsLegend.tsx`). Wird das Popup zu hoch, scrollt nur der Inhalt; Titel und ✕ bleiben sichtbar.
+
+**Legenden-URL:** Bevorzugt aus den Capabilities (`sublayer.legend`), sonst eine Standard-`GetLegendGraphic`-Anfrage.
+Hintergrund: `@open-pioneer/map` 1.5.0 fragt die Capabilities fest mit `LANGUAGE=ger` an, der DWD-GeoServer antwortet
+darauf mit einem Fehler, und die Karte bekommt dann keine Legenden-URL. Mit `wms.legend.params` lässt sich die Legende
+serverseitig kompakt zeichnen (GeoServer: `LEGEND_OPTIONS`, `WIDTH`, `HEIGHT`). Das ist schärfer als ein im Browser
+verkleinertes Bild.
 
 Im Bottom-Panel:
 
