@@ -1,10 +1,7 @@
-# Open Pioneer Trails Starter
+# COSITE Dashboard
 
-[![Build and deploy](https://github.com/open-pioneer/trails-starter/actions/workflows/test-and-build.yml/badge.svg)](https://github.com/open-pioneer/trails-starter/actions/workflows/test-and-build.yml) [![Audit dependencies (daily)](https://github.com/open-pioneer/trails-starter/actions/workflows/audit-dependencies.yml/badge.svg)](https://github.com/open-pioneer/trails-starter/actions/workflows/audit-dependencies.yml)
-
-[Samples](https://open-pioneer.github.io/trails-demo/starter/) | [API Documentation (for this Demo)](https://open-pioneer.github.io/trails-demo/starter/docs/) | [User manual](https://github.com/open-pioneer/trails-starter/tree/main/docs)
-
-See [See also](#see-also) for API docs of other trails packages.
+Dashboard auf Basis des [Open Pioneer Trails Starters](https://github.com/open-pioneer/trails-starter).
+Die App liegt unter `src/apps/dashboard`. Wie das Projekt verdrahtet ist: [docs/DashboardWiring.md](./docs/DashboardWiring.md).
 
 ## Quick start
 
@@ -13,8 +10,6 @@ Ensure that you have [Node](https://nodejs.org/en/) (Version 24 or later) and [p
 Then execute the following commands to get started:
 
 ```bash
-$ git clone https://github.com/open-pioneer/trails-starter.git # Clone the repository
-$ cd trails-starter
 $ pnpm install                                                 # Install dependencies
 $ pnpm run dev                                                 # Launch development server
 ```
