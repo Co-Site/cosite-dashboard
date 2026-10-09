@@ -35,7 +35,7 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
 | `dataLayers/`      | Datenlayer: JSON-Schema + Parser (`types.ts`), Loader, Layer-Fabrik, SensorThings-Helfer (`sta.ts`)       |
 | `mapClick/`        | Kartenklick: Sensorpunkt auswählen oder WMS-GetFeatureInfo im Popup                                       |
 | `charts/`          | Zeitfilter, Laden der Messwerte und Liniendiagramm (Chart.js)                                             |
-| `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachauswahl, Übersetzung der Layernamen                        |
+| `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen             |
 
 ## Datenlayer (`src/public/config/dataLayers.json`)
 
@@ -177,15 +177,17 @@ Der TOC ist ein Fork von `@open-pioneer/toc` 1.5.0 unter `src/packages/toc` (Apa
 
 - **Änderungen gegenüber Upstream** stehen in `src/packages/toc/README.md` („Changes in this fork“). Bei einem Update:
   Upstream-Version neu übernehmen und diese Änderungen erneut einspielen.
-- **`layerMenuContent(layer)`**: Prop am `Toc`. Der Rückgabewert erscheint im ⋮-Popover eines Layers unter der Beschreibung.
+- **`layerItemContent(layer)`**: Prop am `Toc`. Der Rückgabewert erscheint direkt unter dem Titel eines Layers.
   Das Dashboard liefert dort für jeden WMS-Layer einen **Transparenz-Slider** (`toc/LayerOpacitySlider.tsx`,
   0 % = deckend, Startwert aus `opacity` im JSON). Die Funktion sollte eine stabile Identität haben (Modulebene).
+  Das ⋮-Menü ist unverändert wie im Original (zeigt die Beschreibung).
 
 ## Sprache (i18n)
 
-- Unterstützte Sprachen: `de`, `en` (`build.config.mjs` → `i18n`, Texte in `i18n/*.yaml`, im TOC-Fork eigene Texte).
+- Unterstützte Sprachen: `en`, `de` (`build.config.mjs` → `i18n`, Texte in `i18n/*.yaml`, im TOC-Fork eigene Texte).
+- **Standardsprache Englisch**, unabhängig von der Browsersprache (`config.locale` in `app.ts`).
 - **Live-Wechsel ohne Neustart**: `advanced.enableLiveLocaleChanges` in `app.ts`. Kartenausschnitt, Auswahl und Zeitfilter bleiben erhalten.
-- **Sprachauswahl** neben „Ebenen“ im TOC (`toc/LanguageSelector.tsx`, nutzt `runtime.LocaleService`).
+- **Sprachumschalter EN | DE** neben „Ebenen“ im TOC (`toc/LanguageSelector.tsx`, Chakra `SegmentGroup`, nutzt `runtime.LocaleService`).
 - Layernamen aus dem JSON werden beim Start in der aktuellen Sprache erzeugt (`MainMapProvider` bekommt den
   `LocaleService` injiziert) und bei jedem Wechsel per `useLocalizedDataLayers()` aktualisiert (`layer.setTitle`).
 - Popup- und Diagrammtitel lesen den Layernamen live aus der Karte (`dataLayers/useLayerTitle.ts`).
