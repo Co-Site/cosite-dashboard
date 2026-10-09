@@ -16,6 +16,7 @@ messages:
     collapse: "Collapse panel"
     placeholder: "Click a sensor point in the map to show its observations."
   featureInfo:
+    legend: "Legend"
     title: "Information"
     loading: "Loading information …"
     empty: "No information at this location."

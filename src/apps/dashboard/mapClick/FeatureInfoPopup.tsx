@@ -8,6 +8,7 @@ import { useIntl } from "open-pioneer:react-hooks";
 import { localize } from "../dataLayers/localizedText";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { FeatureInfoResult, FeatureInfoValue } from "./featureInfo";
+import { WmsLegend } from "./WmsLegend";
 
 export interface FeatureInfoPopupProps {
     map: MapModel;
@@ -63,14 +64,15 @@ function LayerResult({ map, result }: { map: MapModel; result: FeatureInfoResult
     const language = new Intl.Locale(intl.locale).language;
     if (result.error) {
         return (
-            <Text color="fg.error">
-                {layerTitle}: {intl.formatMessage({ id: "featureInfo.error" })}
-            </Text>
+            <Box>
+                <Text color="fg.error">
+                    {layerTitle}: {intl.formatMessage({ id: "featureInfo.error" })}
+                </Text>
+                <WmsLegend map={map} layerId={result.layerId} />
+            </Box>
         );
     }
-    if (result.features.length === 0) {
-        return null;
-    }
+    // The legend is also shown if there are no values at the clicked position.
     return (
         <Box>
             <Text fontSize="sm" color="fg.muted" mb={1}>
@@ -88,6 +90,7 @@ function LayerResult({ map, result }: { map: MapModel; result: FeatureInfoResult
                     ))}
                 </Box>
             ))}
+            <WmsLegend map={map} layerId={result.layerId} />
         </Box>
     );
 }

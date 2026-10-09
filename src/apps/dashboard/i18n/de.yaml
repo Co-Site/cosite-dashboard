@@ -16,6 +16,7 @@ messages:
     collapse: "Panel einklappen"
     placeholder: "Klicke auf einen Sensorpunkt in der Karte, um seine Messwerte anzuzeigen."
   featureInfo:
+    legend: "Legende"
     title: "Information"
     loading: "Lade Informationen …"
     empty: "Keine Informationen an dieser Stelle."

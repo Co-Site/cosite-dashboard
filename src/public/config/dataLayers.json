@@ -38,13 +38,26 @@
                                 },
                                 {
                                     "property": "TIME",
-                                    "label": { "de": "Gültig für", "en": "Valid for" }
+                                    "label": {
+                                        "de": "Gültig für",
+                                        "en": "Valid for"
+                                    }
                                 },
                                 {
                                     "property": "REFERENCE_TIME",
-                                    "label": { "de": "Modelllauf", "en": "Model run" }
+                                    "label": {
+                                        "de": "Modelllauf",
+                                        "en": "Model run"
+                                    }
                                 }
                             ]
+                        },
+                        "legend": {
+                            "params": {
+                                "WIDTH": "12",
+                                "HEIGHT": "12",
+                                "LEGEND_OPTIONS": "columns:4;fontSize:9"
+                            }
                         }
                     }
                 }
@@ -53,7 +66,10 @@
         {
             "id": "sta",
             "type": "group",
-            "name": { "de": "Sensoren (STA)", "en": "Sensors (STA)" },
+            "name": {
+                "de": "Sensoren (STA)",
+                "en": "Sensors (STA)"
+            },
             "description": {
                 "de": "Messdaten aus der OGC SensorThings API.",
                 "en": "Observations from the OGC SensorThings API."

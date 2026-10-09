@@ -62,6 +62,24 @@ describe("parseDataLayers", () => {
         expect(parseDataLayers({ layers: [wms({ fields: [{ label: "x" }] })] })).toHaveLength(0);
     });
 
+    it("validates the optional legend configuration", () => {
+        const wms = (legend: unknown) => ({
+            id: "wms",
+            type: "wms",
+            name: "WMS",
+            endpoint: "https://example.com",
+            wms: { layers: ["a"], legend }
+        });
+        expect(
+            parseDataLayers({ layers: [wms({ params: { LEGEND_OPTIONS: "columns:3" } })] })
+        ).toHaveLength(1);
+        expect(
+            parseDataLayers({ layers: [wms({ enabled: false, url: "https://x/legend.png" })] })
+        ).toHaveLength(1);
+        expect(parseDataLayers({ layers: [wms({ params: { columns: 3 } })] })).toHaveLength(0);
+        expect(parseDataLayers({ layers: [wms("yes")] })).toHaveLength(0);
+    });
+
     it("parses nested groups and validates their children", () => {
         const layers = parseDataLayers({
             layers: [

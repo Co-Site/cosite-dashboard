@@ -42,7 +42,24 @@ export interface WmsDataLayerConfig extends DataLayerConfigBase {
 
         /** GetFeatureInfo on map click (enabled by default). */
         featureInfo?: WmsFeatureInfoConfig;
+
+        /** Legend shown in the feature info popup (enabled by default). */
+        legend?: WmsLegendConfig;
     };
+}
+
+export interface WmsLegendConfig {
+    /** Whether the legend is shown (default: `true`). */
+    enabled?: boolean;
+
+    /** Legend image URL. Default: the legend URLs from the service's capabilities. */
+    url?: string;
+
+    /**
+     * Additional URL parameters for the legend request,
+     * e.g. `{ "LEGEND_OPTIONS": "columns:3" }` for a compact GeoServer legend.
+     */
+    params?: Record<string, string>;
 }
 
 export interface WmsFeatureInfoConfig {
@@ -170,7 +187,7 @@ function validateEntry(entry: unknown): string | undefined {
             ) {
                 return "wms layers require 'wms.layers' (non-empty list of layer names).";
             }
-            return validateFeatureInfo(wms.featureInfo);
+            return validateFeatureInfo(wms.featureInfo) ?? validateLegend(wms.legend);
         }
         case "sta-datastream":
             return undefined;
@@ -205,6 +222,29 @@ function validateFeatureInfo(featureInfo: unknown): string | undefined {
     return validFields
         ? undefined
         : "'wms.featureInfo.fields' must be a list of { property, label?, unit? }.";
+}
+
+function validateLegend(legend: unknown): string | undefined {
+    if (legend == null) {
+        return undefined;
+    }
+    if (!isObject(legend)) {
+        return "'wms.legend' must be an object.";
+    }
+    if (legend.enabled != null && typeof legend.enabled !== "boolean") {
+        return "'wms.legend.enabled' must be a boolean.";
+    }
+    if (legend.url != null && typeof legend.url !== "string") {
+        return "'wms.legend.url' must be a string.";
+    }
+    const params = legend.params;
+    if (
+        params != null &&
+        (!isObject(params) || !Object.values(params).every((v) => typeof v === "string"))
+    ) {
+        return "'wms.legend.params' must be an object with string values.";
+    }
+    return undefined;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
