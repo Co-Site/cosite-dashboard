@@ -86,7 +86,7 @@ export function BottomPanel(props: BottomPanelProps) {
                                 onSelectionChange({ ...selection, tab: e.value as AnalysisTab })
                             }
                             variant="line"
-                            size="sm"
+                            size="md"
                             // Only the active tab loads and renders its charts.
                             lazyMount
                             unmountOnExit
@@ -96,14 +96,9 @@ export function BottomPanel(props: BottomPanelProps) {
                             px={4}
                             pb={4}
                             height="35vh"
-                            minHeight="300px"
+                            minHeight="340px"
                         >
-                            <Flex
-                                alignItems="center"
-                                justifyContent="space-between"
-                                gap={3}
-                                wrap="wrap"
-                            >
+                            <Flex direction="column" alignItems="flex-start" gap={2}>
                                 <Tabs.List>
                                     <Tabs.Trigger value="single">
                                         {intl.formatMessage({ id: "panel.tabs.single" })}
