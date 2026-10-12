@@ -79,6 +79,11 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 | `20d9667` | Diagrammtyp-Auswahl, Balkendiagramm                         |
 | `0331716` | Boxplot (`@sgratzl/chartjs-chart-boxplot`)                  |
 | `d9e9148` | Windrose (Grundgerüst)                                      |
+| `aac34f9` | Doku: Diagrammtypen, Gesamter Zeitraum                      |
+| `77ef99f` | TOC: Info-Icon statt ⋮ (per CSS)                            |
+| `dcc943e` | Analyse-Panel: größere Tabs, Zeitfilter darunter            |
+| `80c4910` | Analyse-Panel klappt zu einem Icon ein                      |
+| `ed1f5ef` | Diagrammtypen als Icons mit Tooltip                         |
 
 ---
 
@@ -225,7 +230,12 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
       Hinweis. Winddaten gibt es noch keine.
 - **Zeitfilter „Gesamter Zeitraum“:** fragt ab 1970 ab (also alles) und zeichnet die Achse ab dem ersten Messwert.
   Das Feld „von“ bleibt dabei leer. Aktuell ca. 3.800 Werte je Datastream, weit unter der Grenze von 20.000.
-- **Commits:** `f71ec9a`, `0e89ebd`, `f6dfa00`, `448bffa`, `bfce880`, `20d9667`, `0331716`, `d9e9148`
+- **Darstellung:** Tabs in Größe `md`, der Zeitfilter darunter, beides linksbündig. Die Diagrammtypen stehen als
+  Icons (`LuChartLine`, `LuChartColumn`, `LuChartCandlestick`, `LuWind`). Lucide hat kein Boxplot-Icon, Kerzen kommen
+  dem am nächsten. Der Name erscheint als Tooltip und ist `aria-label`. Der Tooltip übernimmt die Element-ID des
+  Segments (`ids`), weil die Segment-Gruppe ihre Einträge über die ID findet.
+- **Commits:** `f71ec9a`, `0e89ebd`, `f6dfa00`, `448bffa`, `bfce880`, `20d9667`, `0331716`, `d9e9148`, `dcc943e`,
+  `ed1f5ef`
 
 ## 9. TOC-Erweiterung und Transparenz-Slider
 
@@ -263,6 +273,12 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - Inhalt nur am Ende des Eintrags: bei WMS-Layern (Sublayer ausgeblendet) direkt unter dem Titel, bei Gruppen
       stünde er unter den Kindern. Fügt der TOC einem Eintrag später neue Kinder hinzu, landen sie hinter dem Container.
     - Ändert Upstream das Markup, kann der Slider anders sitzen. Die API selbst ist öffentlich.
+- **Info-Icon statt ⋮:** Der ⋮-Button des TOC öffnet nur die Beschreibung, soll daher wie ⓘ aussehen. Der TOC rendert
+  das Icon fest, ohne Prop. Deshalb wird es per CSS ersetzt (`toc/TocPanel.tsx`): Das SVG im Button
+  `.toc-layer-item-details-button` wird ausgeblendet, an seiner Stelle zeichnet ein `::before` das Lucide-Icon „info“
+  als Maske in der Textfarbe des Buttons. Die Regel gilt nur innerhalb des TOC, nicht für das ✕ im Popover (Portal).
+  Risiko: Die Klasse ist laut TOC-README nicht garantiert. Fällt sie weg, erscheint wieder ⋮, es geht nichts kaputt.
+  Commit: `77ef99f`.
 - **Ausführliche Begründung** für die Team-Diskussion: [TocExtensionDecision.md](./TocExtensionDecision.md).
 - **Status:** Beide Varianten liegen nebeneinander (`dashboard` mit Fork, `toc-native` ohne) und werden im Team
   diskutiert.
@@ -296,7 +312,9 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 - **Entscheidung:** Das Panel sitzt nicht mehr in einer `MapAnchor`, sondern als eigene Ebene über der Karte. Der Rahmen
   hat `pointer-events: none`, nur Panel und Button nehmen Klicks an. Eingeklappt ist das Panel `inert` (nicht per Tab
   erreichbar), der Fokus springt beim Umschalten auf den jeweils sichtbaren Button.
-- **Commits:** `237a773`
+- **Analyse-Panel genauso:** Eingeklappt verschwindet das Analyse-Panel unten ganz, unten links über der Karte bleibt
+  ein Liniendiagramm-Button (`LuChartLine`) zum Öffnen. Die Karte wird dabei höher. Gleiche Fokusführung wie beim TOC.
+- **Commits:** `237a773`, `80c4910`
 
 ## 12. WMS-Legende
 
