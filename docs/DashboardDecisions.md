@@ -13,9 +13,9 @@ Jedes Element folgt demselben Schema: **Was** · **Entscheidung** · **Warum** �
 - **Ziel:** Aus dem _Open Pioneer Trails Starter_ (Mischung aus How-to und Demonstrator) eine schlanke App machen:
   Hintergrundkarte, TOC, Panel unten mit Diagrammen nach Klick in die Karte.
 - **Branches:** Entstanden auf `dashboard` (TOC-Fork) und `toc-native` (Original-TOC). `toc-native` wurde gewählt und
-  nach `main` gemergt. Seitdem gilt feature → `dev` → `main`, siehe
+  nach `main` gemergt. Repo: `Co-Site/cosite-dashboard`. Seitdem gilt feature → `dev` → `main`, siehe
   [Abschnitt 16](#16-branches-und-arbeitsweise).
-- **Arbeitsweise:** Ein Commit pro abgeschlossenem Schritt, kein Push. Der Pre-Commit-Hook führt `tsc`, oxfmt und
+- **Arbeitsweise:** Ein Commit pro abgeschlossenem Schritt, Push nur nach `origin` und nur auf Wunsch. Der Pre-Commit-Hook führt `tsc`, oxfmt und
   oxlint aus, jeder Schritt muss also für sich bauen.
 
 | #   | Element                                                                             | Schwierigkeit |
@@ -396,7 +396,8 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   automatisch die Legenden-URLs aus den Capabilities.
 - **Weitere Diagramme:** Linie, Balken, Boxplot und Windrose gibt es (Abschnitt 8). Weitere nach Bedarf.
 - **CI-Deploy:** Der Job `deploy` in `.github/workflows/test-and-build.yml` ist noch an das Repository
-  `open-pioneer/trails-starter` gebunden und läuft hier daher nie.
+  `open-pioneer/trails-starter` gebunden (`github.repository == …`) und läuft daher auch in `Co-Site/cosite-dashboard`
+  nie. Build und Tests laufen dort bei jedem Push. Ob ein Deploy auf GitHub Pages gewünscht ist, ist offen.
 - **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären.
 - **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, eine
   Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht noch aus.
@@ -422,6 +423,10 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 - **Nachziehen:** Einen Feature-Branch vor dem Merge auf das aktuelle `dev` zu rebasen ist in Ordnung (er ist noch
   nicht geteilt). Kommt etwas direkt auf `main` (Hotfix), wird `main` in `dev` **gemergt**, nicht rebased: Ein Rebase
   würde die Commits von `dev` neu schreiben und passt dann nicht mehr zu den schon gemergten Feature-Branches.
-- **Remote:** `origin` ist das Upstream-Repo `open-pioneer/trails-starter`, nicht unser eigenes. Es wird nichts
-  gepusht. `dev` ist ein lokaler Branch ohne Tracking, `origin/dev` ist der `dev`-Branch des Starters und hat damit
-  nichts zu tun.
+- **Remotes:**
+    - `origin` = `git@github.com:Co-Site/cosite-dashboard.git`, das eigene Repo. `main` und `dev` werden dorthin
+      gepusht, Feature-Branches nur bei Bedarf.
+    - `upstream` = `open-pioneer/trails-starter`, nur zum Abholen. Push ist deaktiviert (`git remote set-url --push
+upstream no-push`). Updates vom Starter bei Bedarf mit `git fetch upstream` holen und in einem Feature-Branch
+      mergen.
+    - `toc-native` und `dashboard` liegen nur lokal.
