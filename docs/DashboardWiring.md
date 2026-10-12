@@ -35,7 +35,7 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
 | `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                             |
 | `dataLayers/`      | Datenlayer: JSON-Schema + Parser (`types.ts`), Loader, Layer-Fabrik, SensorThings-Helfer (`sta.ts`)       |
 | `mapClick/`        | Kartenklick: Popup mit allen Sensoren an der Stelle oder WMS-GetFeatureInfo                               |
-| `charts/`          | Zeitfilter, Sensorauswahl, Laden der Messwerte und Liniendiagramm (Chart.js)                              |
+| `charts/`          | Zeitfilter, Sensor- und Typauswahl, Messwerte laden, Diagramme: Linie, Balken, Boxplot, Windrose          |
 | `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen             |
 
 ## Datenlayer (`src/public/config/dataLayers.json`)

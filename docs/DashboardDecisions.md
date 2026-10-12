@@ -75,6 +75,10 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 | `0e89ebd` | Sensorliste und Auswahl für das Analyse-Panel               |
 | `f6dfa00` | Tabs „Einzelsensor“ / „Sensorvergleich“ im Analyse-Panel    |
 | `448bffa` | Popup mit allen Sensoren an der Klickposition               |
+| `bfce880` | Zeitfilter: „Gesamter Zeitraum“                             |
+| `20d9667` | Diagrammtyp-Auswahl, Balkendiagramm                         |
+| `0331716` | Boxplot (`@sgratzl/chartjs-chart-boxplot`)                  |
+| `d9e9148` | Windrose (Grundgerüst)                                      |
 
 ---
 
@@ -116,7 +120,9 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   die Ausnahme für 2.1.0. Lizenz unverändert (MIT und Zlib), nur die Version in `support/license-config.yaml` angepasst.
 - **Offen:** `CHANGELOG.md` hat einen Formatfehler (`pnpm fmt:check`), der schon auf `main` besteht und bewusst nicht
   angefasst wurde.
-- **Commits:** `c81b2de`, `a535bb3`, `3cff0ea`
+- **Neue Abhängigkeit:** `@sgratzl/chartjs-chart-boxplot` ^4.4.5 im Catalog (MIT, Boxplot, siehe Abschnitt 8).
+  Lizenzreport und Duplikatprüfung ohne Befund.
+- **Commits:** `c81b2de`, `a535bb3`, `3cff0ea`, `0331716`
 
 ## 4. Datenlayer-Konfiguration (JSON)
 
@@ -206,7 +212,20 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   Sensoren an der Stelle. Datastream 14 und 15 liegen am selben Ort, vorher war nur der zuletzt gezeichnete
   erreichbar. Der Button „In Auswertung anzeigen“ wählt den Sensor in der Einzelansicht und öffnet das Panel.
   Der Popup-Rahmen ist mit dem FeatureInfo-Popup geteilt (`mapClick/PopupFrame.tsx`).
-- **Commits:** `f71ec9a`, `0e89ebd`, `f6dfa00`, `448bffa`
+- **Diagrammtypen:** Linie, Balken, Boxplot, Windrose. Jede Ansicht wählt ihren Typ selbst, im Vergleich also jede
+  Hälfte unabhängig, weil dort auch unterschiedliche Messgrößen nebeneinanderstehen können.
+    - **Balken:** Mittelwert je Abschnitt. Die Länge richtet sich nach dem Zeitraum: bis 2 Tage je Stunde, bis 45 Tage
+      je Tag, darüber je Woche (ab Montag, Ortszeit). Leere Abschnitte bleiben leer. Ob für Niederschlag später eine
+      Summe statt des Mittelwerts gebraucht wird, ist offen.
+    - **Boxplot:** eine Box über alle Werte des gewählten Zeitraums (Quartile, Median, Whisker 1,5 × IQR,
+      Ausreißer). Chart.js kann das nicht selbst, daher das Plugin `@sgratzl/chartjs-chart-boxplot` (MIT, Chart.js-4-
+      Plugin des Boxplot-Standardautors). Selbst bauen wäre ca. 100 Zeilen mehr ohne Tooltips gewesen.
+    - **Windrose (Grundgerüst):** Häufigkeit je Richtung in 16 Sektoren (Nord oben mittig), Chart.js `polarArea`.
+      Genutzt werden nur Daten mit Winkeleinheit (`°`, `deg`) und Werten von 0–360. Sonst bleibt die Rose leer mit
+      Hinweis. Winddaten gibt es noch keine.
+- **Zeitfilter „Gesamter Zeitraum“:** fragt ab 1970 ab (also alles) und zeichnet die Achse ab dem ersten Messwert.
+  Das Feld „von“ bleibt dabei leer. Aktuell ca. 3.800 Werte je Datastream, weit unter der Grenze von 20.000.
+- **Commits:** `f71ec9a`, `0e89ebd`, `f6dfa00`, `448bffa`, `bfce880`, `20d9667`, `0331716`, `d9e9148`
 
 ## 9. TOC-Erweiterung und Transparenz-Slider
 
@@ -350,5 +369,8 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 - **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären.
 - **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, eine
   Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht noch aus.
+- **Windrose fachlich klären:** Welche Datastreams (Richtung, Geschwindigkeit), Geschwindigkeitsklassen gestapelt pro
+  Sektor, Anzahl der Sektoren. Für gestapelte Klassen reicht `polarArea` nicht, dann eigene Zeichnung oder Plugin.
+- **Balken für Niederschlag:** Summe statt Mittelwert je Abschnitt, ggf. pro Datastream in der Konfiguration.
 - **TOC-Variante:** Entscheidung Fork (`dashboard`) oder API-Erweiterung (`toc-native`) im Team treffen, dann den
   anderen Branch verwerfen.
