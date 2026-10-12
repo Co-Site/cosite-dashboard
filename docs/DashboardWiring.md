@@ -31,11 +31,11 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
 | `app.ts`           | `createCustomElement({ component, appMetadata })` + `customElements.define("dashboard-app", ...)`         |
 | `services.ts`      | Service-Klassen, z. B. `MainMapProvider` (Kartenkonfiguration)                                            |
 | `DashboardApp.tsx` | Root-Komponente: Karte, TOC, Kartenwerkzeuge, Bottom-Panel                                                |
-| `BottomPanel.tsx`  | Einklappbares Panel unten (Chakra `Collapsible`), später für Diagramme                                    |
+| `BottomPanel.tsx`  | Einklappbares Analyse-Panel unten, Tabs „Einzelsensor“ / „Sensorvergleich“, gemeinsamer Zeitfilter        |
 | `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                             |
 | `dataLayers/`      | Datenlayer: JSON-Schema + Parser (`types.ts`), Loader, Layer-Fabrik, SensorThings-Helfer (`sta.ts`)       |
-| `mapClick/`        | Kartenklick: Sensorpunkt auswählen oder WMS-GetFeatureInfo im Popup                                       |
-| `charts/`          | Zeitfilter, Laden der Messwerte und Liniendiagramm (Chart.js)                                             |
+| `mapClick/`        | Kartenklick: Popup mit allen Sensoren an der Stelle oder WMS-GetFeatureInfo                               |
+| `charts/`          | Zeitfilter, Sensorauswahl, Laden der Messwerte und Liniendiagramm (Chart.js)                              |
 | `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen             |
 
 ## Datenlayer (`src/public/config/dataLayers.json`)

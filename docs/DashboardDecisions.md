@@ -71,6 +71,10 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 | --------- | ----------------------------------------------------------- |
 | `22b279a` | TOC-Fork entfernt, Original `@open-pioneer/toc` eingebunden |
 | `9dc52cb` | Transparenz-Slider über die öffentliche TOC-API             |
+| `f3cfda7` | Datenquellen: DWD-Radar (RADOLAN-RW), STA Datastream 15     |
+| `0e89ebd` | Sensorliste und Auswahl für das Analyse-Panel               |
+| `f6dfa00` | Tabs „Einzelsensor“ / „Sensorvergleich“ im Analyse-Panel    |
+| `448bffa` | Popup mit allen Sensoren an der Klickposition               |
 
 ---
 
@@ -190,7 +194,19 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - Höchstens 20.000 Werte, danach Hinweis „gekürzt“.
     - Ungültiger Zeitraum (von ≥ bis) wird markiert, der letzte gültige bleibt aktiv.
 - **Grenze:** Die nativen Datumsfelder formatieren nach der Browsersprache, nicht nach der App-Sprache.
-- **Commits:** `f71ec9a`
+- **Tabs (Branch `toc-native`):** Oben im Panel „Einzelsensor“ und „Sensorvergleich“.
+    - Einzelsensor: Dropdown mit allen STA-Sensoren (auch ausgeblendeten), darunter das Diagramm.
+    - Sensorvergleich: zwei Hälften nebeneinander (schmal: untereinander), jede mit eigenem Dropdown.
+    - Der Zeitfilter gilt für beide Tabs, damit der Vergleich denselben Zeitraum zeigt.
+    - Vorauswahl: erster Sensor bzw. erster und zweiter Sensor. Ausgewählt wird über die Layer-ID, die Daten des
+      Datastreams kommen aus dem Feature des Layers (`dataLayers/useStaSensors.ts`).
+    - Dropdown als natives `<select>` (`NativeSelect`), damit kein Popup im Shadow DOM positioniert werden muss.
+    - Nur der aktive Tab lädt Messwerte (`lazyMount`, `unmountOnExit`).
+- **Sensor-Popup:** Ein Klick auf einen Sensorpunkt wählt nicht mehr direkt aus, sondern zeigt ein Popup mit **allen**
+  Sensoren an der Stelle. Datastream 14 und 15 liegen am selben Ort, vorher war nur der zuletzt gezeichnete
+  erreichbar. Der Button „In Auswertung anzeigen“ wählt den Sensor in der Einzelansicht und öffnet das Panel.
+  Der Popup-Rahmen ist mit dem FeatureInfo-Popup geteilt (`mapClick/PopupFrame.tsx`).
+- **Commits:** `f71ec9a`, `0e89ebd`, `f6dfa00`, `448bffa`
 
 ## 9. TOC-Erweiterung und Transparenz-Slider
 
@@ -332,5 +348,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 - **CI-Deploy:** Der Job `deploy` in `.github/workflows/test-and-build.yml` ist noch an das Repository
   `open-pioneer/trails-starter` gebunden und läuft hier daher nie.
 - **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären.
+- **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, eine
+  Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht noch aus.
 - **TOC-Variante:** Entscheidung Fork (`dashboard`) oder API-Erweiterung (`toc-native`) im Team treffen, dann den
   anderen Branch verwerfen.
