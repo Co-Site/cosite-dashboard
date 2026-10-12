@@ -67,23 +67,26 @@ Alle Commits auf `dashboard` (2026-10-09, älteste zuerst):
 
 Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne TOC-Fork, siehe Abschnitt 9):
 
-| Commit    | Inhalt                                                      |
-| --------- | ----------------------------------------------------------- |
-| `22b279a` | TOC-Fork entfernt, Original `@open-pioneer/toc` eingebunden |
-| `9dc52cb` | Transparenz-Slider über die öffentliche TOC-API             |
-| `f3cfda7` | Datenquellen: DWD-Radar (RADOLAN-RW), STA Datastream 15     |
-| `0e89ebd` | Sensorliste und Auswahl für das Analyse-Panel               |
-| `f6dfa00` | Tabs „Einzelsensor“ / „Sensorvergleich“ im Analyse-Panel    |
-| `448bffa` | Popup mit allen Sensoren an der Klickposition               |
-| `bfce880` | Zeitfilter: „Gesamter Zeitraum“                             |
-| `20d9667` | Diagrammtyp-Auswahl, Balkendiagramm                         |
-| `0331716` | Boxplot (`@sgratzl/chartjs-chart-boxplot`)                  |
-| `d9e9148` | Windrose (Grundgerüst)                                      |
-| `aac34f9` | Doku: Diagrammtypen, Gesamter Zeitraum                      |
-| `77ef99f` | TOC: Info-Icon statt ⋮ (per CSS)                            |
-| `dcc943e` | Analyse-Panel: größere Tabs, Zeitfilter darunter            |
-| `80c4910` | Analyse-Panel klappt zu einem Icon ein                      |
-| `ed1f5ef` | Diagrammtypen als Icons mit Tooltip                         |
+| Commit                          | Inhalt                                                      |
+| ------------------------------- | ----------------------------------------------------------- |
+| `22b279a`                       | TOC-Fork entfernt, Original `@open-pioneer/toc` eingebunden |
+| `9dc52cb`                       | Transparenz-Slider über die öffentliche TOC-API             |
+| `f3cfda7`                       | Datenquellen: DWD-Radar (RADOLAN-RW), STA Datastream 15     |
+| `0e89ebd`                       | Sensorliste und Auswahl für das Analyse-Panel               |
+| `f6dfa00`                       | Tabs „Einzelsensor“ / „Sensorvergleich“ im Analyse-Panel    |
+| `448bffa`                       | Popup mit allen Sensoren an der Klickposition               |
+| `bfce880`                       | Zeitfilter: „Gesamter Zeitraum“                             |
+| `20d9667`                       | Diagrammtyp-Auswahl, Balkendiagramm                         |
+| `0331716`                       | Boxplot (`@sgratzl/chartjs-chart-boxplot`)                  |
+| `d9e9148`                       | Windrose (Grundgerüst)                                      |
+| `aac34f9`                       | Doku: Diagrammtypen, Gesamter Zeitraum                      |
+| `77ef99f`                       | TOC: Info-Icon statt ⋮ (per CSS)                            |
+| `dcc943e`                       | Analyse-Panel: größere Tabs, Zeitfilter darunter            |
+| `80c4910`                       | Analyse-Panel klappt zu einem Icon ein                      |
+| `ed1f5ef`, `d0e4c24`, `c83ad6a` | Diagrammtypen als Icons mit Tooltip                         |
+| `b938ba9`                       | Doku: Designänderungen                                      |
+| `d0e4c24`                       | Analyse-Panel: Tabs `lg`, keine Überschrift                 |
+| `c83ad6a`                       | Analyse-Panel: Höhe 45 % der App                            |
 
 ---
 
@@ -230,7 +233,11 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
       Hinweis. Winddaten gibt es noch keine.
 - **Zeitfilter „Gesamter Zeitraum“:** fragt ab 1970 ab (also alles) und zeichnet die Achse ab dem ersten Messwert.
   Das Feld „von“ bleibt dabei leer. Aktuell ca. 3.800 Werte je Datastream, weit unter der Grenze von 20.000.
-- **Darstellung:** Tabs in Größe `md`, der Zeitfilter darunter, beides linksbündig. Die Diagrammtypen stehen als
+- **Darstellung:** Tabs in Größe `lg`, der Zeitfilter darunter, beides linksbündig. Im Chakra-Rezept haben `sm` und
+  `md` dieselbe Schrift (14px), nur `lg` ist größer (16px). Die Überschrift „Auswertung“ ist entfallen, der
+  Einklapp-Button steht rechts neben den Tabs, der Bereich behält seinen Namen als `aria-label`. Höhe: 45 % der App
+  (`45cqh`, die App-Wurzel ist `container-type: size`), mindestens 320px. Bezug ist also die App, nicht das
+  Browserfenster. Die Diagrammtypen stehen als
   Icons (`LuChartLine`, `LuChartColumn`, `LuChartCandlestick`, `LuWind`). Lucide hat kein Boxplot-Icon, Kerzen kommen
   dem am nächsten. Der Name erscheint als Tooltip und ist `aria-label`. Der Tooltip übernimmt die Element-ID des
   Segments (`ids`), weil die Segment-Gruppe ihre Einträge über die ID findet.
