@@ -8,8 +8,10 @@ import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useMemo, useState } from "react";
 import { fetchObservations, Observation, StaDatastreamProperties } from "../dataLayers/sta";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
+import { BarChart } from "./BarChart";
+import { ChartType } from "./chartTypes";
 import { ObservationChart } from "./ObservationChart";
-import { displayRange, TimeFilter } from "./timeRange";
+import { displayRange, TimeFilter, TimeRange } from "./timeRange";
 
 const LOG = createLogger("dashboard:DatastreamChart");
 
@@ -20,13 +22,14 @@ type LoadState =
 
 export interface DatastreamChartProps {
     datastream: StaDatastreamProperties;
+    chartType: ChartType;
     timeFilter: TimeFilter;
 }
 
 /**
- * Loads the observations of a datastream for the time range and shows them as a line chart.
+ * Loads the observations of a datastream for the time range and shows them in a chart of the given type.
  */
-export function DatastreamChart({ datastream, timeFilter }: DatastreamChartProps) {
+export function DatastreamChart({ datastream, chartType, timeFilter }: DatastreamChartProps) {
     const range = timeFilter.range;
     const intl = useIntl();
     const [state, setState] = useState<LoadState>({ kind: "loading" });
@@ -81,7 +84,8 @@ export function DatastreamChart({ datastream, timeFilter }: DatastreamChartProps
                     <Text color="fg.muted">{intl.formatMessage({ id: "chart.empty" })}</Text>
                 )}
                 {state.kind === "loaded" && state.observations.length > 0 && (
-                    <ObservationChart
+                    <TypedChart
+                        type={chartType}
                         observations={state.observations}
                         label={title}
                         unit={datastream.unit}
@@ -91,6 +95,22 @@ export function DatastreamChart({ datastream, timeFilter }: DatastreamChartProps
             </Box>
         </Flex>
     );
+}
+
+function TypedChart(props: {
+    type: ChartType;
+    observations: Observation[];
+    label: string;
+    unit: string | undefined;
+    range: TimeRange;
+}) {
+    const { type, ...chartProps } = props;
+    switch (type) {
+        case "line":
+            return <ObservationChart {...chartProps} />;
+        case "bar":
+            return <BarChart {...chartProps} />;
+    }
 }
 
 function Summary(props: {

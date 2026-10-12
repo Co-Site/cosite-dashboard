@@ -44,7 +44,15 @@ messages:
       7d: "7 Tage"
       30d: "30 Tage"
       all: "Gesamter Zeitraum"
+  chartType:
+    label: "Diagrammtyp"
+    line: "Linie"
+    bar: "Balken"
   chart:
+    bar:
+      hour: "Mittelwert je Stunde"
+      day: "Mittelwert je Tag"
+      week: "Mittelwert je Woche"
     loading: "Lade Messwerte …"
     error: "Messwerte konnten nicht geladen werden."
     empty: "Keine Messwerte im gewählten Zeitraum."

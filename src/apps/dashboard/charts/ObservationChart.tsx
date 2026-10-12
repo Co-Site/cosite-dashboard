@@ -14,14 +14,17 @@ import {
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useRef } from "react";
 import { Observation } from "../dataLayers/sta";
+import {
+    createValueFormatter,
+    formatTimeTick,
+    GRID_COLOR,
+    SERIES_COLOR,
+    TEXT_SECONDARY
+} from "./chartStyle";
 import { TimeRange } from "./timeRange";
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Tooltip);
 
-// Chart colors (canvas needs concrete values).
-const SERIES_COLOR = "#2a78d6";
-const TEXT_SECONDARY = "#52514e";
-const GRID_COLOR = "rgba(0, 0, 0, 0.08)";
 const CROSSHAIR_COLOR = "rgba(0, 0, 0, 0.35)";
 
 export interface ObservationChartProps {
@@ -51,8 +54,7 @@ export function ObservationChart({ observations, label, unit, range }: Observati
         if (!canvas) {
             return;
         }
-        const formatValue = (value: number) =>
-            `${intl.formatNumber(value, { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ""}`;
+        const formatValue = createValueFormatter(intl, unit);
 
         const chart = new Chart<"line", Point[]>(canvas, {
             type: "line",
@@ -86,13 +88,7 @@ export function ObservationChart({ observations, label, unit, range }: Observati
                             color: TEXT_SECONDARY,
                             maxTicksLimit: 8,
                             maxRotation: 0,
-                            callback: (value) =>
-                                intl.formatDate(Number(value), {
-                                    day: "2-digit",
-                                    month: "2-digit",
-                                    hour: "2-digit",
-                                    minute: "2-digit"
-                                })
+                            callback: (value) => formatTimeTick(intl, Number(value))
                         }
                     },
                     y: {

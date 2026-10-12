@@ -44,7 +44,15 @@ messages:
       7d: "7 days"
       30d: "30 days"
       all: "Entire period"
+  chartType:
+    label: "Chart type"
+    line: "Line"
+    bar: "Bar"
   chart:
+    bar:
+      hour: "Mean per hour"
+      day: "Mean per day"
+      week: "Mean per week"
     loading: "Loading observations …"
     error: "Observations could not be loaded."
     empty: "No observations in the selected time range."

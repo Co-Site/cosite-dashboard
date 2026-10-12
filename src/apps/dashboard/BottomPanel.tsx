@@ -7,6 +7,7 @@ import { SectionHeading, TitledSection } from "@open-pioneer/react-utils";
 import { useIntl } from "open-pioneer:react-hooks";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import { AnalysisSelection, AnalysisTab, withDefaultSensors } from "./charts/analysisSelection";
+import { ChartType } from "./charts/chartTypes";
 import { SensorChartView } from "./charts/SensorChartView";
 import { TimeFilter } from "./charts/timeRange";
 import { TimeRangeFilter } from "./charts/TimeRangeFilter";
@@ -43,6 +44,17 @@ export function BottomPanel(props: BottomPanelProps) {
         const compare: AnalysisSelection["compare"] = [...selection.compare];
         compare[index] = sensorId;
         onSelectionChange({ ...selection, compare });
+    };
+    const setChartType = (view: "single" | 0 | 1, chartType: ChartType) => {
+        const { single, compare } = selection.charts;
+        const charts: AnalysisSelection["charts"] =
+            view === "single"
+                ? { single: chartType, compare }
+                : {
+                      single,
+                      compare: view === 0 ? [chartType, compare[1]] : [compare[0], chartType]
+                  };
+        onSelectionChange({ ...selection, charts });
     };
 
     return (
@@ -115,6 +127,10 @@ export function BottomPanel(props: BottomPanelProps) {
                                             onChange={(single) =>
                                                 onSelectionChange({ ...selection, single })
                                             }
+                                            chartType={selection.charts.single}
+                                            onChartTypeChange={(type) =>
+                                                setChartType("single", type)
+                                            }
                                             timeFilter={timeFilter}
                                             label={intl.formatMessage({ id: "panel.sensor.label" })}
                                         />
@@ -130,6 +146,10 @@ export function BottomPanel(props: BottomPanelProps) {
                                                     sensors={sensors}
                                                     value={selection.compare[0]}
                                                     onChange={(id) => setCompare(0, id)}
+                                                    chartType={selection.charts.compare[0]}
+                                                    onChartTypeChange={(type) =>
+                                                        setChartType(0, type)
+                                                    }
                                                     timeFilter={timeFilter}
                                                     label={intl.formatMessage({
                                                         id: "panel.sensor.labelA"
@@ -141,6 +161,10 @@ export function BottomPanel(props: BottomPanelProps) {
                                                     sensors={sensors}
                                                     value={selection.compare[1]}
                                                     onChange={(id) => setCompare(1, id)}
+                                                    chartType={selection.charts.compare[1]}
+                                                    onChartTypeChange={(type) =>
+                                                        setChartType(1, type)
+                                                    }
                                                     timeFilter={timeFilter}
                                                     label={intl.formatMessage({
                                                         id: "panel.sensor.labelB"

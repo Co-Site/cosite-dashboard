@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
 // SPDX-License-Identifier: Apache-2.0
 
-import { Box, chakra, Flex, NativeSelect, Spinner, Text } from "@chakra-ui/react";
+import { Box, chakra, Flex, NativeSelect, SegmentGroup, Spinner, Text } from "@chakra-ui/react";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useId } from "react";
 import { StaSensor, useDatastreamProperties } from "../dataLayers/useStaSensors";
+import { CHART_TYPES, ChartType } from "./chartTypes";
 import { DatastreamChart } from "./DatastreamChart";
 import { TimeFilter } from "./timeRange";
 
@@ -17,6 +18,9 @@ export interface SensorChartViewProps {
     value: string | undefined;
     onChange(sensorId: string): void;
 
+    chartType: ChartType;
+    onChartTypeChange(chartType: ChartType): void;
+
     timeFilter: TimeFilter;
 
     /** Label of the sensor selection. */
@@ -24,10 +28,10 @@ export interface SensorChartViewProps {
 }
 
 /**
- * Selection of a sensor and the chart of its observations.
+ * Selection of a sensor and a chart type, and the chart of the sensor's observations.
  */
 export function SensorChartView(props: SensorChartViewProps) {
-    const { sensors, value, onChange, timeFilter, label } = props;
+    const { sensors, value, onChange, chartType, onChartTypeChange, timeFilter, label } = props;
     const intl = useIntl();
     const map = useMapModelValue();
     const selectId = useId();
@@ -35,7 +39,7 @@ export function SensorChartView(props: SensorChartViewProps) {
 
     return (
         <Flex direction="column" height="100%" gap={2} minWidth={0}>
-            <Flex alignItems="center" gap={2}>
+            <Flex alignItems="center" gap={2} wrap="wrap">
                 <chakra.label htmlFor={selectId} fontSize="sm" flexShrink={0}>
                     {label}
                 </chakra.label>
@@ -58,10 +62,15 @@ export function SensorChartView(props: SensorChartViewProps) {
                     </NativeSelect.Field>
                     <NativeSelect.Indicator />
                 </NativeSelect.Root>
+                <ChartTypeSelector value={chartType} onChange={onChartTypeChange} />
             </Flex>
             <Box flex="1" minHeight={0}>
                 {datastream ? (
-                    <DatastreamChart datastream={datastream} timeFilter={timeFilter} />
+                    <DatastreamChart
+                        datastream={datastream}
+                        chartType={chartType}
+                        timeFilter={timeFilter}
+                    />
                 ) : value ? (
                     <Flex gap={2} alignItems="center">
                         <Spinner size="sm" />
@@ -74,5 +83,32 @@ export function SensorChartView(props: SensorChartViewProps) {
                 )}
             </Box>
         </Flex>
+    );
+}
+
+function ChartTypeSelector(props: { value: ChartType; onChange(value: ChartType): void }) {
+    const { value, onChange } = props;
+    const intl = useIntl();
+    return (
+        <SegmentGroup.Root
+            size="xs"
+            aria-label={intl.formatMessage({ id: "chartType.label" })}
+            value={value}
+            onValueChange={(details) => {
+                if (details.value) {
+                    onChange(details.value as ChartType);
+                }
+            }}
+        >
+            <SegmentGroup.Indicator />
+            {CHART_TYPES.map((type) => (
+                <SegmentGroup.Item key={type} value={type}>
+                    <SegmentGroup.ItemText>
+                        {intl.formatMessage({ id: `chartType.${type}` })}
+                    </SegmentGroup.ItemText>
+                    <SegmentGroup.ItemHiddenInput />
+                </SegmentGroup.Item>
+            ))}
+        </SegmentGroup.Root>
     );
 }
