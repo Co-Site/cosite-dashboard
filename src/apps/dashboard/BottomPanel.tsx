@@ -92,8 +92,9 @@ export function BottomPanel(props: BottomPanelProps) {
                         px={4}
                         pt={2}
                         pb={4}
-                        height="35vh"
-                        minHeight="340px"
+                        // 45 % of the app's height (the app is the size container, see DashboardApp).
+                        height="45cqh"
+                        minHeight="320px"
                     >
                         <Flex direction="column" alignItems="flex-start" gap={2}>
                             <Flex alignSelf="stretch" alignItems="center" gap={2}>

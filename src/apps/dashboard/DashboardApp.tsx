@@ -47,7 +47,8 @@ export function DashboardApp() {
     });
 
     return (
-        <Flex height="100%" direction="column" overflow="hidden">
+        // Size container: the analysis panel's height is relative to the app (`cqh` units).
+        <Flex height="100%" direction="column" overflow="hidden" containerType="size">
             {map && (
                 <DefaultMapProvider map={map}>
                     <Flex flex="1" direction="column" position="relative" minHeight={0}>
