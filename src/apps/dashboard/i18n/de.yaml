@@ -1,0 +1,74 @@
+messages:
+  ariaLabel:
+    map: "Karte. Mit den Pfeiltasten kannst du die Karte bewegen. Mit der Plus Taste hineinzoomen und mit der Minus Taste herauszoomen."
+    toc: "Inhaltsverzeichnis der Karte"
+    mapTools: "Kartenwerkzeuge"
+  toc:
+    collapse: "Ebenen ausblenden"
+    expand: "Ebenen einblenden"
+    transparency: "Transparenz"
+  language:
+    label: "Sprache"
+  tocTitle: "Ebenen"
+  panel:
+    title: "Auswertung"
+    expand: "Auswertung einblenden"
+    collapse: "Auswertung ausblenden"
+    tabs:
+      single: "Einzelsensor"
+      compare: "Sensorvergleich"
+    sensor:
+      label: "Sensor"
+      labelA: "Sensor A"
+      labelB: "Sensor B"
+      placeholder: "Sensor wählen"
+      none: "Keine Sensoren konfiguriert."
+      loading: "Lade Sensor …"
+  featureInfo:
+    legend: "Legende"
+    title: "Information"
+    loading: "Lade Informationen …"
+    empty: "Keine Informationen an dieser Stelle."
+    error: "Abfrage fehlgeschlagen."
+    close: "Schließen"
+  sensorPopup:
+    title: "Sensoren"
+    show: "In Auswertung anzeigen"
+  timeFilter:
+    label: "Zeitraum"
+    from: "von"
+    to: "bis"
+    invalid: "„von“ muss vor „bis“ liegen."
+    preset:
+      24h: "24 Stunden"
+      7d: "7 Tage"
+      30d: "30 Tage"
+      all: "Gesamter Zeitraum"
+  chartType:
+    label: "Diagrammtyp"
+    line: "Linie"
+    bar: "Balken"
+    boxplot: "Boxplot"
+    windrose: "Windrose"
+  chart:
+    frequency: "Häufigkeit"
+    windrose:
+      directions: "N,NNO,NO,ONO,O,OSO,SO,SSO,S,SSW,SW,WSW,W,WNW,NW,NNW"
+      noData: "Keine Richtungsdaten (Grad)."
+    boxplot:
+      max: "Maximum"
+      q3: "3. Quartil (75 %)"
+      median: "Median"
+      q1: "1. Quartil (25 %)"
+      min: "Minimum"
+      mean: "Mittelwert"
+    bar:
+      hour: "Mittelwert je Stunde"
+      day: "Mittelwert je Tag"
+      week: "Mittelwert je Woche"
+    loading: "Lade Messwerte …"
+    error: "Messwerte konnten nicht geladen werden."
+    empty: "Keine Messwerte im gewählten Zeitraum."
+    count: "{count, plural, one {# Messwert} other {# Messwerte}}"
+    stats: "Min {min} · Max {max} · Letzter {last}"
+    truncated: "gekürzt, bitte Zeitraum verkleinern"

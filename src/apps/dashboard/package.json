@@ -1,0 +1,23 @@
+{
+    "name": "dashboard-app",
+    "private": true,
+    "dependencies": {
+        "@chakra-ui/react": "catalog:",
+        "@emotion/react": "catalog:",
+        "@emotion/styled": "catalog:",
+        "@open-pioneer/chakra-snippets": "catalog:",
+        "@open-pioneer/core": "catalog:",
+        "@open-pioneer/map": "catalog:",
+        "@open-pioneer/map-navigation": "catalog:",
+        "@open-pioneer/react-utils": "catalog:",
+        "@open-pioneer/reactivity": "catalog:",
+        "@open-pioneer/runtime": "catalog:",
+        "@open-pioneer/toc": "catalog:",
+        "@sgratzl/chartjs-chart-boxplot": "catalog:",
+        "chart.js": "catalog:",
+        "ol": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "react-icons": "catalog:"
+    }
+}

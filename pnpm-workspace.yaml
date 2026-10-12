@@ -17,6 +17,7 @@ catalog:
   "@open-pioneer/overview-map": *ol_base_packages_version
   "@open-pioneer/scale-bar": *ol_base_packages_version
   "@open-pioneer/scale-viewer": *ol_base_packages_version
+  "@open-pioneer/toc": *ol_base_packages_version
 
   # Trails core packages
   # https://github.com/open-pioneer/trails-core-packages
@@ -39,6 +40,8 @@ catalog:
   "@emotion/react": ^11.14.0
   "@emotion/styled": ^11.14.1
   "@formatjs/intl": ^4.2.0
+  "@sgratzl/chartjs-chart-boxplot": ^4.4.5
+  chart.js: ^4.5.1
   ol: ^10.10.0
   react-dom: &react_version ^19.3.0
   react-icons: ^5.7.0

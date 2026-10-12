@@ -1,0 +1,74 @@
+messages:
+  ariaLabel:
+    map: "Map. Use the arrow keys to move the map. Zoom in with the plus button and zoom out with the minus button."
+    toc: "Table of contents of the map"
+    mapTools: "Map tools"
+  toc:
+    collapse: "Hide layers"
+    expand: "Show layers"
+    transparency: "Transparency"
+  language:
+    label: "Language"
+  tocTitle: "Layers"
+  panel:
+    title: "Analysis"
+    expand: "Show analysis"
+    collapse: "Hide analysis"
+    tabs:
+      single: "Single sensor"
+      compare: "Sensor comparison"
+    sensor:
+      label: "Sensor"
+      labelA: "Sensor A"
+      labelB: "Sensor B"
+      placeholder: "Choose a sensor"
+      none: "No sensors configured."
+      loading: "Loading sensor …"
+  featureInfo:
+    legend: "Legend"
+    title: "Information"
+    loading: "Loading information …"
+    empty: "No information at this location."
+    error: "Request failed."
+    close: "Close"
+  sensorPopup:
+    title: "Sensors"
+    show: "Show in analysis"
+  timeFilter:
+    label: "Time range"
+    from: "from"
+    to: "to"
+    invalid: "“from” must be before “to”."
+    preset:
+      24h: "24 hours"
+      7d: "7 days"
+      30d: "30 days"
+      all: "Entire period"
+  chartType:
+    label: "Chart type"
+    line: "Line"
+    bar: "Bar"
+    boxplot: "Box plot"
+    windrose: "Wind rose"
+  chart:
+    frequency: "Frequency"
+    windrose:
+      directions: "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW"
+      noData: "No direction data (degrees)."
+    boxplot:
+      max: "Maximum"
+      q3: "3rd quartile (75 %)"
+      median: "Median"
+      q1: "1st quartile (25 %)"
+      min: "Minimum"
+      mean: "Mean"
+    bar:
+      hour: "Mean per hour"
+      day: "Mean per day"
+      week: "Mean per week"
+    loading: "Loading observations …"
+    error: "Observations could not be loaded."
+    empty: "No observations in the selected time range."
+    count: "{count, plural, one {# observation} other {# observations}}"
+    stats: "Min {min} · Max {max} · Latest {last}"
+    truncated: "truncated, please choose a shorter time range"
