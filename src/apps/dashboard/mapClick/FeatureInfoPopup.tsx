@@ -64,7 +64,7 @@ function LayerResult({ map, result }: { map: MapModel; result: FeatureInfoResult
     // The legend is also shown if there are no values at the clicked position.
     return (
         <Box>
-            <Text fontSize="sm" color="fg.muted" mb={1}>
+            <Text fontSize="sm" fontWeight="semibold" mb={1}>
                 {layerTitle}
             </Text>
             {result.features.map((feature) => (
@@ -72,7 +72,7 @@ function LayerResult({ map, result }: { map: MapModel; result: FeatureInfoResult
                     {feature.values.map((value) => (
                         <Flex key={value.property} justifyContent="space-between" gap={4}>
                             <Text as="dt">{localize(value.label, language)}</Text>
-                            <Text as="dd" fontWeight="semibold" textAlign="right">
+                            <Text as="dd" textAlign="right">
                                 {formatValue(intl, value)}
                             </Text>
                         </Flex>
