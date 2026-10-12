@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchObservations, Observation, StaDatastreamProperties } from "../dataLayers/sta";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { BarChart } from "./BarChart";
+import { BoxPlotChart } from "./BoxPlotChart";
 import { ChartType } from "./chartTypes";
 import { ObservationChart } from "./ObservationChart";
 import { displayRange, TimeFilter, TimeRange } from "./timeRange";
@@ -110,6 +111,8 @@ function TypedChart(props: {
             return <ObservationChart {...chartProps} />;
         case "bar":
             return <BarChart {...chartProps} />;
+        case "boxplot":
+            return <BoxPlotChart {...chartProps} />;
     }
 }
 

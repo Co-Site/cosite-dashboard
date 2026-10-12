@@ -2,6 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /** Types of charts for the observations of a sensor. */
-export type ChartType = "line" | "bar";
+export type ChartType = "line" | "bar" | "boxplot";
 
-export const CHART_TYPES: ChartType[] = ["line", "bar"];
+export const CHART_TYPES: ChartType[] = ["line", "bar", "boxplot"];

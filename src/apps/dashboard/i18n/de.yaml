@@ -48,7 +48,15 @@ messages:
     label: "Diagrammtyp"
     line: "Linie"
     bar: "Balken"
+    boxplot: "Boxplot"
   chart:
+    boxplot:
+      max: "Maximum"
+      q3: "3. Quartil (75 %)"
+      median: "Median"
+      q1: "1. Quartil (25 %)"
+      min: "Minimum"
+      mean: "Mittelwert"
     bar:
       hour: "Mittelwert je Stunde"
       day: "Mittelwert je Tag"

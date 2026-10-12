@@ -12,6 +12,7 @@
         "@open-pioneer/reactivity": "catalog:",
         "@open-pioneer/runtime": "catalog:",
         "@open-pioneer/toc": "catalog:",
+        "@sgratzl/chartjs-chart-boxplot": "catalog:",
         "chart.js": "catalog:",
         "ol": "catalog:",
         "react": "catalog:",
