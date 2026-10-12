@@ -3,19 +3,22 @@
 
 import { createLogger, isAbortError } from "@open-pioneer/core";
 import { Highlight, MapModel, Overlay } from "@open-pioneer/map";
+import { Coordinate } from "ol/coordinate";
 import { unByKey } from "ol/Observable";
-import { useEffect, useRef } from "react";
+import { Pixel } from "ol/pixel";
+import { ReactNode, useEffect, useRef } from "react";
 import { getDatastreamProperties, StaDatastreamProperties } from "../dataLayers/sta";
 import { addClickMarker } from "./clickMarker";
 import { FeatureInfoResult, getQueryableWmsLayers, queryWmsFeatureInfo } from "./featureInfo";
 import { FeatureInfoPopup } from "./FeatureInfoPopup";
 import { getPopupMaxHeight, getPopupOffset } from "./popupPlacement";
+import { SensorPopup } from "./SensorPopup";
 
 const LOG = createLogger("dashboard:useMapClick");
 
 export interface MapClickOptions {
-    /** Called when a SensorThings datastream feature was clicked. */
-    onDatastreamClick?(datastream: StaDatastreamProperties): void;
+    /** Called when a sensor (data layer id) should be shown in the analysis panel. */
+    onShowDatastream?(dataLayerId: string): void;
 }
 
 /** Pixel tolerance for hitting a sensor point. */
@@ -23,7 +26,8 @@ const HIT_TOLERANCE = 5;
 
 /**
  * Handles clicks into the map:
- * - a click on a sensor point selects its datastream (see {@link MapClickOptions.onDatastreamClick}),
+ * - a click on a sensor point shows a popup with all sensors at that position; each one can be shown
+ *   in the analysis panel (see {@link MapClickOptions.onShowDatastream}),
  * - otherwise, a marker is set at the clicked position and WMS GetFeatureInfo results
  *   are shown in a popup next to it.
  */
@@ -68,11 +72,38 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
             }
         };
 
+        const openPopup = (coordinate: Coordinate, pixel: Pixel, content: ReactNode) => {
+            const overlay = (popup = map.overlays.add({
+                position: coordinate,
+                positioning: "top-left",
+                offset: getPopupOffset(pixel, olMap.getSize() ?? [0, 0], [0, 0]),
+                stopEvent: true,
+                content
+            }));
+            popupResizeObserver = new ResizeObserver(placePopup);
+            popupResizeObserver.observe(overlay.element);
+            return overlay;
+        };
+
         const olMap = map.olMap;
-        const datastreamAt = (pixel: number[]) =>
-            olMap.forEachFeatureAtPixel(pixel, (feature) => getDatastreamProperties(feature), {
-                hitTolerance: HIT_TOLERANCE
-            });
+        // All sensors at the position (several sensors may share a location).
+        const datastreamsAt = (pixel: Pixel) => {
+            const datastreams: StaDatastreamProperties[] = [];
+            olMap.forEachFeatureAtPixel(
+                pixel,
+                (feature) => {
+                    const datastream = getDatastreamProperties(feature);
+                    if (
+                        datastream &&
+                        !datastreams.some((d) => d.dataLayerId === datastream.dataLayerId)
+                    ) {
+                        datastreams.push(datastream);
+                    }
+                },
+                { hitTolerance: HIT_TOLERANCE }
+            );
+            return datastreams;
+        };
 
         const pointerKey = olMap.on("pointermove", (event) => {
             if (event.dragging) {
@@ -80,15 +111,29 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
             }
             const target = olMap.getTargetElement();
             if (target) {
-                target.style.cursor = datastreamAt(event.pixel) ? "pointer" : "";
+                target.style.cursor = datastreamsAt(event.pixel).length ? "pointer" : "";
             }
         });
 
         const clickKey = olMap.on("singleclick", (event) => {
             closePopup();
-            const datastream = datastreamAt(event.pixel);
-            if (datastream) {
-                optionsRef.current.onDatastreamClick?.(datastream);
+            const maxHeight = getPopupMaxHeight(olMap.getSize()?.[1] ?? 0);
+            const datastreams = datastreamsAt(event.pixel);
+            if (datastreams.length) {
+                openPopup(
+                    event.coordinate,
+                    event.pixel,
+                    <SensorPopup
+                        map={map}
+                        datastreams={datastreams}
+                        maxHeight={maxHeight}
+                        onClose={closePopup}
+                        onShow={(dataLayerId) => {
+                            closePopup();
+                            optionsRef.current.onShowDatastream?.(dataLayerId);
+                        }}
+                    />
+                );
                 return;
             }
 
@@ -98,7 +143,6 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
             }
 
             const request = (pendingRequest = new AbortController());
-            const maxHeight = getPopupMaxHeight(olMap.getSize()?.[1] ?? 0);
             const content = (results: FeatureInfoResult[] | undefined) => (
                 <FeatureInfoPopup
                     map={map}
@@ -108,15 +152,7 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
                 />
             );
             marker = addClickMarker(map, event.coordinate);
-            const overlay = (popup = map.overlays.add({
-                position: event.coordinate,
-                positioning: "top-left",
-                offset: getPopupOffset(event.pixel, olMap.getSize() ?? [0, 0], [0, 0]),
-                stopEvent: true,
-                content: content(undefined)
-            }));
-            popupResizeObserver = new ResizeObserver(placePopup);
-            popupResizeObserver.observe(overlay.element);
+            const overlay = openPopup(event.coordinate, event.pixel, content(undefined));
 
             queryWmsFeatureInfo(map, layers, event.coordinate, request.signal)
                 .then((results) => {

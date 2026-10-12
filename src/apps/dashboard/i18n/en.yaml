@@ -31,6 +31,9 @@ messages:
     empty: "No information at this location."
     error: "Request failed."
     close: "Close"
+  sensorPopup:
+    title: "Sensors"
+    show: "Show in analysis"
   timeFilter:
     label: "Time range"
     from: "from"

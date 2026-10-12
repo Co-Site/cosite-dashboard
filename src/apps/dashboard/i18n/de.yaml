@@ -31,6 +31,9 @@ messages:
     empty: "Keine Informationen an dieser Stelle."
     error: "Abfrage fehlgeschlagen."
     close: "Schließen"
+  sensorPopup:
+    title: "Sensoren"
+    show: "In Auswertung anzeigen"
   timeFilter:
     label: "Zeitraum"
     from: "von"

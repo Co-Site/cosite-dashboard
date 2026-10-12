@@ -22,12 +22,8 @@ export function DashboardApp() {
     const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => presetFilter("7d"));
     const [selection, setSelection] = useState<AnalysisSelection>(INITIAL_SELECTION);
     useMapClick(map, {
-        onDatastreamClick(clicked) {
-            setSelection((current) => ({
-                ...current,
-                tab: "single",
-                single: clicked.dataLayerId
-            }));
+        onShowDatastream(dataLayerId) {
+            setSelection((current) => ({ ...current, tab: "single", single: dataLayerId }));
             setPanelOpen(true);
         }
     });

@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
 // SPDX-License-Identifier: Apache-2.0
 
-import { Box, CloseButton, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
+import { Box, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
 import { MapModel } from "@open-pioneer/map";
 import { PackageIntl } from "@open-pioneer/runtime";
 import { useIntl } from "open-pioneer:react-hooks";
 import { localize } from "../dataLayers/localizedText";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { FeatureInfoResult, FeatureInfoValue } from "./featureInfo";
+import { PopupFrame } from "./PopupFrame";
 import { WmsLegend } from "./WmsLegend";
 
 export interface FeatureInfoPopupProps {
@@ -23,42 +24,26 @@ export function FeatureInfoPopup({ map, results, maxHeight, onClose }: FeatureIn
     const intl = useIntl();
     const hasFeatures = results?.some((result) => result.features.length > 0);
     return (
-        <Flex
-            direction="column"
-            backgroundColor="white"
-            borderWidth="1px"
-            borderRadius="lg"
-            boxShadow="lg"
-            minWidth="220px"
-            maxWidth="320px"
-            maxHeight={`${maxHeight}px`}
+        <PopupFrame
+            title={intl.formatMessage({ id: "featureInfo.title" })}
+            maxHeight={maxHeight}
+            onClose={onClose}
         >
-            {/* Header stays visible, only the content below scrolls. */}
-            <Flex justifyContent="space-between" alignItems="center" gap={2} px={3} pt={3} pb={1}>
-                <Text fontWeight="bold">{intl.formatMessage({ id: "featureInfo.title" })}</Text>
-                <CloseButton
-                    size="2xs"
-                    aria-label={intl.formatMessage({ id: "featureInfo.close" })}
-                    onClick={onClose}
-                />
-            </Flex>
-            <Box px={3} pb={3} overflowY="auto" minHeight={0}>
-                {!results && (
-                    <Flex gap={2} alignItems="center">
-                        <Spinner size="sm" />
-                        <Text>{intl.formatMessage({ id: "featureInfo.loading" })}</Text>
-                    </Flex>
-                )}
-                {results && !hasFeatures && (
-                    <Text color="fg.muted">{intl.formatMessage({ id: "featureInfo.empty" })}</Text>
-                )}
-                <Stack gap={3}>
-                    {results?.map((result) => (
-                        <LayerResult key={result.layerId} map={map} result={result} />
-                    ))}
-                </Stack>
-            </Box>
-        </Flex>
+            {!results && (
+                <Flex gap={2} alignItems="center">
+                    <Spinner size="sm" />
+                    <Text>{intl.formatMessage({ id: "featureInfo.loading" })}</Text>
+                </Flex>
+            )}
+            {results && !hasFeatures && (
+                <Text color="fg.muted">{intl.formatMessage({ id: "featureInfo.empty" })}</Text>
+            )}
+            <Stack gap={3}>
+                {results?.map((result) => (
+                    <LayerResult key={result.layerId} map={map} result={result} />
+                ))}
+            </Stack>
+        </PopupFrame>
     );
 }
 
