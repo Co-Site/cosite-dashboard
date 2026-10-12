@@ -49,7 +49,12 @@ messages:
     line: "Line"
     bar: "Bar"
     boxplot: "Box plot"
+    windrose: "Wind rose"
   chart:
+    frequency: "Frequency"
+    windrose:
+      directions: "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW"
+      noData: "No direction data (degrees)."
     boxplot:
       max: "Maximum"
       q3: "3rd quartile (75 %)"

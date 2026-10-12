@@ -13,6 +13,7 @@ import { BoxPlotChart } from "./BoxPlotChart";
 import { ChartType } from "./chartTypes";
 import { ObservationChart } from "./ObservationChart";
 import { displayRange, TimeFilter, TimeRange } from "./timeRange";
+import { WindRoseChart } from "./WindRoseChart";
 
 const LOG = createLogger("dashboard:DatastreamChart");
 
@@ -113,6 +114,8 @@ function TypedChart(props: {
             return <BarChart {...chartProps} />;
         case "boxplot":
             return <BoxPlotChart {...chartProps} />;
+        case "windrose":
+            return <WindRoseChart {...chartProps} />;
     }
 }
 

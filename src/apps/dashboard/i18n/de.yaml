@@ -49,7 +49,12 @@ messages:
     line: "Linie"
     bar: "Balken"
     boxplot: "Boxplot"
+    windrose: "Windrose"
   chart:
+    frequency: "Häufigkeit"
+    windrose:
+      directions: "N,NNO,NO,ONO,O,OSO,SO,SSO,S,SSW,SW,WSW,W,WNW,NW,NNW"
+      noData: "Keine Richtungsdaten (Grad)."
     boxplot:
       max: "Maximum"
       q3: "3. Quartil (75 %)"

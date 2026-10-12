@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { describe, expect, it } from "vitest";
-import { bucketSize, bucketStart, meanPerBucket } from "./statistics";
+import {
+    bucketSize,
+    bucketStart,
+    directionFrequencies,
+    isDirectionData,
+    meanPerBucket
+} from "./statistics";
 
 const range = (days: number) => ({ from: new Date(2026, 9, 1), to: new Date(2026, 9, 1 + days) });
 
@@ -51,5 +57,34 @@ describe("meanPerBucket", () => {
 
     it("handles empty input", () => {
         expect(meanPerBucket([], "hour")).toEqual([]);
+    });
+});
+
+const values = (...v: number[]) => v.map((value, i) => ({ time: i, value }));
+
+describe("isDirectionData", () => {
+    it("requires an angle unit and values between 0 and 360", () => {
+        expect(isDirectionData("°", values(0, 90, 360))).toBe(true);
+        expect(isDirectionData("deg", values(180))).toBe(true);
+        expect(isDirectionData("°C", values(12))).toBe(false);
+        expect(isDirectionData("%", values(7))).toBe(false);
+        expect(isDirectionData(undefined, values(7))).toBe(false);
+        expect(isDirectionData("°", values(-1))).toBe(false);
+        expect(isDirectionData("°", values(361))).toBe(false);
+    });
+});
+
+describe("directionFrequencies", () => {
+    it("counts the share per sector, centered on the direction", () => {
+        const frequencies = directionFrequencies(values(0, 355, 10, 90, 180));
+        expect(frequencies).toHaveLength(16);
+        expect(frequencies[0]).toBe(60); // N: 0°, 355°, 10°
+        expect(frequencies[4]).toBe(20); // E
+        expect(frequencies[8]).toBe(20); // S
+        expect(frequencies.reduce((a, b) => a + b, 0)).toBe(100);
+    });
+
+    it("returns zeros without observations", () => {
+        expect(directionFrequencies([])).toEqual(new Array(16).fill(0));
     });
 });

@@ -80,3 +80,34 @@ function nextBucketStart(start: number, size: BucketSize): number {
     }
     return date.getTime();
 }
+
+/** Number of direction sectors of a wind rose (N, NNE, NE, …). */
+export const DIRECTION_SECTORS = 16;
+
+const ANGLE_UNITS = new Set(["°", "deg", "degree", "degrees"]);
+
+/**
+ * Whether the observations are directions: the unit is an angle (e.g. `°` or `deg`)
+ * and all values are between 0 and 360.
+ */
+export function isDirectionData(unit: string | undefined, observations: Observation[]): boolean {
+    if (!unit || !ANGLE_UNITS.has(unit.trim().toLowerCase())) {
+        return false;
+    }
+    return observations.every(({ value }) => value >= 0 && value <= 360);
+}
+
+/**
+ * Share of the observations (in percent) per direction sector, starting with north, clockwise.
+ * Each sector is centered on its direction (north: 348.75° to 11.25°).
+ */
+export function directionFrequencies(observations: Observation[]): number[] {
+    const counts = new Array<number>(DIRECTION_SECTORS).fill(0);
+    const sectorWidth = 360 / DIRECTION_SECTORS;
+    for (const { value } of observations) {
+        const sector = Math.round(value / sectorWidth) % DIRECTION_SECTORS;
+        counts[sector] = (counts[sector] ?? 0) + 1;
+    }
+    const total = observations.length;
+    return counts.map((count) => (total ? (count / total) * 100 : 0));
+}
