@@ -12,8 +12,8 @@ messages:
   tocTitle: "Ebenen"
   panel:
     title: "Auswertung"
-    expand: "Panel ausklappen"
-    collapse: "Panel einklappen"
+    expand: "Auswertung einblenden"
+    collapse: "Auswertung ausblenden"
     tabs:
       single: "Einzelsensor"
       compare: "Sensorvergleich"

@@ -5,7 +5,8 @@ import { Box, Collapsible, Flex, IconButton, Tabs, Text } from "@chakra-ui/react
 import { useMapModelValue } from "@open-pioneer/map";
 import { SectionHeading, TitledSection } from "@open-pioneer/react-utils";
 import { useIntl } from "open-pioneer:react-hooks";
-import { LuChevronDown, LuChevronUp } from "react-icons/lu";
+import { Ref, useId } from "react";
+import { LuPanelBottomClose } from "react-icons/lu";
 import { AnalysisSelection, AnalysisTab, withDefaultSensors } from "./charts/analysisSelection";
 import { ChartType } from "./charts/chartTypes";
 import { SensorChartView } from "./charts/SensorChartView";
@@ -14,8 +15,15 @@ import { TimeRangeFilter } from "./charts/TimeRangeFilter";
 import { useStaSensors } from "./dataLayers/useStaSensors";
 
 export interface BottomPanelProps {
+    /** Id of the panel element (e.g. for `aria-controls`). */
+    id: string;
+
+    /** When closed, the panel is hidden completely (see the open button in `DashboardApp`). */
     open: boolean;
     onOpenChange(open: boolean): void;
+
+    /** Ref to the button that closes the panel (for focus management). */
+    closeButtonRef?: Ref<HTMLButtonElement>;
 
     timeFilter: TimeFilter;
     onTimeFilterChange(filter: TimeFilter): void;
@@ -26,19 +34,21 @@ export interface BottomPanelProps {
 }
 
 /**
- * Collapsible panel at the bottom of the dashboard.
+ * Collapsible analysis panel at the bottom of the dashboard (collapsed, only an icon remains, see `DashboardApp`).
  * Shows the observations of a single sensor or compares two sensors, within the same time range.
  */
 export function BottomPanel(props: BottomPanelProps) {
-    const { open, onOpenChange, timeFilter, onTimeFilterChange, onSelectionChange } = props;
+    const { id, open, onOpenChange, closeButtonRef } = props;
+    const { timeFilter, onTimeFilterChange, onSelectionChange } = props;
     const intl = useIntl();
+    const headingId = useId();
     const map = useMapModelValue();
     const sensors = useStaSensors(map);
     const selection = withDefaultSensors(
         props.selection,
         sensors.map((sensor) => sensor.id)
     );
-    const toggleLabel = intl.formatMessage({ id: open ? "panel.collapse" : "panel.expand" });
+    const collapseLabel = intl.formatMessage({ id: "panel.collapse" });
 
     const setCompare = (index: 0 | 1, sensorId: string) => {
         const compare: AnalysisSelection["compare"] = [...selection.compare];
@@ -58,28 +68,37 @@ export function BottomPanel(props: BottomPanelProps) {
     };
 
     return (
-        <Collapsible.Root open={open} onOpenChange={(e) => onOpenChange(e.open)}>
-            <Box as="section" borderTopWidth="1px" backgroundColor="white" boxShadow="lg">
-                <TitledSection
-                    title={
-                        <Flex alignItems="center" justifyContent="space-between" px={4} py={2}>
-                            <SectionHeading size="md">
-                                {intl.formatMessage({ id: "panel.title" })}
-                            </SectionHeading>
-                            <Collapsible.Trigger asChild>
+        <Collapsible.Root open={open}>
+            <Collapsible.Content>
+                <Box
+                    as="section"
+                    id={id}
+                    aria-labelledby={headingId}
+                    borderTopWidth="1px"
+                    backgroundColor="white"
+                    boxShadow="lg"
+                >
+                    <TitledSection
+                        title={
+                            <Flex alignItems="center" justifyContent="space-between" px={4} py={2}>
+                                <SectionHeading id={headingId} size="md">
+                                    {intl.formatMessage({ id: "panel.title" })}
+                                </SectionHeading>
                                 <IconButton
-                                    aria-label={toggleLabel}
-                                    title={toggleLabel}
+                                    ref={closeButtonRef}
+                                    aria-label={collapseLabel}
+                                    title={collapseLabel}
+                                    aria-controls={id}
+                                    aria-expanded={true}
                                     variant="ghost"
                                     size="sm"
+                                    onClick={() => onOpenChange(false)}
                                 >
-                                    {open ? <LuChevronDown /> : <LuChevronUp />}
+                                    <LuPanelBottomClose />
                                 </IconButton>
-                            </Collapsible.Trigger>
-                        </Flex>
-                    }
-                >
-                    <Collapsible.Content>
+                            </Flex>
+                        }
+                    >
                         <Tabs.Root
                             value={selection.tab}
                             onValueChange={(e) =>
@@ -171,9 +190,9 @@ export function BottomPanel(props: BottomPanelProps) {
                                 </>
                             )}
                         </Tabs.Root>
-                    </Collapsible.Content>
-                </TitledSection>
-            </Box>
+                    </TitledSection>
+                </Box>
+            </Collapsible.Content>
         </Collapsible.Root>
     );
 }

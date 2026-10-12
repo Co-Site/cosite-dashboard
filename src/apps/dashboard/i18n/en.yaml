@@ -12,8 +12,8 @@ messages:
   tocTitle: "Layers"
   panel:
     title: "Analysis"
-    expand: "Expand panel"
-    collapse: "Collapse panel"
+    expand: "Show analysis"
+    collapse: "Hide analysis"
     tabs:
       single: "Single sensor"
       compare: "Sensor comparison"
