@@ -12,9 +12,11 @@ Jedes Element folgt demselben Schema: **Was** · **Entscheidung** · **Warum** �
 
 - **Ziel:** Aus dem _Open Pioneer Trails Starter_ (Mischung aus How-to und Demonstrator) eine schlanke App machen:
   Hintergrundkarte, TOC, Panel unten mit Diagrammen nach Klick in die Karte.
-- **Branch:** Alles passiert auf `dashboard` (soll später umbenannt werden). `main` bleibt unverändert wie geklont.
-- **Arbeitsweise:** Ein Commit pro abgeschlossenem Schritt, kein Push ohne Rückfrage. Der Pre-Commit-Hook führt
-  `tsc`, oxfmt und oxlint aus, jeder Schritt muss also für sich bauen.
+- **Branches:** Entstanden auf `dashboard` (TOC-Fork) und `toc-native` (Original-TOC). `toc-native` wurde gewählt und
+  nach `main` gemergt. Seitdem gilt feature → `dev` → `main`, siehe
+  [Abschnitt 16](#16-branches-und-arbeitsweise).
+- **Arbeitsweise:** Ein Commit pro abgeschlossenem Schritt, kein Push. Der Pre-Commit-Hook führt `tsc`, oxfmt und
+  oxlint aus, jeder Schritt muss also für sich bauen.
 
 | #   | Element                                                                             | Schwierigkeit |
 | --- | ----------------------------------------------------------------------------------- | ------------- |
@@ -33,6 +35,7 @@ Jedes Element folgt demselben Schema: **Was** · **Entscheidung** · **Warum** �
 | 13  | [Popup-Platzierung und Marker](#13-popup-platzierung-und-marker)                    | 🟡            |
 | 14  | [Testen](#14-testen)                                                                | 🟢            |
 | 15  | [Offene Punkte](#15-offene-punkte-und-ideen)                                        |               |
+| 16  | [Branches und Arbeitsweise](#16-branches-und-arbeitsweise)                          |               |
 
 Alle Commits auf `dashboard` (2026-10-09, älteste zuerst):
 
@@ -287,8 +290,8 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   Risiko: Die Klasse ist laut TOC-README nicht garantiert. Fällt sie weg, erscheint wieder ⋮, es geht nichts kaputt.
   Commit: `77ef99f`.
 - **Ausführliche Begründung** für die Team-Diskussion: [TocExtensionDecision.md](./TocExtensionDecision.md).
-- **Status:** Beide Varianten liegen nebeneinander (`dashboard` mit Fork, `toc-native` ohne) und werden im Team
-  diskutiert.
+- **Status:** Entschieden für `toc-native` (Erweiterung über die öffentliche API, kein Fork). Nach `main` gemergt.
+  `dashboard` mit dem Fork bleibt als Referenz bestehen, wird aber nicht weiterentwickelt.
 - **Commits (`toc-native`):** `22b279a`, `9dc52cb`
 
 ## 10. Mehrsprachigkeit
@@ -391,7 +394,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   (siehe Abschnitt 12). Vorerst bewusst nicht umgesetzt.
 - **Upstream-Issue:** Fest eingebautes `LANGUAGE=ger` in `@open-pioneer/map` melden. Wird es behoben, nutzt die App
   automatisch die Legenden-URLs aus den Capabilities.
-- **Weitere Diagramme:** Ursprünglicher Wunsch: „Graphen verschiedener Natur“ im Panel unten.
+- **Weitere Diagramme:** Linie, Balken, Boxplot und Windrose gibt es (Abschnitt 8). Weitere nach Bedarf.
 - **CI-Deploy:** Der Job `deploy` in `.github/workflows/test-and-build.yml` ist noch an das Repository
   `open-pioneer/trails-starter` gebunden und läuft hier daher nie.
 - **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären.
@@ -400,5 +403,25 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 - **Windrose fachlich klären:** Welche Datastreams (Richtung, Geschwindigkeit), Geschwindigkeitsklassen gestapelt pro
   Sektor, Anzahl der Sektoren. Für gestapelte Klassen reicht `polarArea` nicht, dann eigene Zeichnung oder Plugin.
 - **Balken für Niederschlag:** Summe statt Mittelwert je Abschnitt, ggf. pro Datastream in der Konfiguration.
-- **TOC-Variante:** Entscheidung Fork (`dashboard`) oder API-Erweiterung (`toc-native`) im Team treffen, dann den
-  anderen Branch verwerfen.
+
+## 16. Branches und Arbeitsweise
+
+**Was:** Wie ab dem Merge von `toc-native` nach `main` entwickelt wird.
+
+| Branch       | Rolle                                                                   |
+| ------------ | ----------------------------------------------------------------------- |
+| `main`       | Stabiler Stand. Bekommt nur Merges aus `dev`.                           |
+| `dev`        | Integrationsstand. Bekommt Merges aus Feature-Branches.                 |
+| `<feature>`  | Ein Branch pro Feature, abgezweigt von `dev`, z. B. `feature/windrose`. |
+| `toc-native` | Gewählte TOC-Variante, nach `main` gemergt. Bleibt als Historie.        |
+| `dashboard`  | TOC-Fork-Variante. Nicht gemergt, bleibt nur als Referenz.              |
+
+- **Ablauf:** Feature-Branch von `dev` → ein Commit pro Schritt → `git merge --no-ff <feature>` nach `dev` → wenn
+  `dev` stabil ist, `git merge --no-ff dev` nach `main`. `--no-ff`, damit jedes Feature als Merge-Commit sichtbar
+  bleibt.
+- **Nachziehen:** Einen Feature-Branch vor dem Merge auf das aktuelle `dev` zu rebasen ist in Ordnung (er ist noch
+  nicht geteilt). Kommt etwas direkt auf `main` (Hotfix), wird `main` in `dev` **gemergt**, nicht rebased: Ein Rebase
+  würde die Commits von `dev` neu schreiben und passt dann nicht mehr zu den schon gemergten Feature-Branches.
+- **Remote:** `origin` ist das Upstream-Repo `open-pioneer/trails-starter`, nicht unser eigenes. Es wird nichts
+  gepusht. `dev` ist ein lokaler Branch ohne Tracking, `origin/dev` ist der `dev`-Branch des Starters und hat damit
+  nichts zu tun.

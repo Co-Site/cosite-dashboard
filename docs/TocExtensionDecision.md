@@ -4,6 +4,9 @@ Begründung für die Team-Diskussion: wie der Transparenz-Slider im TOC umgesetz
 Umsetzung gemacht hat) jeweils zu einer Lösung bewogen hat, und wo ich dabei falsch lag.
 Einordnung in die übrigen Entscheidungen: [DashboardDecisions.md](./DashboardDecisions.md), Abschnitt 9.
 
+> **Status:** Entschieden für `toc-native` (öffentliche API, kein Fork), nach `main` gemergt. `dashboard` mit dem Fork
+> bleibt nur als Referenz.
+
 ## Kurzfassung
 
 Unter jedem WMS-Layer im TOC soll ein Transparenz-Slider stehen. `@open-pioneer/toc` bietet dafür keinen vorgesehenen
