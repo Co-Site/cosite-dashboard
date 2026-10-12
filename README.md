@@ -1,7 +1,24 @@
 # COSITE Dashboard
 
-Dashboard auf Basis des [Open Pioneer Trails Starters](https://github.com/open-pioneer/trails-starter).
-Die App liegt unter `src/apps/dashboard`. Wie das Projekt verdrahtet ist: [docs/DashboardWiring.md](./docs/DashboardWiring.md).
+A web dashboard for the COSITE project. It brings weather data from the German Weather Service (DWD) and
+observations from in-situ sensors (OGC SensorThings API) together on one map and lets you analyse them.
+
+## Features
+
+- **Map layers:** DWD web map services, e.g. the ICON 2 m air temperature forecast and the hourly radar
+  precipitation (RADOLAN RW), each with its own transparency slider in the table of contents.
+- **Sensors:** datastreams of the COSITE SensorThings API (currently soil temperature and soil moisture in
+  Cologne-Kalk). Clicking a sensor point lists all sensors at that location.
+- **Analysis panel:** observations of a single sensor or two sensors side by side, as line chart, bar chart
+  (mean per hour, day or week), box plot or wind rose (basic version). Time range: last 24 hours, 7 or 30 days,
+  the entire period, or a custom range.
+- **Feature info:** clicking the map shows the values of the visible WMS layers, including their legends.
+- **Configurable data:** all layers and sensors are defined in `src/public/config/dataLayers.json`, which is loaded
+  at runtime, so sources can be added or changed without rebuilding.
+- **English and German** user interface, switchable at runtime.
+
+Built on the [Open Pioneer Trails starter](https://github.com/open-pioneer/trails-starter) (React, Chakra UI,
+OpenLayers, Chart.js). The app lives in `src/apps/dashboard`.
 
 ## Quick start
 
@@ -17,7 +34,15 @@ $ pnpm run dev                                                 # Launch developm
 Vite will print the project's local address (usually <http://localhost:5173/>).
 Point your browser at it and start programming!
 
-Additional in-depth information can be found in the [Documentation](./docs/README.md).
+Run the tests with `pnpm test`. `pnpm build` creates a production build in `dist/www`.
+
+## Documentation
+
+- [docs/DashboardWiring.md](./docs/DashboardWiring.md): how the app is structured and how data layers are configured
+  (in German).
+- [docs/DashboardDecisions.md](./docs/DashboardDecisions.md): why the dashboard is built the way it is, including the
+  branch workflow (in German).
+- [docs/README.md](./docs/README.md): general documentation of the Trails starter.
 
 ## See also
 
