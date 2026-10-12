@@ -9,8 +9,22 @@ describe("parseDataLayers", () => {
     it("accepts the shipped configuration", () => {
         const layers = parseDataLayers(JSON.parse(shippedConfig));
         expect(summarize(layers)).toEqual([
-            ["wms", "group", [["dwd-icon-t2m", "wms"]]],
-            ["sta", "group", [["sta-ds-14", "sta-datastream"]]]
+            [
+                "wms",
+                "group",
+                [
+                    ["dwd-icon-t2m", "wms"],
+                    ["dwd-radolan-rw", "wms"]
+                ]
+            ],
+            [
+                "sta",
+                "group",
+                [
+                    ["sta-ds-14", "sta-datastream"],
+                    ["sta-ds-15", "sta-datastream"]
+                ]
+            ]
         ]);
     });
 

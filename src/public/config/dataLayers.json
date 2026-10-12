@@ -60,6 +60,51 @@
                             }
                         }
                     }
+                },
+                {
+                    "id": "dwd-radolan-rw",
+                    "type": "wms",
+                    "name": {
+                        "de": "Niederschlag letzte Stunde (DWD Radar)",
+                        "en": "Precipitation last hour (DWD radar)"
+                    },
+                    "description": {
+                        "de": "An Stationsdaten angeeichtes Radarkomposit des Deutschen Wetterdienstes (RADOLAN RW): Niederschlagssumme der letzten Stunde, nur Deutschland.",
+                        "en": "Radar composite of the German Weather Service (DWD), calibrated with station data (RADOLAN RW): precipitation of the last hour, Germany only."
+                    },
+                    "endpoint": "https://maps.dwd.de/geoserver/dwd/wms",
+                    "visible": false,
+                    "opacity": 0.7,
+                    "attribution": "© Deutscher Wetterdienst",
+                    "wms": {
+                        "layers": ["RADOLAN-RW"],
+                        "featureInfo": {
+                            "fields": [
+                                {
+                                    "property": "GRAY_INDEX",
+                                    "label": {
+                                        "de": "Niederschlag (1 h)",
+                                        "en": "Precipitation (1 h)"
+                                    },
+                                    "unit": "mm"
+                                },
+                                {
+                                    "property": "TIME",
+                                    "label": {
+                                        "de": "Messzeit",
+                                        "en": "Observed at"
+                                    }
+                                }
+                            ]
+                        },
+                        "legend": {
+                            "params": {
+                                "WIDTH": "12",
+                                "HEIGHT": "12",
+                                "LEGEND_OPTIONS": "columns:4;fontSize:9"
+                            }
+                        }
+                    }
                 }
             ]
         },
@@ -87,6 +132,20 @@
                         "en": "Soil temperature of the SMT100 sensor at the test node in Cologne-Kalk (SensorThings API)."
                     },
                     "endpoint": "https://cosite.thk.52north.org/sensordata/v1.1/Datastreams(14)",
+                    "visible": true
+                },
+                {
+                    "id": "sta-ds-15",
+                    "type": "sta-datastream",
+                    "name": {
+                        "de": "Bodenfeuchte SMT100 (Köln-Kalk)",
+                        "en": "Soil moisture SMT100 (Cologne-Kalk)"
+                    },
+                    "description": {
+                        "de": "Bodenfeuchte (volumetrischer Wassergehalt) des SMT100-Sensors am Testknoten in Köln-Kalk (SensorThings API).",
+                        "en": "Soil moisture (volumetric water content) of the SMT100 sensor at the test node in Cologne-Kalk (SensorThings API)."
+                    },
+                    "endpoint": "https://cosite.thk.52north.org/sensordata/v1.1/Datastreams(15)",
                     "visible": true
                 }
             ]
