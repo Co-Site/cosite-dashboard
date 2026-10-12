@@ -370,6 +370,9 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 - **Höhe und Scroll:** Das Popup ist höchstens Kartenhöhe minus 16 px, maximal 400 px hoch. Erst wenn der Inhalt höher
   ist, scrollt er. Mit der kompakten DWD-Legende (Inhalt ca. 250 px) passt meist alles, ein Scrollbalken erscheint dann
   nicht.
+- **Ausgewählter Sensor:** Ein Klick auf einen Sensorpunkt markiert ihn mit einem blauen Ring, das Popup sitzt am
+  Sensor statt an der Klickposition. Der nächste Klick in die Karte (oder ✕ im Popup) hebt die Markierung auf.
+  „In Auswertung anzeigen“ schließt nur das Popup, der Sensor bleibt markiert, solange er im Panel gezeigt wird.
 - **Commits:** `0cf7594`, `74b09ed`, `2fc058c`
 
 ## 14. Testen
