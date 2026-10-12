@@ -43,6 +43,7 @@ messages:
       24h: "24 Stunden"
       7d: "7 Tage"
       30d: "30 Tage"
+      all: "Gesamter Zeitraum"
   chart:
     loading: "Lade Messwerte …"
     error: "Messwerte konnten nicht geladen werden."

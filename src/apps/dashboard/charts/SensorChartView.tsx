@@ -7,7 +7,7 @@ import { useIntl } from "open-pioneer:react-hooks";
 import { useId } from "react";
 import { StaSensor, useDatastreamProperties } from "../dataLayers/useStaSensors";
 import { DatastreamChart } from "./DatastreamChart";
-import { TimeRange } from "./timeRange";
+import { TimeFilter } from "./timeRange";
 
 export interface SensorChartViewProps {
     /** Sensors to choose from. */
@@ -17,7 +17,7 @@ export interface SensorChartViewProps {
     value: string | undefined;
     onChange(sensorId: string): void;
 
-    range: TimeRange;
+    timeFilter: TimeFilter;
 
     /** Label of the sensor selection. */
     label: string;
@@ -26,7 +26,8 @@ export interface SensorChartViewProps {
 /**
  * Selection of a sensor and the chart of its observations.
  */
-export function SensorChartView({ sensors, value, onChange, range, label }: SensorChartViewProps) {
+export function SensorChartView(props: SensorChartViewProps) {
+    const { sensors, value, onChange, timeFilter, label } = props;
     const intl = useIntl();
     const map = useMapModelValue();
     const selectId = useId();
@@ -60,7 +61,7 @@ export function SensorChartView({ sensors, value, onChange, range, label }: Sens
             </Flex>
             <Box flex="1" minHeight={0}>
                 {datastream ? (
-                    <DatastreamChart datastream={datastream} range={range} />
+                    <DatastreamChart datastream={datastream} timeFilter={timeFilter} />
                 ) : value ? (
                     <Flex gap={2} alignItems="center">
                         <Spinner size="sm" />

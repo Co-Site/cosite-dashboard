@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchObservations, Observation, StaDatastreamProperties } from "../dataLayers/sta";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { ObservationChart } from "./ObservationChart";
-import { TimeRange } from "./timeRange";
+import { displayRange, TimeFilter } from "./timeRange";
 
 const LOG = createLogger("dashboard:DatastreamChart");
 
@@ -20,13 +20,14 @@ type LoadState =
 
 export interface DatastreamChartProps {
     datastream: StaDatastreamProperties;
-    range: TimeRange;
+    timeFilter: TimeFilter;
 }
 
 /**
  * Loads the observations of a datastream for the time range and shows them as a line chart.
  */
-export function DatastreamChart({ datastream, range }: DatastreamChartProps) {
+export function DatastreamChart({ datastream, timeFilter }: DatastreamChartProps) {
+    const range = timeFilter.range;
     const intl = useIntl();
     const [state, setState] = useState<LoadState>({ kind: "loading" });
 
@@ -84,7 +85,7 @@ export function DatastreamChart({ datastream, range }: DatastreamChartProps) {
                         observations={state.observations}
                         label={title}
                         unit={datastream.unit}
-                        range={range}
+                        range={displayRange(timeFilter, state.observations[0]?.time)}
                     />
                 )}
             </Box>

@@ -115,7 +115,7 @@ export function BottomPanel(props: BottomPanelProps) {
                                             onChange={(single) =>
                                                 onSelectionChange({ ...selection, single })
                                             }
-                                            range={timeFilter.range}
+                                            timeFilter={timeFilter}
                                             label={intl.formatMessage({ id: "panel.sensor.label" })}
                                         />
                                     </Tabs.Content>
@@ -130,7 +130,7 @@ export function BottomPanel(props: BottomPanelProps) {
                                                     sensors={sensors}
                                                     value={selection.compare[0]}
                                                     onChange={(id) => setCompare(0, id)}
-                                                    range={timeFilter.range}
+                                                    timeFilter={timeFilter}
                                                     label={intl.formatMessage({
                                                         id: "panel.sensor.labelA"
                                                     })}
@@ -141,7 +141,7 @@ export function BottomPanel(props: BottomPanelProps) {
                                                     sensors={sensors}
                                                     value={selection.compare[1]}
                                                     onChange={(id) => setCompare(1, id)}
-                                                    range={timeFilter.range}
+                                                    timeFilter={timeFilter}
                                                     label={intl.formatMessage({
                                                         id: "panel.sensor.labelB"
                                                     })}

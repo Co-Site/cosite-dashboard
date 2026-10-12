@@ -27,12 +27,14 @@ export function TimeRangeFilter({ value, onChange }: TimeRangeFilterProps) {
 
     // While the inputs do not form a valid range, the edited values are kept locally.
     const [draft, setDraft] = useState<{ from: string; to: string }>();
-    const from = draft?.from ?? toLocalInputValue(value.range.from);
+    // The entire period has no meaningful start date (it starts at the first observation of each sensor).
+    const entirePeriod = value.preset === "all" && !draft;
+    const from = draft?.from ?? (entirePeriod ? "" : toLocalInputValue(value.range.from));
     const to = draft?.to ?? toLocalInputValue(value.range.to);
 
     const fromDate = fromLocalInputValue(from);
     const toDate = fromLocalInputValue(to);
-    const invalid = !fromDate || !toDate || fromDate >= toDate;
+    const invalid = !entirePeriod && (!fromDate || !toDate || fromDate >= toDate);
 
     const updateRange = (nextFrom: string, nextTo: string) => {
         const f = fromLocalInputValue(nextFrom);
