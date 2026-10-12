@@ -14,7 +14,16 @@ messages:
     title: "Analysis"
     expand: "Expand panel"
     collapse: "Collapse panel"
-    placeholder: "Click a sensor point in the map to show its observations."
+    tabs:
+      single: "Single sensor"
+      compare: "Sensor comparison"
+    sensor:
+      label: "Sensor"
+      labelA: "Sensor A"
+      labelB: "Sensor B"
+      placeholder: "Choose a sensor"
+      none: "No sensors configured."
+      loading: "Loading sensor …"
   featureInfo:
     legend: "Legend"
     title: "Information"

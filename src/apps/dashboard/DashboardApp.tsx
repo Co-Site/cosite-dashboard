@@ -7,8 +7,8 @@ import { InitialExtent, ZoomIn, ZoomOut } from "@open-pioneer/map-navigation";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useState } from "react";
 import { BottomPanel } from "./BottomPanel";
+import { AnalysisSelection, INITIAL_SELECTION } from "./charts/analysisSelection";
 import { presetFilter, TimeFilter } from "./charts/timeRange";
-import { StaDatastreamProperties } from "./dataLayers/sta";
 import { useMapClick } from "./mapClick/useMapClick";
 import { MAP_ID } from "./services";
 import { TocPanel } from "./toc/TocPanel";
@@ -20,10 +20,14 @@ export function DashboardApp() {
     useLocalizedDataLayers(map);
     const [panelOpen, setPanelOpen] = useState(true);
     const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => presetFilter("7d"));
-    const [datastream, setDatastream] = useState<StaDatastreamProperties>();
+    const [selection, setSelection] = useState<AnalysisSelection>(INITIAL_SELECTION);
     useMapClick(map, {
         onDatastreamClick(clicked) {
-            setDatastream(clicked);
+            setSelection((current) => ({
+                ...current,
+                tab: "single",
+                single: clicked.dataLayerId
+            }));
             setPanelOpen(true);
         }
     });
@@ -56,7 +60,8 @@ export function DashboardApp() {
                         onOpenChange={setPanelOpen}
                         timeFilter={timeFilter}
                         onTimeFilterChange={setTimeFilter}
-                        datastream={datastream}
+                        selection={selection}
+                        onSelectionChange={setSelection}
                     />
                 </DefaultMapProvider>
             )}

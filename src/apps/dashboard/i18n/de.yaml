@@ -14,7 +14,16 @@ messages:
     title: "Auswertung"
     expand: "Panel ausklappen"
     collapse: "Panel einklappen"
-    placeholder: "Klicke auf einen Sensorpunkt in der Karte, um seine Messwerte anzuzeigen."
+    tabs:
+      single: "Einzelsensor"
+      compare: "Sensorvergleich"
+    sensor:
+      label: "Sensor"
+      labelA: "Sensor A"
+      labelB: "Sensor B"
+      placeholder: "Sensor wählen"
+      none: "Keine Sensoren konfiguriert."
+      loading: "Lade Sensor …"
   featureInfo:
     legend: "Legende"
     title: "Information"
