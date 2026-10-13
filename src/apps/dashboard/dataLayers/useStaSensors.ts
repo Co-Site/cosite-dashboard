@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { AnyLayer, isLayer, MapModel } from "@open-pioneer/map";
 import { useReactiveSnapshot } from "@open-pioneer/reactivity";
 import { FeatureLike } from "ol/Feature";
@@ -69,10 +66,7 @@ export function useDatastreamProperties(
     return useMemo(() => (feature ? getDatastreamProperties(feature) : undefined), [feature]);
 }
 
-function getSensorSource(
-    map: MapModel,
-    dataLayerId: string | undefined
-): VectorSource<FeatureLike> | undefined {
+function getSensorSource(map: MapModel, dataLayerId: string | undefined): VectorSource<FeatureLike> | undefined {
     const layer = dataLayerId ? map.layers.getLayerById(dataLayerId) : undefined;
     if (!layer || !isLayer(layer) || !(layer.olLayer instanceof VectorLayer)) {
         return undefined;

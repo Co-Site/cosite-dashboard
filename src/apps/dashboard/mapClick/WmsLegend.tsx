@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { Box, Image, Stack, Text } from "@chakra-ui/react";
 import { MapModel, WMSLayer } from "@open-pioneer/map";
 import { useReactiveSnapshot } from "@open-pioneer/reactivity";
@@ -55,9 +52,7 @@ function useLegendUrls(map: MapModel, layerId: string): string[] {
                   .flatMap((sublayer) => {
                       const url =
                           sublayer.legend ??
-                          (sublayer.name
-                              ? getLegendGraphicUrl(layer.url, sublayer.name)
-                              : undefined);
+                          (sublayer.name ? getLegendGraphicUrl(layer.url, sublayer.name) : undefined);
                       return url ? [url] : [];
                   });
         return sources.map((url) => withParams(url, config.params));

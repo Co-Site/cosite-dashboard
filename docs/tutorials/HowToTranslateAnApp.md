@@ -137,9 +137,7 @@ function InterpolationExample() {
                 placeholder={intl.formatMessage({ id: "interpolation.placeholder" })}
                 size="sm"
             />
-            <Text mb="8px">
-                {intl.formatMessage({ id: "interpolation.value" }, { name: value })}
-            </Text>
+            <Text mb="8px">{intl.formatMessage({ id: "interpolation.value" }, { name: value })}</Text>
         </>
     );
 }
@@ -174,13 +172,7 @@ We generate another entry in our `ExampleStack` for our `PluralsExample`:
 // src/apps/empty/AppUI.tsx
 function ExampleStack() {
     return (
-        <Stack
-            mb={5}
-            mt={5}
-            separator={<StackSeparator borderColor="gray.200" />}
-            gap="24px"
-            align="stretch"
-        >
+        <Stack mb={5} mt={5} separator={<StackSeparator borderColor="gray.200" />} gap="24px" align="stretch">
             <Box bg="white" w="100%" p={4} color="black" borderWidth="1px" borderColor="black">
                 <InterpolationExample></InterpolationExample>
             </Box>
@@ -246,13 +238,7 @@ Let's add an entry for `SelectionExample` in our `ExampleStack`:
 // src/apps/empty/AppUI.tsx
 function ExampleStack() {
     return (
-        <Stack
-            mb={5}
-            mt={5}
-            separator={<StackSeparator borderColor="gray.200" />}
-            gap="24px"
-            align="stretch"
-        >
+        <Stack mb={5} mt={5} separator={<StackSeparator borderColor="gray.200" />} gap="24px" align="stretch">
             <Box bg="white" w="100%" p={4} color="black" borderWidth="1px" borderColor="black">
                 <InterpolationExample></InterpolationExample>
             </Box>
@@ -290,20 +276,12 @@ function SelectionExample() {
             />
             <RadioGroup onValueChange={(e) => setValue2(e.value)} value={value2}>
                 <Stack gap={4} direction="row">
-                    <Radio value="female">
-                        {intl.formatMessage({ id: "selection.gender.female" })}
-                    </Radio>
-                    <Radio value="male">
-                        {intl.formatMessage({ id: "selection.gender.male" })}
-                    </Radio>
-                    <Radio value="other">
-                        {intl.formatMessage({ id: "selection.gender.other" })}
-                    </Radio>
+                    <Radio value="female">{intl.formatMessage({ id: "selection.gender.female" })}</Radio>
+                    <Radio value="male">{intl.formatMessage({ id: "selection.gender.male" })}</Radio>
+                    <Radio value="other">{intl.formatMessage({ id: "selection.gender.other" })}</Radio>
                 </Stack>
             </RadioGroup>
-            <Text mb="8px">
-                {intl.formatMessage({ id: "selection.value" }, { name: value1, gender: value2 })}
-            </Text>
+            <Text mb="8px">{intl.formatMessage({ id: "selection.value" }, { name: value1, gender: value2 })}</Text>
         </>
     );
 }
@@ -343,13 +321,7 @@ Now we add an entry for `NumberFormatExample` to our `ExampleStack` :
 // src/apps/empty/AppUI.tsx
 function ExampleStack() {
     return (
-        <Stack
-            mb={5}
-            mt={5}
-            separator={<StackSeparator borderColor="gray.200" />}
-            gap="24px"
-            align="stretch"
-        >
+        <Stack mb={5} mt={5} separator={<StackSeparator borderColor="gray.200" />} gap="24px" align="stretch">
             <Box bg="white" w="100%" p={4} color="black" borderWidth="1px" borderColor="black">
                 <InterpolationExample></InterpolationExample>
             </Box>
@@ -454,13 +426,7 @@ Finally, we add an entry for the `DateTimeFormatExample` to our `ExampleStack` :
 // src/apps/empty/AppUI.tsx
 function ExampleStack() {
     return (
-        <Stack
-            mb={5}
-            mt={5}
-            separator={<StackSeparator borderColor="gray.200" />}
-            gap="24px"
-            align="stretch"
-        >
+        <Stack mb={5} mt={5} separator={<StackSeparator borderColor="gray.200" />} gap="24px" align="stretch">
             <Box bg="white" w="100%" p={4} color="black" borderWidth="1px" borderColor="black">
                 <InterpolationExample></InterpolationExample>
             </Box>
@@ -493,12 +459,7 @@ function DateTimeFormatExample() {
             <Heading as="h4" size="md">
                 {intl.formatMessage({ id: "datetimeformat.heading" })}
             </Heading>
-            <Input
-                value={value}
-                onChange={(evt) => setValue(evt.target.value)}
-                size="md"
-                type="datetime-local"
-            />
+            <Input value={value} onChange={(evt) => setValue(evt.target.value)} size="md" type="datetime-local" />
             <Text mb="8px">
                 {intl.formatMessage({ id: "datetimeformat.timelabel" })}
                 {intl.formatDate(value, { dateStyle: "full", timeStyle: "short" })}

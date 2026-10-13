@@ -52,12 +52,7 @@ A factory is declared as a class that implements `ServiceFactory` and is wrapped
 
 ```ts
 // some-package/HelloWorldServiceFactory.ts
-import {
-    defineServiceFactory,
-    DeclaredService,
-    ServiceFactory,
-    ServiceOptions
-} from "@open-pioneer/runtime";
+import { defineServiceFactory, DeclaredService, ServiceFactory, ServiceOptions } from "@open-pioneer/runtime";
 
 interface HelloWorldService extends DeclaredService<"hello.HelloWorldService"> {
     sayHello(): void;

@@ -1,13 +1,5 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { createLogger } from "@open-pioneer/core";
-import {
-    MapConfig,
-    MapConfigProvider,
-    MapConfigProviderOptions,
-    SimpleLayer
-} from "@open-pioneer/map";
+import { MapConfig, MapConfigProvider, MapConfigProviderOptions, SimpleLayer } from "@open-pioneer/map";
 import { LocaleService, ServiceOptions } from "@open-pioneer/runtime";
 import TileLayer from "ol/layer/Tile";
 import { fromLonLat } from "ol/proj";

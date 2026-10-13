@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { createLogger, isAbortError } from "@open-pioneer/core";
 import { Highlight, MapModel, Overlay } from "@open-pioneer/map";
 import { Coordinate } from "ol/coordinate";
@@ -99,14 +96,10 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
                 pixel,
                 (feature) => {
                     const datastream = getDatastreamProperties(feature);
-                    if (
-                        datastream &&
-                        !datastreams.some((d) => d.dataLayerId === datastream.dataLayerId)
-                    ) {
+                    if (datastream && !datastreams.some((d) => d.dataLayerId === datastream.dataLayerId)) {
                         datastreams.push(datastream);
                         const geometry = feature.getGeometry();
-                        location ??=
-                            geometry instanceof Point ? geometry.getCoordinates() : undefined;
+                        location ??= geometry instanceof Point ? geometry.getCoordinates() : undefined;
                     }
                 },
                 { hitTolerance: HIT_TOLERANCE }
@@ -157,12 +150,7 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
 
             const request = (pendingRequest = new AbortController());
             const content = (results: FeatureInfoResult[] | undefined) => (
-                <FeatureInfoPopup
-                    map={map}
-                    results={results}
-                    maxHeight={maxHeight}
-                    onClose={closePopup}
-                />
+                <FeatureInfoPopup map={map} results={results} maxHeight={maxHeight} onClose={closePopup} />
             );
             marker = addClickMarker(map, event.coordinate);
             const overlay = openPopup(event.coordinate, event.pixel, content(undefined));

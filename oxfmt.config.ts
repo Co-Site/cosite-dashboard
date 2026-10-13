@@ -9,7 +9,7 @@ export default defineConfig({
     trailingComma: "none",
     singleQuote: false,
     quoteProps: "preserve",
-    printWidth: 100,
+    printWidth: 120,
     sortPackageJson: true,
     sortImports: {
         newlinesBetween: false

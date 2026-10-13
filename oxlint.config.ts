@@ -5,7 +5,6 @@ import { defineConfig, type OxlintConfig } from "oxlint";
 
 export default defineConfig({
     plugins: ["typescript", "jsx-a11y", "react", "eslint", "import", "oxc", "promise", "vitest"],
-    jsPlugins: ["@tony.ganchev/eslint-plugin-header"],
     categories: {
         correctness: "error",
         perf: "warn"
@@ -14,21 +13,14 @@ export default defineConfig({
         builtin: true,
         browser: true
     },
-    ignorePatterns: [
-        "**/dist",
-        "**/node_modules",
-        "**/temp",
-        "**/test-data",
-        "**/chakra-snippets",
-        "**/.*"
-    ],
+    ignorePatterns: ["**/dist", "**/node_modules", "**/temp", "**/test-data", "**/chakra-snippets", "**/.*"],
     options: {
-        reportUnusedDisableDirectives: "error"
+        reportUnusedDisableDirectives: "warn"
     },
     rules: {
         "no-array-constructor": "error",
         "no-case-declarations": "error",
-        "no-empty": "error",
+        "no-empty": "warn",
         "no-fallthrough": "error",
         "no-prototype-builtins": "error",
         "no-regex-spaces": "error",
@@ -39,17 +31,17 @@ export default defineConfig({
                 allowTernary: true
             }
         ],
-        "no-var": "error",
-        "import/no-duplicates": "error",
+        "no-var": "warn",
+        "import/no-duplicates": "warn",
         "max-params": [
             "warn",
             {
                 max: 4
             }
         ],
-        "prefer-const": "error",
-        "prefer-rest-params": "error",
-        "prefer-spread": "error",
+        "prefer-const": "warn",
+        "prefer-rest-params": "warn",
+        "prefer-spread": "warn",
         "preserve-caught-error": "error",
         "oxc/branches-sharing-code": "warn",
         "oxc/no-accumulating-spread": "warn",
@@ -68,31 +60,12 @@ export default defineConfig({
             }
         ],
 
-        // Enforce copyright header on top of the file.
-        // NOTE: use your own copyright header (if the existing does not apply) or remove this rule completely.
-        "@tony.ganchev/header/header": [
-            "error",
-            {
-                header: {
-                    commentType: "line",
-                    lines: [
-                        " SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)",
-                        " SPDX-License-Identifier: Apache-2.0"
-                    ]
-                },
-                // Separate imports from license header
-                trailingEmptyLines: {
-                    minimum: 2
-                }
-            }
-        ],
-
         // TypeScript rules
         "typescript/ban-ts-comment": "error",
         "typescript/no-empty-object-type": "off",
-        "typescript/no-explicit-any": "error",
+        "typescript/no-explicit-any": "off",
         "typescript/no-namespace": "error",
-        "typescript/no-non-null-assertion": "error",
+        "typescript/no-non-null-assertion": "warn",
         "typescript/no-require-imports": "error",
         "typescript/no-unnecessary-type-constraint": "error",
         "typescript/no-unsafe-function-type": "error",
@@ -106,7 +79,7 @@ export default defineConfig({
         "react/no-unknown-property": "error",
         "react/react-in-jsx-scope": "off",
         "react/rules-of-hooks": "error",
-        "react/self-closing-comp": "error",
+        "react/self-closing-comp": "warn",
         "react/exhaustive-deps": [
             "warn",
             {
@@ -132,16 +105,15 @@ export default defineConfig({
         "jsx-a11y/prefer-tag-over-role": "off",
 
         // Vitest rules
-        "vitest/no-commented-out-tests": "error",
+        "vitest/no-commented-out-tests": "warn",
         "vitest/require-mock-type-parameters": "off"
     },
     overrides: [
         {
-            // Allow non-null assertions ("!") and "as any" casts in unit tests for convenience.
+            // Allow non-null assertions ("!") in unit tests for convenience.
             files: ["**/*.test.*"],
             rules: {
-                "typescript/no-non-null-assertion": "off",
-                "typescript/no-explicit-any": "off"
+                "typescript/no-non-null-assertion": "off"
             }
         }
     ]

@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { Box } from "@chakra-ui/react";
 import { BarController, BarElement, Chart, LinearScale, Tooltip } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
@@ -102,10 +99,7 @@ export function BarChart({ observations, label, unit, range }: BarChartProps) {
                                 const { bucket } = item.raw as BarPoint;
                                 return [
                                     `${meanLabel}: ${formatValue(bucket.mean)}`,
-                                    intl.formatMessage(
-                                        { id: "chart.count" },
-                                        { count: bucket.count }
-                                    )
+                                    intl.formatMessage({ id: "chart.count" }, { count: bucket.count })
                                 ];
                             }
                         }
@@ -147,11 +141,7 @@ export function BarChart({ observations, label, unit, range }: BarChartProps) {
     );
 }
 
-function formatBucket(
-    intl: ReturnType<typeof useIntl>,
-    bucket: Bucket,
-    size: ReturnType<typeof bucketSize>
-): string {
+function formatBucket(intl: ReturnType<typeof useIntl>, bucket: Bucket, size: ReturnType<typeof bucketSize>): string {
     if (size === "hour") {
         return intl.formatDate(bucket.start, { dateStyle: "medium", timeStyle: "short" });
     }

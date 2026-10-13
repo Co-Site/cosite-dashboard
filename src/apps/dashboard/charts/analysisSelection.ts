@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { ChartType } from "./chartTypes";
 
 /** Tabs of the analysis panel. */
@@ -31,10 +28,7 @@ export const INITIAL_SELECTION: AnalysisSelection = {
  * the first sensor for the single view, the first and second sensor for the compare view.
  * Selections of sensors that are not available (anymore) are replaced as well.
  */
-export function withDefaultSensors(
-    selection: AnalysisSelection,
-    sensorIds: string[]
-): AnalysisSelection {
+export function withDefaultSensors(selection: AnalysisSelection, sensorIds: string[]): AnalysisSelection {
     const valid = (id: string | undefined) => (id && sensorIds.includes(id) ? id : undefined);
     const [first, second = first] = sensorIds;
     return {

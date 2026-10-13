@@ -1,16 +1,7 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { Button, chakra, Flex, Group, Input, Text } from "@chakra-ui/react";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useId, useState } from "react";
-import {
-    fromLocalInputValue,
-    presetFilter,
-    TIME_RANGE_PRESETS,
-    TimeFilter,
-    toLocalInputValue
-} from "./timeRange";
+import { fromLocalInputValue, presetFilter, TIME_RANGE_PRESETS, TimeFilter, toLocalInputValue } from "./timeRange";
 
 export interface TimeRangeFilterProps {
     value: TimeFilter;

@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { SegmentGroup } from "@chakra-ui/react";
 import { createLogger } from "@open-pioneer/core";
 import { useReactiveSnapshot } from "@open-pioneer/reactivity";
@@ -18,10 +15,7 @@ const LANGUAGE_ORDER = ["en", "de"];
 export function LanguageSelector() {
     const intl = useIntl();
     const localeService = useService<LocaleService>("runtime.LocaleService");
-    const current = useReactiveSnapshot(
-        () => localeService.messageLocale.language,
-        [localeService]
-    );
+    const current = useReactiveSnapshot(() => localeService.messageLocale.language, [localeService]);
     const languages = localeService.supportedMessageLocales
         .map((locale) => locale.language)
         .sort((a, b) => order(a) - order(b));
