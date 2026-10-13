@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { Box, chakra, Flex, NativeSelect, SegmentGroup, Spinner, Text } from "@chakra-ui/react";
 import { Tooltip } from "@open-pioneer/chakra-snippets/tooltip";
 import { useMapModelValue } from "@open-pioneer/map";
@@ -67,20 +64,14 @@ export function SensorChartView(props: SensorChartViewProps) {
             </Flex>
             <Box flex="1" minHeight={0}>
                 {datastream ? (
-                    <DatastreamChart
-                        datastream={datastream}
-                        chartType={chartType}
-                        timeFilter={timeFilter}
-                    />
+                    <DatastreamChart datastream={datastream} chartType={chartType} timeFilter={timeFilter} />
                 ) : value ? (
                     <Flex gap={2} alignItems="center">
                         <Spinner size="sm" />
                         <Text>{intl.formatMessage({ id: "panel.sensor.loading" })}</Text>
                     </Flex>
                 ) : (
-                    <Text color="fg.muted">
-                        {intl.formatMessage({ id: "panel.sensor.placeholder" })}
-                    </Text>
+                    <Text color="fg.muted">{intl.formatMessage({ id: "panel.sensor.placeholder" })}</Text>
                 )}
             </Box>
         </Flex>

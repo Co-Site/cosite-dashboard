@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { AnyLayer, MapModel, WMSLayer } from "@open-pioneer/map";
 import { Coordinate } from "ol/coordinate";
 import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
@@ -102,10 +99,7 @@ export async function queryWmsFeatureInfo(
     );
 }
 
-function toValues(
-    properties: Record<string, unknown>,
-    fields: FeatureInfoField[] | undefined
-): FeatureInfoValue[] {
+function toValues(properties: Record<string, unknown>, fields: FeatureInfoField[] | undefined): FeatureInfoValue[] {
     if (!fields) {
         return Object.entries(properties).map(([property, value]) => ({
             property,

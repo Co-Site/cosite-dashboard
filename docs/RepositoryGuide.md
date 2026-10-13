@@ -425,12 +425,7 @@ import { Tooltip } from "@open-pioneer/chakra-snippets/tooltip";
 function MyComponent() {
     return (
         <Container>
-            <Tooltip
-                showArrow
-                content="Button Tooltip"
-                aria-label="A tooltip"
-                positioning={{ placement: "top" }}
-            >
+            <Tooltip showArrow content="Button Tooltip" aria-label="A tooltip" positioning={{ placement: "top" }}>
                 <Button>Button with a tooltip</Button>
             </Tooltip>
         </Container>

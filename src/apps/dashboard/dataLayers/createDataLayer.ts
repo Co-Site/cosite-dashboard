@@ -1,27 +1,12 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { createLogger } from "@open-pioneer/core";
-import {
-    GroupLayer,
-    Layer,
-    LayerFactory,
-    MapModel,
-    SimpleLayer,
-    WMSLayer
-} from "@open-pioneer/map";
+import { GroupLayer, Layer, LayerFactory, MapModel, SimpleLayer, WMSLayer } from "@open-pioneer/map";
 import { LayerTocAttributes } from "@open-pioneer/toc";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { Circle, Fill, Stroke, Style } from "ol/style";
 import { localize } from "./localizedText";
 import { createDatastreamFeature, fetchDatastream } from "./sta";
-import {
-    DataLayerGroupConfig,
-    DataLayerNode,
-    StaDatastreamLayerConfig,
-    WmsDataLayerConfig
-} from "./types";
+import { DataLayerGroupConfig, DataLayerNode, StaDatastreamLayerConfig, WmsDataLayerConfig } from "./types";
 
 const LOG = createLogger("dashboard:createDataLayer");
 
@@ -93,12 +78,7 @@ function createStaDatastreamLayer(
     const source = new VectorSource({ attributions: config.attribution });
     fetchDatastream(config.endpoint)
         .then((datastream) => {
-            const feature = createDatastreamFeature(
-                config.id,
-                config.endpoint,
-                datastream,
-                mapProjection
-            );
+            const feature = createDatastreamFeature(config.id, config.endpoint, datastream, mapProjection);
             if (feature) {
                 source.addFeature(feature);
             } else {

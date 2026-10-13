@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { Box, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
 import { MapModel } from "@open-pioneer/map";
 import { PackageIntl } from "@open-pioneer/runtime";
@@ -24,20 +21,14 @@ export function FeatureInfoPopup({ map, results, maxHeight, onClose }: FeatureIn
     const intl = useIntl();
     const hasFeatures = results?.some((result) => result.features.length > 0);
     return (
-        <PopupFrame
-            title={intl.formatMessage({ id: "featureInfo.title" })}
-            maxHeight={maxHeight}
-            onClose={onClose}
-        >
+        <PopupFrame title={intl.formatMessage({ id: "featureInfo.title" })} maxHeight={maxHeight} onClose={onClose}>
             {!results && (
                 <Flex gap={2} alignItems="center">
                     <Spinner size="sm" />
                     <Text>{intl.formatMessage({ id: "featureInfo.loading" })}</Text>
                 </Flex>
             )}
-            {results && !hasFeatures && (
-                <Text color="fg.muted">{intl.formatMessage({ id: "featureInfo.empty" })}</Text>
-            )}
+            {results && !hasFeatures && <Text color="fg.muted">{intl.formatMessage({ id: "featureInfo.empty" })}</Text>}
             <Stack gap={3}>
                 {results?.map((result) => (
                     <LayerResult key={result.layerId} map={map} result={result} />

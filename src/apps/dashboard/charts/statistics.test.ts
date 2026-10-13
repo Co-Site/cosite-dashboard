@@ -1,14 +1,5 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { describe, expect, it } from "vitest";
-import {
-    bucketSize,
-    bucketStart,
-    directionFrequencies,
-    isDirectionData,
-    meanPerBucket
-} from "./statistics";
+import { bucketSize, bucketStart, directionFrequencies, isDirectionData, meanPerBucket } from "./statistics";
 
 const range = (days: number) => ({ from: new Date(2026, 9, 1), to: new Date(2026, 9, 1 + days) });
 

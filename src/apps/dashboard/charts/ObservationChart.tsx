@@ -1,26 +1,9 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { Box } from "@chakra-ui/react";
-import {
-    Chart,
-    LinearScale,
-    LineController,
-    LineElement,
-    Plugin,
-    PointElement,
-    Tooltip
-} from "chart.js";
+import { Chart, LinearScale, LineController, LineElement, Plugin, PointElement, Tooltip } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useRef } from "react";
 import { Observation } from "../dataLayers/sta";
-import {
-    createValueFormatter,
-    formatTimeTick,
-    GRID_COLOR,
-    SERIES_COLOR,
-    TEXT_SECONDARY
-} from "./chartStyle";
+import { createValueFormatter, formatTimeTick, GRID_COLOR, SERIES_COLOR, TEXT_SECONDARY } from "./chartStyle";
 import { TimeRange } from "./timeRange";
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Tooltip);

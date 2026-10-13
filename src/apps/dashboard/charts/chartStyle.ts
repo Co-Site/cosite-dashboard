@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { PackageIntl } from "@open-pioneer/runtime";
 
 // Chart colors (canvas needs concrete values), shared by all charts.
@@ -10,12 +7,8 @@ export const TEXT_SECONDARY = "#52514e";
 export const GRID_COLOR = "rgba(0, 0, 0, 0.08)";
 
 /** Formats an observed value with its unit, e.g. `12.34 °C`. */
-export function createValueFormatter(
-    intl: PackageIntl,
-    unit: string | undefined
-): (value: number) => string {
-    return (value) =>
-        `${intl.formatNumber(value, { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ""}`;
+export function createValueFormatter(intl: PackageIntl, unit: string | undefined): (value: number) => string {
+    return (value) => `${intl.formatNumber(value, { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ""}`;
 }
 
 /** Formats a tick of a time axis (milliseconds since epoch), e.g. `09.10., 12:00`. */

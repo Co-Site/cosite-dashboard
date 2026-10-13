@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 /** Horizontal distance between the clicked position (marker) and the popup. */
 const GAP_X = 18;
 
@@ -27,11 +24,7 @@ export function getPopupMaxHeight(mapHeight: number): number {
  *   with its top edge below the clicked position.
  * - If there is not enough space below, it is moved up just enough to be fully visible.
  */
-export function getPopupOffset(
-    clickPixel: number[],
-    mapSize: number[],
-    popupSize: number[]
-): [number, number] {
+export function getPopupOffset(clickPixel: number[], mapSize: number[], popupSize: number[]): [number, number] {
     const [x = 0, y = 0] = clickPixel;
     const [mapWidth = 0, mapHeight = 0] = mapSize;
     const [width = 0, height = 0] = popupSize;

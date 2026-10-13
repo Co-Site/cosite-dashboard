@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)
-// SPDX-License-Identifier: Apache-2.0
-
 import { describe, expect, it } from "vitest";
 import shippedConfig from "../../../public/config/dataLayers.json?raw";
 import { DataLayerNode, parseDataLayers } from "./types";
@@ -69,9 +66,7 @@ describe("parseDataLayers", () => {
             wms: { layers: ["a"], featureInfo }
         });
         expect(parseDataLayers({ layers: [wms(undefined)] })).toHaveLength(1);
-        expect(
-            parseDataLayers({ layers: [wms({ fields: [{ property: "x", unit: "°C" }] })] })
-        ).toHaveLength(1);
+        expect(parseDataLayers({ layers: [wms({ fields: [{ property: "x", unit: "°C" }] })] })).toHaveLength(1);
         expect(parseDataLayers({ layers: [wms({ enabled: "no" })] })).toHaveLength(0);
         expect(parseDataLayers({ layers: [wms({ fields: [{ label: "x" }] })] })).toHaveLength(0);
     });
@@ -84,12 +79,8 @@ describe("parseDataLayers", () => {
             endpoint: "https://example.com",
             wms: { layers: ["a"], legend }
         });
-        expect(
-            parseDataLayers({ layers: [wms({ params: { LEGEND_OPTIONS: "columns:3" } })] })
-        ).toHaveLength(1);
-        expect(
-            parseDataLayers({ layers: [wms({ enabled: false, url: "https://x/legend.png" })] })
-        ).toHaveLength(1);
+        expect(parseDataLayers({ layers: [wms({ params: { LEGEND_OPTIONS: "columns:3" } })] })).toHaveLength(1);
+        expect(parseDataLayers({ layers: [wms({ enabled: false, url: "https://x/legend.png" })] })).toHaveLength(1);
         expect(parseDataLayers({ layers: [wms({ params: { columns: 3 } })] })).toHaveLength(0);
         expect(parseDataLayers({ layers: [wms("yes")] })).toHaveLength(0);
     });
@@ -122,9 +113,7 @@ describe("parseDataLayers", () => {
                 { id: "a", type: "sta-datastream", name: "Duplicate id", endpoint: "https://c" }
             ]
         });
-        expect(summarize(layers)).toEqual([
-            ["outer", "group", [["inner", "group", [["a", "sta-datastream"]]]]]
-        ]);
+        expect(summarize(layers)).toEqual([["outer", "group", [["inner", "group", [["a", "sta-datastream"]]]]]]);
     });
 });
 
