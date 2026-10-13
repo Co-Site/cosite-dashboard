@@ -5,8 +5,7 @@ description: Turn a fresh clone of the Open Pioneer Trails starter (open-pioneer
 
 # Trails starter → project
 
-> **Status: draft for discussion.** Derived from how the COSITE dashboard was built from the starter
-> (`docs/DashboardDecisions.md` §1–3, §16, branch `feature/adjust_commit_hook`). German version: `SKILL.de.md`.
+> **Status: draft for discussion.** German version: `SKILL.de.md`.
 > Keep both files in sync.
 
 ## Goal
@@ -70,7 +69,7 @@ git switch -c dev
 git switch -c feature/trails-to-project         # all following steps on this branch
 ```
 
-**Workflow** (as in COSITE): one branch per feature from `dev`, one commit per step, `git merge --no-ff` feature → `dev`
+**Workflow:** one branch per feature from `dev`, one commit per step, `git merge --no-ff` feature → `dev`
 and `dev` → `main`. Hotfixes on `main` are merged into `dev`, never rebased. Updates of the starter: `git fetch upstream`
 and merge them in a feature branch.
 
@@ -81,7 +80,7 @@ and merge them in a feature branch.
 Comes **before** any new file, otherwise the header rule fails on every new file.
 
 > **Ask the user about every setting in this step.** All values below (headers, rule levels, hook behaviour,
-> line length) are **defaults** – the choices made for COSITE – not a fixed recipe. Preferences differ a lot
+> line length) are **defaults** – a proposal – not a fixed recipe. Preferences differ a lot
 > between teams and people. Before changing anything:
 >
 > - Go through **all** settings of 2a–2d with the user and show for each one the starter's value and the default
@@ -383,7 +382,7 @@ is reformatted, at most a warning.
 - **`pnpm install` fails with "Missing time for version X of <package>"** (trust policy): the registry has the
   timestamp, only the local metadata cache does not. `pnpm cache delete <package>`, do not change the policy.
 - **License report fails after `pnpm install`:** a package with a version-specific exception in
-  `support/license-config.yaml` was updated (COSITE: `pako` 2.1.0 → 2.2.0). Check that the license is unchanged, then
+  `support/license-config.yaml` was updated (e.g. `pako` 2.1.0 → 2.2.0). Check that the license is unchanged, then
   adjust the version.
 - **`tsc` in the hook fails on `resize-observer-polyfill`:** no map package installed – the samples were removed
   before the app existed (see step 3).
@@ -395,10 +394,10 @@ is reformatted, at most a warning.
 - **Copyright headers vs. Apache 2.0:** The license asks to keep existing copyright notices in derived work. Is
   removing the Open Pioneer headers in `src/` fine (the app code there is new), or should a notice stay, e.g. in
   `NOTICE` or the README?
-- **Own header:** none (current state) or an own SPDX header for the project?
+- **Own header:** none (default) or an own SPDX header for the project?
 - **Dependency audit:** the removed weekly audit came from the Trails automation. Replace it with an own workflow
   (`pnpm audit`)?
-- **Tests in the hook:** keep (current state) or only in CI?
+- **Tests in the hook:** keep (default) or only in CI?
 - **`docs/`:** thin out the starter docs later?
 - **Deploy:** target for the new project (GitHub Pages, own server)?
 - **Delivery:** user skill (`~/.claude/skills/`), project skill (`.claude/skills/`) or a plugin for the team?

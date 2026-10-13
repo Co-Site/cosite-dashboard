@@ -2,8 +2,6 @@
 
 > **Status: Entwurf zur Diskussion.** Deutsche Fassung von [`SKILL.md`](./SKILL.md). Maßgeblich ist `SKILL.md`
 > (Englisch, mit Skill-Frontmatter, wird später von Claude benutzt). Änderungen immer in beiden Dateien nachziehen.
-> Abgeleitet aus dem Aufbau des COSITE-Dashboards (`docs/DashboardDecisions.md` §1–3, §16,
-> Branch `feature/adjust_commit_hook`).
 
 ## Ziel
 
@@ -67,7 +65,7 @@ git switch -c dev
 git switch -c feature/trails-to-project         # alle folgenden Schritte auf diesem Branch
 ```
 
-**Arbeitsweise** (wie bei COSITE): ein Branch pro Feature von `dev`, ein Commit pro Schritt, `git merge --no-ff`
+**Arbeitsweise:** ein Branch pro Feature von `dev`, ein Commit pro Schritt, `git merge --no-ff`
 Feature → `dev` und `dev` → `main`. Hotfixes auf `main` werden in `dev` gemergt, nie rebased. Updates des Starters:
 `git fetch upstream` und in einem Feature-Branch mergen.
 
@@ -78,7 +76,7 @@ Feature → `dev` und `dev` → `main`. Hotfixes auf `main` werden in `dev` geme
 Kommt **vor** jeder neuen Datei, sonst schlägt die Header-Regel bei jeder neuen Datei an.
 
 > **Jede Einstellung in diesem Schritt beim Nutzer abfragen.** Alle Werte unten (Header, Regel-Stufen, Hook-Verhalten,
-> Zeilenlänge) sind **Standardwerte**, nämlich die Entscheidungen für COSITE, kein festes Rezept. Die Vorlieben
+> Zeilenlänge) sind **Standardwerte**, also ein Vorschlag, kein festes Rezept. Die Vorlieben
 > unterscheiden sich zwischen Teams und Personen stark. Vor jeder Änderung:
 >
 > - **Alle** Einstellungen aus 2a–2d mit dem Nutzer durchgehen und jeweils den Wert des Starters und den hier
@@ -226,7 +224,7 @@ durch, die Datei wird umformatiert, höchstens eine Warnung.
 - **`pnpm install` bricht ab mit „Missing time for version X of <paket>“** (Trust-Policy): Die Registry hat den
   Zeitstempel, nur der lokale Metadaten-Cache nicht. `pnpm cache delete <paket>`, die Policy nicht ändern.
 - **Lizenzreport scheitert nach `pnpm install`:** Ein Paket mit versionsgebundener Ausnahme in
-  `support/license-config.yaml` wurde aktualisiert (COSITE: `pako` 2.1.0 → 2.2.0). Prüfen, dass die Lizenz gleich
+  `support/license-config.yaml` wurde aktualisiert (z. B. `pako` 2.1.0 → 2.2.0). Prüfen, dass die Lizenz gleich
   geblieben ist, dann die Version anpassen.
 - **`tsc` im Hook scheitert an `resize-observer-polyfill`:** Kein Kartenpaket installiert, die Samples wurden gelöscht,
   bevor es die App gab (siehe Schritt 3).
@@ -238,10 +236,10 @@ durch, die Datei wird umformatiert, höchstens eine Warnung.
 - **Copyright-Header vs. Apache 2.0:** Die Lizenz verlangt, bestehende Copyright-Hinweise in abgeleiteten Werken zu
   erhalten. Ist das Entfernen der Open-Pioneer-Header in `src/` in Ordnung (der App-Code dort ist neu), oder soll ein
   Hinweis bleiben, z. B. in einer `NOTICE`-Datei oder im README?
-- **Eigener Header:** keiner (aktueller Stand) oder ein eigener SPDX-Header für das Projekt?
+- **Eigener Header:** keiner (Standard) oder ein eigener SPDX-Header für das Projekt?
 - **Dependency-Audit:** Der entfernte wöchentliche Audit kam aus der Trails-Automatisierung. Durch einen eigenen
   Workflow (`pnpm audit`) ersetzen?
-- **Tests im Hook:** behalten (aktueller Stand) oder nur in der CI?
+- **Tests im Hook:** behalten (Standard) oder nur in der CI?
 - **`docs/`:** die Starter-Doku später ausdünnen?
 - **Deploy:** Ziel für das neue Projekt (GitHub Pages, eigener Server)?
 - **Auslieferung:** User-Skill (`~/.claude/skills/`), Projekt-Skill (`.claude/skills/`) oder Plugin fürs Team?
