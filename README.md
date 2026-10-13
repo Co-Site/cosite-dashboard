@@ -1,14 +1,12 @@
 # COSITE Dashboard
 
-A web dashboard for the COSITE project. It brings weather data from the German Weather Service (DWD) and
-observations from in-situ sensors (OGC SensorThings API) together on one map and lets you analyse them.
+A web dashboard for the COSITE project. It brings weather data from different sources e.g. the German Weather Service (DWD) and
+observations from in-situ sensors (OGC SensorThings API) together on one map and lets you analyze them.
 
 ## Features
 
-- **Map layers:** DWD web map services, e.g. the ICON 2 m air temperature forecast and the hourly radar
-  precipitation (RADOLAN RW), each with its own transparency slider in the table of contents.
-- **Sensors:** datastreams of the COSITE SensorThings API (currently soil temperature and soil moisture in
-  Cologne-Kalk). Clicking a sensor point lists all sensors at that location.
+- **Map layers:** OGS-WMS based layers with opacity sliders
+- **Sensors:** datastreams of the COSITE SensorThings API. Clicking a sensor point lists all sensors at that location.
 - **Analysis panel:** observations of a single sensor or two sensors side by side, as line chart, bar chart
   (mean per hour, day or week), box plot or wind rose (basic version). Time range: last 24 hours, 7 or 30 days,
   the entire period, or a custom range.
