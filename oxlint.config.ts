@@ -5,7 +5,6 @@ import { defineConfig, type OxlintConfig } from "oxlint";
 
 export default defineConfig({
     plugins: ["typescript", "jsx-a11y", "react", "eslint", "import", "oxc", "promise", "vitest"],
-    jsPlugins: ["@tony.ganchev/eslint-plugin-header"],
     categories: {
         correctness: "error",
         perf: "warn"
@@ -65,25 +64,6 @@ export default defineConfig({
                 caughtErrorsIgnorePattern: "^_",
                 args: "after-used",
                 argsIgnorePattern: "^_"
-            }
-        ],
-
-        // Enforce copyright header on top of the file.
-        // NOTE: use your own copyright header (if the existing does not apply) or remove this rule completely.
-        "@tony.ganchev/header/header": [
-            "error",
-            {
-                header: {
-                    commentType: "line",
-                    lines: [
-                        " SPDX-FileCopyrightText: 2023-2025 Open Pioneer project (https://github.com/open-pioneer)",
-                        " SPDX-License-Identifier: Apache-2.0"
-                    ]
-                },
-                // Separate imports from license header
-                trailingEmptyLines: {
-                    minimum: 2
-                }
             }
         ],
 
