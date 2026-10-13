@@ -532,13 +532,11 @@ interface FileSpec {
 function readLicenseConfig(path: string): LicenseConfig {
     try {
         const content = readFileSync(path, "utf-8");
-        // oxlint-disable-next-line @typescript-eslint/no-explicit-any
         const rawConfig = loadYaml(content) as any;
 
         const config: LicenseConfig = {
             allowedLicenses: rawConfig.allowedLicenses,
             overrideLicenses: rawConfig.overrideLicenses?.map(
-                // oxlint-disable-next-line @typescript-eslint/no-explicit-any
                 (rawEntry: any): OverrideLicenseEntry => {
                     const entry: OverrideLicenseEntry = {
                         name: rawEntry.name,
@@ -551,13 +549,11 @@ function readLicenseConfig(path: string): LicenseConfig {
                 }
             ),
             additionalLicenses: rawConfig.additionalLicenses?.map(
-                // oxlint-disable-next-line @typescript-eslint/no-explicit-any
                 (rawEntry: any): AdditionalLicensesEntry => {
                     const entry: AdditionalLicensesEntry = {
                         name: rawEntry.name,
                         version: rawEntry.version,
                         license: rawEntry.license,
-                        // oxlint-disable-next-line @typescript-eslint/no-explicit-any
                         licenseFiles: rawEntry.licenseFiles.map((file: any) => {
                             return {
                                 type: "custom",
@@ -575,13 +571,11 @@ function readLicenseConfig(path: string): LicenseConfig {
     }
 }
 
-// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 function readFileSpecs(rawSpecs: any): FileSpec[] | undefined {
     if (!rawSpecs) {
         return undefined;
     }
 
-    // oxlint-disable-next-line @typescript-eslint/no-explicit-any
     const readRawSpec = (rawSpec: any): FileSpec => {
         // Default is "package" when using a raw string
         if (typeof rawSpec === "string") {
@@ -655,7 +649,6 @@ function findFirstMatch(directory: string, candidates: string[]): string[] {
  * Returns the project's name from the package.json file in the repository root.
  */
 function getProjectName(): string {
-    // oxlint-disable-next-line @typescript-eslint/no-explicit-any
     let data: any;
     try {
         data = JSON.parse(readFileSync(PACKAGE_JSON_PATH, "utf-8"));

@@ -4,8 +4,6 @@
  */
 import "@testing-library/jest-dom/vitest";
 
-/* oxlint-disable @typescript-eslint/no-explicit-any */
-
 if (typeof window !== "undefined") {
     // Running with mocked dom (happy-dom or jsdom)
     if (!globalThis.ResizeObserver) {
