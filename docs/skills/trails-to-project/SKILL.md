@@ -23,7 +23,8 @@ This skill turns a fresh clone into a **blank project**:
   Open Pioneer project in `src/`, header lint rule).
 - **Kept on purpose:** `docs/**` (reference for now), `support/**`, `patches/**`, `LICENSE`, the `build-docs`
   script (for own packages later).
-- **Lint and commit hook** fix what they can instead of failing; only real bugs block a commit.
+- **Lint and commit hook** fix what they can instead of failing; only real bugs block a commit (default –
+  every lint, format and hook setting is asked, see step 2).
 
 ## Inputs
 
@@ -38,6 +39,8 @@ Ask the user for these before starting (defaults in brackets):
 | `origin` URL  | own Git repository (optional, step 1)                      | none (skip remote)      |
 
 The element tag is the app name and **must contain a hyphen** (custom element rule), e.g. `map-app`.
+
+The lint, format and hook settings are asked separately at the start of step 2 – **all** of them, see there.
 
 ## Prerequisites
 
@@ -77,6 +80,19 @@ and merge them in a feature branch.
 
 Comes **before** any new file, otherwise the header rule fails on every new file.
 
+> **Ask the user about every setting in this step.** All values below (headers, rule levels, hook behaviour,
+> line length) are **defaults** – the choices made for COSITE – not a fixed recipe. Preferences differ a lot
+> between teams and people. Before changing anything:
+>
+> - Go through **all** settings of 2a–2d with the user and show for each one the starter's value and the default
+>   proposed here. Also offer the rules of `oxlint.config.ts` that are not in the table (current level from the file).
+> - Ask about the formatter options too (`oxfmt.config.ts`: `printWidth`, `tabWidth`, `semi`, `singleQuote`,
+>   `trailingComma`) and about which checks the hook runs (lockfile, format, lint, `tsc`, tests) and whether lint
+>   fixes or fails.
+> - Ask in small groups (e.g. headers · rule levels · hook · formatting), not one setting after the other.
+>   "Take the defaults" is a valid answer for a group.
+> - Never apply a default silently. Note the chosen values in the commit message.
+
 **2a. Remove the copyright headers in `src/` and the header rule.** `src/` is the project's code. Remove the two lines
 
 ```ts
@@ -107,7 +123,7 @@ Then remove the rule and the plugin:
 
 **2b. Relax the lint rules** in `oxlint.config.ts`:
 
-| Setting                                                                            | Before  | After   |
+| Setting                                                                            | Starter | Default |
 | ---------------------------------------------------------------------------------- | ------- | ------- |
 | `typescript/no-explicit-any`                                                       | `error` | `off`   |
 | `prefer-const`, `no-var`, `no-empty`, `prefer-rest-params`, `prefer-spread`        | `error` | `warn`  |

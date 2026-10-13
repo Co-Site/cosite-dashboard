@@ -19,7 +19,8 @@ des Trails-Teams aufruft. Dieser Skill macht aus einem frischen Klon ein **Blank
   Copyright-Header des Open-Pioneer-Projekts in `src/`, Header-Lint-Regel).
 - **Bewusst behalten:** `docs/**` (vorerst als Nachschlagewerk), `support/**`, `patches/**`, `LICENSE`, das
   Script `build-docs` (für spätere eigene Pakete).
-- **Lint und Commit-Hook** korrigieren selbst, was geht, statt abzubrechen. Nur echte Fehler blockieren einen Commit.
+- **Lint und Commit-Hook** korrigieren selbst, was geht, statt abzubrechen. Nur echte Fehler blockieren einen Commit
+  (Standard – jede Einstellung zu Lint, Formatierung und Hook wird abgefragt, siehe Schritt 2).
 
 ## Eingaben
 
@@ -34,6 +35,9 @@ Vor dem Start beim Nutzer abfragen (Standard in Klammern):
 | `origin`-URL   | eigenes Git-Repository (optional, Schritt 1)              | keine (Remote entfällt) |
 
 Der Element-Tag ist der App-Name und **muss einen Bindestrich enthalten** (Regel für Custom Elements), z. B. `map-app`.
+
+Die Einstellungen für Lint, Formatierung und Hook werden zu Beginn von Schritt 2 eigens abgefragt, und zwar **alle**,
+siehe dort.
 
 ## Voraussetzungen
 
@@ -73,6 +77,20 @@ Feature → `dev` und `dev` → `main`. Hotfixes auf `main` werden in `dev` geme
 
 Kommt **vor** jeder neuen Datei, sonst schlägt die Header-Regel bei jeder neuen Datei an.
 
+> **Jede Einstellung in diesem Schritt beim Nutzer abfragen.** Alle Werte unten (Header, Regel-Stufen, Hook-Verhalten,
+> Zeilenlänge) sind **Standardwerte**, nämlich die Entscheidungen für COSITE, kein festes Rezept. Die Vorlieben
+> unterscheiden sich zwischen Teams und Personen stark. Vor jeder Änderung:
+>
+> - **Alle** Einstellungen aus 2a–2d mit dem Nutzer durchgehen und jeweils den Wert des Starters und den hier
+>   vorgeschlagenen Standard zeigen. Auch die Regeln aus `oxlint.config.ts` anbieten, die nicht in der Tabelle stehen
+>   (aktuelle Stufe aus der Datei).
+> - Auch die Formatter-Optionen abfragen (`oxfmt.config.ts`: `printWidth`, `tabWidth`, `semi`, `singleQuote`,
+>   `trailingComma`) sowie, welche Prüfungen der Hook ausführt (Lockfile, Format, Lint, `tsc`, Tests) und ob Lint
+>   korrigiert oder abbricht.
+> - In kleinen Gruppen fragen (z. B. Header · Regel-Stufen · Hook · Formatierung), nicht Einstellung für Einstellung.
+>   „Standardwerte nehmen“ ist eine gültige Antwort für eine Gruppe.
+> - Nie einen Standardwert stillschweigend übernehmen. Die gewählten Werte in der Commit-Nachricht festhalten.
+
 **2a. Copyright-Header in `src/` und die Header-Regel entfernen.** `src/` ist der Code des Projekts. Die zwei Zeilen
 
 ```ts
@@ -103,15 +121,15 @@ Danach Regel und Plugin entfernen:
 
 **2b. Lint-Regeln lockern** in `oxlint.config.ts`:
 
-| Einstellung                                                                        | Vorher  | Nachher |
-| ---------------------------------------------------------------------------------- | ------- | ------- |
-| `typescript/no-explicit-any`                                                       | `error` | `off`   |
-| `prefer-const`, `no-var`, `no-empty`, `prefer-rest-params`, `prefer-spread`        | `error` | `warn`  |
-| `import/no-duplicates`, `react/self-closing-comp`, `vitest/no-commented-out-tests` | `error` | `warn`  |
-| `typescript/no-non-null-assertion`                                                 | `error` | `warn`  |
-| `options.reportUnusedDisableDirectives`                                            | `error` | `warn`  |
-| `no-unused-vars`                                                                   | `warn`  | `warn`  |
-| `categories.correctness` (echte Fehler, z. B. `react/rules-of-hooks`)              | `error` | `error` |
+| Einstellung                                                                        | Starter | Standard |
+| ---------------------------------------------------------------------------------- | ------- | -------- |
+| `typescript/no-explicit-any`                                                       | `error` | `off`    |
+| `prefer-const`, `no-var`, `no-empty`, `prefer-rest-params`, `prefer-spread`        | `error` | `warn`   |
+| `import/no-duplicates`, `react/self-closing-comp`, `vitest/no-commented-out-tests` | `error` | `warn`   |
+| `typescript/no-non-null-assertion`                                                 | `error` | `warn`   |
+| `options.reportUnusedDisableDirectives`                                            | `error` | `warn`   |
+| `no-unused-vars`                                                                   | `warn`  | `warn`   |
+| `categories.correctness` (echte Fehler, z. B. `react/rules-of-hooks`)              | `error` | `error`  |
 
 Im Override für `**/*.test.*` die Zeile `"typescript/no-explicit-any": "off"` streichen (gilt jetzt global) und den
 Kommentar auf `!` beschränken. Die Kommentare, die nur `no-explicit-any` abgeschaltet haben, entfernen, sie erzeugen
