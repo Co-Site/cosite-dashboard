@@ -99,10 +99,7 @@ export async function queryWmsFeatureInfo(
     );
 }
 
-function toValues(
-    properties: Record<string, unknown>,
-    fields: FeatureInfoField[] | undefined
-): FeatureInfoValue[] {
+function toValues(properties: Record<string, unknown>, fields: FeatureInfoField[] | undefined): FeatureInfoValue[] {
     if (!fields) {
         return Object.entries(properties).map(([property, value]) => ({
             property,

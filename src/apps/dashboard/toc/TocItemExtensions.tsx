@@ -61,11 +61,7 @@ function ItemPortal({ element, children }: { element: HTMLElement; children: Rea
     }
     return createPortal(
         // Aligned with the item title: collapse button + gap + checkbox control and label gap.
-        <Box
-            paddingInlineStart="calc(2.25rem + 0.5rem + 1.625rem)"
-            paddingInlineEnd={2}
-            paddingBottom={2}
-        >
+        <Box paddingInlineStart="calc(2.25rem + 0.5rem + 1.625rem)" paddingInlineEnd={2} paddingBottom={2}>
             {children}
         </Box>,
         container

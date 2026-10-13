@@ -64,20 +64,14 @@ export function SensorChartView(props: SensorChartViewProps) {
             </Flex>
             <Box flex="1" minHeight={0}>
                 {datastream ? (
-                    <DatastreamChart
-                        datastream={datastream}
-                        chartType={chartType}
-                        timeFilter={timeFilter}
-                    />
+                    <DatastreamChart datastream={datastream} chartType={chartType} timeFilter={timeFilter} />
                 ) : value ? (
                     <Flex gap={2} alignItems="center">
                         <Spinner size="sm" />
                         <Text>{intl.formatMessage({ id: "panel.sensor.loading" })}</Text>
                     </Flex>
                 ) : (
-                    <Text color="fg.muted">
-                        {intl.formatMessage({ id: "panel.sensor.placeholder" })}
-                    </Text>
+                    <Text color="fg.muted">{intl.formatMessage({ id: "panel.sensor.placeholder" })}</Text>
                 )}
             </Box>
         </Flex>

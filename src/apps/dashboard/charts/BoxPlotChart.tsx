@@ -4,13 +4,7 @@ import { CategoryScale, Chart, LinearScale, Tooltip } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useRef } from "react";
 import { Observation } from "../dataLayers/sta";
-import {
-    createValueFormatter,
-    GRID_COLOR,
-    SERIES_COLOR,
-    SERIES_FILL,
-    TEXT_SECONDARY
-} from "./chartStyle";
+import { createValueFormatter, GRID_COLOR, SERIES_COLOR, SERIES_FILL, TEXT_SECONDARY } from "./chartStyle";
 
 Chart.register(BoxPlotController, BoxAndWiskers, CategoryScale, LinearScale, Tooltip);
 

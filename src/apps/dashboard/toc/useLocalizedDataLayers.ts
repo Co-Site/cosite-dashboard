@@ -10,10 +10,7 @@ import { localizeDataLayers } from "../dataLayers/createDataLayer";
  */
 export function useLocalizedDataLayers(map: MapModel | undefined) {
     const localeService = useService<LocaleService>("runtime.LocaleService");
-    const language = useReactiveSnapshot(
-        () => localeService.messageLocale.language,
-        [localeService]
-    );
+    const language = useReactiveSnapshot(() => localeService.messageLocale.language, [localeService]);
     useEffect(() => {
         if (map) {
             localizeDataLayers(map, language);

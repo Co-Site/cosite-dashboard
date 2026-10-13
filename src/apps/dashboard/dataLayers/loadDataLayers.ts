@@ -9,9 +9,7 @@ export const DATA_LAYERS_URL = import.meta.env.VITE_DATA_LAYERS_URL || "./config
 export async function loadDataLayers(url = DATA_LAYERS_URL): Promise<DataLayerNode[]> {
     const response = await fetch(url, { cache: "no-cache" });
     if (!response.ok) {
-        throw new Error(
-            `Failed to load data layer configuration from ${url}: HTTP ${response.status}`
-        );
+        throw new Error(`Failed to load data layer configuration from ${url}: HTTP ${response.status}`);
     }
     return parseDataLayers(await response.json());
 }

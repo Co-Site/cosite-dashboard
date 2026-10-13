@@ -37,10 +37,7 @@ export interface StaDatastreamProperties {
 /**
  * Fetches a datastream including the location of its thing.
  */
-export async function fetchDatastream(
-    endpoint: string,
-    signal?: AbortSignal
-): Promise<StaDatastream> {
+export async function fetchDatastream(endpoint: string, signal?: AbortSignal): Promise<StaDatastream> {
     const url = new URL(endpoint);
     url.searchParams.set("$expand", "Thing/Locations,ObservedProperty");
     const response = await fetch(url, { signal });
@@ -72,8 +69,7 @@ export function createDatastreamFeature(
     const properties: StaDatastreamProperties = {
         dataLayerId,
         datastreamUrl: endpoint,
-        observationsUrl:
-            datastream["Observations@iot.navigationLink"] ?? `${endpoint}/Observations`,
+        observationsUrl: datastream["Observations@iot.navigationLink"] ?? `${endpoint}/Observations`,
         name: datastream.name,
         unit: displayUnit(datastream.unitOfMeasurement?.symbol),
         observedProperty: datastream.ObservedProperty?.name,

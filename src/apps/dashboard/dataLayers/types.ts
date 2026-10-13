@@ -103,9 +103,7 @@ export type DataLayerType = DataLayerNode["type"];
  */
 export function parseDataLayers(json: unknown): DataLayerNode[] {
     if (!isObject(json) || !Array.isArray(json.layers)) {
-        throw new Error(
-            "Invalid data layer configuration: expected an object with a 'layers' array."
-        );
+        throw new Error("Invalid data layer configuration: expected an object with a 'layers' array.");
     }
     return parseNodes(json.layers, "layers", new Set());
 }
@@ -156,18 +154,13 @@ function validateEntry(entry: unknown): string | undefined {
     if (entry.visible != null && typeof entry.visible !== "boolean") {
         return "property 'visible' must be a boolean.";
     }
-    if (
-        entry.opacity != null &&
-        (typeof entry.opacity !== "number" || entry.opacity < 0 || entry.opacity > 1)
-    ) {
+    if (entry.opacity != null && (typeof entry.opacity !== "number" || entry.opacity < 0 || entry.opacity > 1)) {
         return "property 'opacity' must be a number between 0 and 1.";
     }
 
     const type = entry.type as DataLayerType;
     if (type === "group") {
-        return Array.isArray(entry.layers)
-            ? undefined
-            : "groups require 'layers' (list of layers or groups).";
+        return Array.isArray(entry.layers) ? undefined : "groups require 'layers' (list of layers or groups).";
     }
 
     if (typeof entry.endpoint !== "string" || entry.endpoint === "") {
@@ -216,9 +209,7 @@ function validateFeatureInfo(featureInfo: unknown): string | undefined {
                 (field.label == null || isLocalizedText(field.label)) &&
                 (field.unit == null || typeof field.unit === "string")
         );
-    return validFields
-        ? undefined
-        : "'wms.featureInfo.fields' must be a list of { property, label?, unit? }.";
+    return validFields ? undefined : "'wms.featureInfo.fields' must be a list of { property, label?, unit? }.";
 }
 
 function validateLegend(legend: unknown): string | undefined {
@@ -235,10 +226,7 @@ function validateLegend(legend: unknown): string | undefined {
         return "'wms.legend.url' must be a string.";
     }
     const params = legend.params;
-    if (
-        params != null &&
-        (!isObject(params) || !Object.values(params).every((v) => typeof v === "string"))
-    ) {
+    if (params != null && (!isObject(params) || !Object.values(params).every((v) => typeof v === "string"))) {
         return "'wms.legend.params' must be an object with string values.";
     }
     return undefined;

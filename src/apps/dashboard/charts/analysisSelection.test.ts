@@ -16,10 +16,11 @@ describe("withDefaultSensors", () => {
 
     it("keeps valid selections and replaces unknown ones", () => {
         const charts = INITIAL_SELECTION.charts;
-        const selection = withDefaultSensors(
-            { tab: "compare", single: "c", compare: ["unknown", "c"], charts },
-            ["a", "b", "c"]
-        );
+        const selection = withDefaultSensors({ tab: "compare", single: "c", compare: ["unknown", "c"], charts }, [
+            "a",
+            "b",
+            "c"
+        ]);
         expect(selection).toEqual({ tab: "compare", single: "c", compare: ["a", "c"], charts });
     });
 

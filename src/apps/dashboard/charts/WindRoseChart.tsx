@@ -36,8 +36,7 @@ export function WindRoseChart({ observations, label, unit }: WindRoseChartProps)
         if (!canvas) {
             return;
         }
-        const formatPercent = (value: number) =>
-            `${intl.formatNumber(value, { maximumFractionDigits: 1 })} %`;
+        const formatPercent = (value: number) => `${intl.formatNumber(value, { maximumFractionDigits: 1 })} %`;
         const chart = new Chart<"polarArea">(canvas, {
             type: "polarArea",
             data: {

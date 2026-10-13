@@ -57,13 +57,7 @@ export function fromLocalInputValue(value: string): Date | undefined {
     if (!match) {
         return undefined;
     }
-    const [year, month, day, hours, minutes] = match.slice(1).map(Number) as [
-        number,
-        number,
-        number,
-        number,
-        number
-    ];
+    const [year, month, day, hours, minutes] = match.slice(1).map(Number) as [number, number, number, number, number];
     const date = new Date(year, month - 1, day, hours, minutes);
     return Number.isNaN(date.getTime()) ? undefined : date;
 }

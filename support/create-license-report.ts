@@ -76,9 +76,7 @@ function analyzeLicenses(
 
     const usedOverrides = new Set<OverrideLicenseEntry>();
     const getOverrideEntry = (name: string, version: string) => {
-        const entry = config.overrideLicenses?.find(
-            (e) => e.name === name && e.version === version
-        );
+        const entry = config.overrideLicenses?.find((e) => e.name === name && e.version === version);
         if (entry) {
             usedOverrides.add(entry);
         }
@@ -100,9 +98,7 @@ function analyzeLicenses(
             if (!overrideEntry?.license) {
                 if (!licenses || licenses === "Unknown") {
                     unknownLicenses = true;
-                    console.warn(
-                        `Failed to detect licenses of dependency ${dependencyInfo} at ${path}`
-                    );
+                    console.warn(`Failed to detect licenses of dependency ${dependencyInfo} at ${path}`);
                 } else if (!config.allowedLicenses.includes(licenses)) {
                     disallowedLicenses = true;
                     console.warn(
@@ -133,9 +129,7 @@ function analyzeLicenses(
 
             const licenseTexts = licenseFiles.map(readProjectFile);
             if (licenseTexts.length === 0) {
-                console.warn(
-                    `Failed to detect license text of dependency ${dependencyInfo} in ${path}`
-                );
+                console.warn(`Failed to detect license text of dependency ${dependencyInfo} in ${path}`);
                 missingLicenseText = true;
             }
 
@@ -194,14 +188,10 @@ function getAdditionalLicenses(
 
         if (!licenseSpec || licenseSpec === "Unknown") {
             unknownLicenses = true;
-            console.warn(
-                `Failed to detect licenses of dependency ${name} at "additionalLicenses" configuration`
-            );
+            console.warn(`Failed to detect licenses of dependency ${name} at "additionalLicenses" configuration`);
         } else if (!config.allowedLicenses.includes(licenseSpec)) {
             disallowedLicenses = true;
-            console.warn(
-                `License '${licenseSpec}' of dependency ${name} is not allowed by configuration.`
-            );
+            console.warn(`License '${licenseSpec}' of dependency ${name} is not allowed by configuration.`);
         }
 
         const licenseTexts =
@@ -210,10 +200,9 @@ function getAdditionalLicenses(
                     try {
                         return readFileSync(resolve(THIS_DIR, file.path), "utf-8");
                     } catch (e) {
-                        throw new Error(
-                            `Failed to read license file for project ${name} at ${file.path}: ${e}`,
-                            { cause: e }
-                        );
+                        throw new Error(`Failed to read license file for project ${name} at ${file.path}: ${e}`, {
+                            cause: e
+                        });
                     }
                 } else {
                     console.warn(
@@ -244,9 +233,7 @@ function getAdditionalLicenses(
 /**
  * Yields all (path, version) pairs for the given project.
  */
-function* walkProjectLocations(
-    project: PnpmLicenseProject
-): Generator<{ path: string; version: string }> {
+function* walkProjectLocations(project: PnpmLicenseProject): Generator<{ path: string; version: string }> {
     const versions = project.versions;
     const paths = project.paths;
     if (paths.length !== versions.length) {
@@ -536,34 +523,30 @@ function readLicenseConfig(path: string): LicenseConfig {
 
         const config: LicenseConfig = {
             allowedLicenses: rawConfig.allowedLicenses,
-            overrideLicenses: rawConfig.overrideLicenses?.map(
-                (rawEntry: any): OverrideLicenseEntry => {
-                    const entry: OverrideLicenseEntry = {
-                        name: rawEntry.name,
-                        version: rawEntry.version,
-                        license: rawEntry.license,
-                        licenseFiles: readFileSpecs(rawEntry.licenseFiles),
-                        noticeFiles: readFileSpecs(rawEntry.noticeFiles)
-                    };
-                    return entry;
-                }
-            ),
-            additionalLicenses: rawConfig.additionalLicenses?.map(
-                (rawEntry: any): AdditionalLicensesEntry => {
-                    const entry: AdditionalLicensesEntry = {
-                        name: rawEntry.name,
-                        version: rawEntry.version,
-                        license: rawEntry.license,
-                        licenseFiles: rawEntry.licenseFiles.map((file: any) => {
-                            return {
-                                type: "custom",
-                                path: file.custom
-                            };
-                        })
-                    };
-                    return entry;
-                }
-            )
+            overrideLicenses: rawConfig.overrideLicenses?.map((rawEntry: any): OverrideLicenseEntry => {
+                const entry: OverrideLicenseEntry = {
+                    name: rawEntry.name,
+                    version: rawEntry.version,
+                    license: rawEntry.license,
+                    licenseFiles: readFileSpecs(rawEntry.licenseFiles),
+                    noticeFiles: readFileSpecs(rawEntry.noticeFiles)
+                };
+                return entry;
+            }),
+            additionalLicenses: rawConfig.additionalLicenses?.map((rawEntry: any): AdditionalLicensesEntry => {
+                const entry: AdditionalLicensesEntry = {
+                    name: rawEntry.name,
+                    version: rawEntry.version,
+                    license: rawEntry.license,
+                    licenseFiles: rawEntry.licenseFiles.map((file: any) => {
+                        return {
+                            type: "custom",
+                            path: file.custom
+                        };
+                    })
+                };
+                return entry;
+            })
         };
         return config;
     } catch (e) {
@@ -588,9 +571,7 @@ function readFileSpecs(rawSpecs: any): FileSpec[] | undefined {
             return { type: "custom", path: rawSpec.custom };
         }
 
-        throw new Error(
-            `Invalid file spec in license config: ${JSON.stringify(rawSpec, undefined, 4)}`
-        );
+        throw new Error(`Invalid file spec in license config: ${JSON.stringify(rawSpec, undefined, 4)}`);
     };
     return rawSpecs.map(readRawSpec);
 }

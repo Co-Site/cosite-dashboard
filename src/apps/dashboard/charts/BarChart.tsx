@@ -99,10 +99,7 @@ export function BarChart({ observations, label, unit, range }: BarChartProps) {
                                 const { bucket } = item.raw as BarPoint;
                                 return [
                                     `${meanLabel}: ${formatValue(bucket.mean)}`,
-                                    intl.formatMessage(
-                                        { id: "chart.count" },
-                                        { count: bucket.count }
-                                    )
+                                    intl.formatMessage({ id: "chart.count" }, { count: bucket.count })
                                 ];
                             }
                         }
@@ -144,11 +141,7 @@ export function BarChart({ observations, label, unit, range }: BarChartProps) {
     );
 }
 
-function formatBucket(
-    intl: ReturnType<typeof useIntl>,
-    bucket: Bucket,
-    size: ReturnType<typeof bucketSize>
-): string {
+function formatBucket(intl: ReturnType<typeof useIntl>, bucket: Bucket, size: ReturnType<typeof bucketSize>): string {
     if (size === "hour") {
         return intl.formatDate(bucket.start, { dateStyle: "medium", timeStyle: "short" });
     }

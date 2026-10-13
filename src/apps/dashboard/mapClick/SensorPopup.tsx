@@ -22,30 +22,17 @@ export interface SensorPopupProps {
 export function SensorPopup({ map, datastreams, maxHeight, onClose, onShow }: SensorPopupProps) {
     const intl = useIntl();
     return (
-        <PopupFrame
-            title={intl.formatMessage({ id: "sensorPopup.title" })}
-            maxHeight={maxHeight}
-            onClose={onClose}
-        >
+        <PopupFrame title={intl.formatMessage({ id: "sensorPopup.title" })} maxHeight={maxHeight} onClose={onClose}>
             <Stack gap={3}>
                 {datastreams.map((datastream) => (
-                    <SensorEntry
-                        key={datastream.dataLayerId}
-                        map={map}
-                        datastream={datastream}
-                        onShow={onShow}
-                    />
+                    <SensorEntry key={datastream.dataLayerId} map={map} datastream={datastream} onShow={onShow} />
                 ))}
             </Stack>
         </PopupFrame>
     );
 }
 
-function SensorEntry(props: {
-    map: MapModel;
-    datastream: StaDatastreamProperties;
-    onShow(dataLayerId: string): void;
-}) {
+function SensorEntry(props: { map: MapModel; datastream: StaDatastreamProperties; onShow(dataLayerId: string): void }) {
     const { map, datastream, onShow } = props;
     const intl = useIntl();
     // Localized name from the data layer configuration; the datastream name comes from the server.
@@ -61,12 +48,7 @@ function SensorEntry(props: {
                     {details}
                 </Text>
             )}
-            <Button
-                size="xs"
-                variant="outline"
-                mt={1}
-                onClick={() => onShow(datastream.dataLayerId)}
-            >
+            <Button size="xs" variant="outline" mt={1} onClick={() => onShow(datastream.dataLayerId)}>
                 <LuChartLine />
                 {intl.formatMessage({ id: "sensorPopup.show" })}
             </Button>

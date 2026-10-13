@@ -75,9 +75,7 @@ export function BottomPanel(props: BottomPanelProps) {
                 >
                     <Tabs.Root
                         value={selection.tab}
-                        onValueChange={(e) =>
-                            onSelectionChange({ ...selection, tab: e.value as AnalysisTab })
-                        }
+                        onValueChange={(e) => onSelectionChange({ ...selection, tab: e.value as AnalysisTab })}
                         variant="line"
                         size="lg"
                         // Only the active tab loads and renders its charts.
@@ -120,18 +118,14 @@ export function BottomPanel(props: BottomPanelProps) {
                             <TimeRangeFilter value={timeFilter} onChange={onTimeFilterChange} />
                         </Flex>
                         {sensors.length === 0 ? (
-                            <Text color="fg.muted">
-                                {intl.formatMessage({ id: "panel.sensor.none" })}
-                            </Text>
+                            <Text color="fg.muted">{intl.formatMessage({ id: "panel.sensor.none" })}</Text>
                         ) : (
                             <>
                                 <Tabs.Content value="single" flex="1" minHeight={0} pt={0}>
                                     <SensorChartView
                                         sensors={sensors}
                                         value={selection.single}
-                                        onChange={(single) =>
-                                            onSelectionChange({ ...selection, single })
-                                        }
+                                        onChange={(single) => onSelectionChange({ ...selection, single })}
                                         chartType={selection.charts.single}
                                         onChartTypeChange={(type) => setChartType("single", type)}
                                         timeFilter={timeFilter}
@@ -139,11 +133,7 @@ export function BottomPanel(props: BottomPanelProps) {
                                     />
                                 </Tabs.Content>
                                 <Tabs.Content value="compare" flex="1" minHeight={0} pt={0}>
-                                    <Flex
-                                        direction={{ base: "column", md: "row" }}
-                                        gap={6}
-                                        height="100%"
-                                    >
+                                    <Flex direction={{ base: "column", md: "row" }} gap={6} height="100%">
                                         <Box flex="1" minWidth={0} minHeight={0}>
                                             <SensorChartView
                                                 sensors={sensors}

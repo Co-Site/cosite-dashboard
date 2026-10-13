@@ -13,14 +13,7 @@ export default defineConfig({
         builtin: true,
         browser: true
     },
-    ignorePatterns: [
-        "**/dist",
-        "**/node_modules",
-        "**/temp",
-        "**/test-data",
-        "**/chakra-snippets",
-        "**/.*"
-    ],
+    ignorePatterns: ["**/dist", "**/node_modules", "**/temp", "**/test-data", "**/chakra-snippets", "**/.*"],
     options: {
         reportUnusedDisableDirectives: "warn"
     },

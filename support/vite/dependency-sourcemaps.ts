@@ -52,10 +52,7 @@ export function dependencySourcemaps(): Plugin {
                 } catch (e) {
                     // Vite's dependency optimizer runs rolldown with `logLevel: "silent"`, which
                     // swallows `this.warn`. Use `console.warn` so the message is actually rendered.
-                    console.warn(
-                        `[dependency-sourcemaps] Failed to parse source map for ${moduleId}:`,
-                        e
-                    );
+                    console.warn(`[dependency-sourcemaps] Failed to parse source map for ${moduleId}:`, e);
                 }
 
                 if (!map) {
@@ -67,10 +64,7 @@ export function dependencySourcemaps(): Plugin {
                 // when validating sourcemap paths:
                 //
                 //      Sourcemap for "foo/trails-openlayers-base-packages/node_modules/.vite/deps/globals-D5aHNsrt.js" points to a source file outside its package: "foo/trails-openlayers-base-packages/node_modules/.pnpm/geotiff@3.0.5/node_modules/geotiff/src/globals.js"
-                if (
-                    !Array.isArray(map.sourcesContent) ||
-                    map.sourcesContent.some((c: unknown) => c == null)
-                ) {
+                if (!Array.isArray(map.sourcesContent) || map.sourcesContent.some((c: unknown) => c == null)) {
                     // console.debug(
                     //     `[dependency-sourcemaps] Ignoring source map for ${moduleId} since it contains non-inlined sources`
                     // );

@@ -52,9 +52,7 @@ function useLegendUrls(map: MapModel, layerId: string): string[] {
                   .flatMap((sublayer) => {
                       const url =
                           sublayer.legend ??
-                          (sublayer.name
-                              ? getLegendGraphicUrl(layer.url, sublayer.name)
-                              : undefined);
+                          (sublayer.name ? getLegendGraphicUrl(layer.url, sublayer.name) : undefined);
                       return url ? [url] : [];
                   });
         return sources.map((url) => withParams(url, config.params));

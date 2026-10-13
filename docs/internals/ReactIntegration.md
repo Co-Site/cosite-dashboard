@@ -66,9 +66,7 @@ function render(Component: ComponentType, props: Record<string, unknown>) {
                 locale={this.locale}
                 styles={this.styles}
             >
-                <PackageContext.Provider value={this.packageContext}>
-                    {contentNode}
-                </PackageContext.Provider>
+                <PackageContext.Provider value={this.packageContext}>{contentNode}</PackageContext.Provider>
             </CustomChakraProvider>
         </StrictMode>
     );

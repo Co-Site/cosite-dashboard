@@ -66,10 +66,7 @@ export function useDatastreamProperties(
     return useMemo(() => (feature ? getDatastreamProperties(feature) : undefined), [feature]);
 }
 
-function getSensorSource(
-    map: MapModel,
-    dataLayerId: string | undefined
-): VectorSource<FeatureLike> | undefined {
+function getSensorSource(map: MapModel, dataLayerId: string | undefined): VectorSource<FeatureLike> | undefined {
     const layer = dataLayerId ? map.layers.getLayerById(dataLayerId) : undefined;
     if (!layer || !isLayer(layer) || !(layer.olLayer instanceof VectorLayer)) {
         return undefined;

@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    bucketSize,
-    bucketStart,
-    directionFrequencies,
-    isDirectionData,
-    meanPerBucket
-} from "./statistics";
+import { bucketSize, bucketStart, directionFrequencies, isDirectionData, meanPerBucket } from "./statistics";
 
 const range = (days: number) => ({ from: new Date(2026, 9, 1), to: new Date(2026, 9, 1 + days) });
 

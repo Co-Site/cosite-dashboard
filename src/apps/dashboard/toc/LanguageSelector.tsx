@@ -15,10 +15,7 @@ const LANGUAGE_ORDER = ["en", "de"];
 export function LanguageSelector() {
     const intl = useIntl();
     const localeService = useService<LocaleService>("runtime.LocaleService");
-    const current = useReactiveSnapshot(
-        () => localeService.messageLocale.language,
-        [localeService]
-    );
+    const current = useReactiveSnapshot(() => localeService.messageLocale.language, [localeService]);
     const languages = localeService.supportedMessageLocales
         .map((locale) => locale.language)
         .sort((a, b) => order(a) - order(b));

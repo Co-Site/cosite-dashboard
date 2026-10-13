@@ -37,9 +37,7 @@ export function DatastreamChart({ datastream, chartType, timeFilter }: Datastrea
         const controller = new AbortController();
         setState({ kind: "loading" });
         fetchObservations(datastream.observationsUrl, range, controller.signal)
-            .then(({ observations, truncated }) =>
-                setState({ kind: "loaded", observations, truncated })
-            )
+            .then(({ observations, truncated }) => setState({ kind: "loaded", observations, truncated }))
             .catch((error) => {
                 if (!isAbortError(error)) {
                     LOG.error("Failed to load observations.", error);
@@ -62,11 +60,7 @@ export function DatastreamChart({ datastream, chartType, timeFilter }: Datastrea
                     {source}
                 </Text>
                 {state.kind === "loaded" && (
-                    <Summary
-                        observations={state.observations}
-                        unit={datastream.unit}
-                        truncated={state.truncated}
-                    />
+                    <Summary observations={state.observations} unit={datastream.unit} truncated={state.truncated} />
                 )}
             </Flex>
             <Box flex="1" minHeight={0} position="relative">
@@ -76,9 +70,7 @@ export function DatastreamChart({ datastream, chartType, timeFilter }: Datastrea
                         <Text>{intl.formatMessage({ id: "chart.loading" })}</Text>
                     </Flex>
                 )}
-                {state.kind === "error" && (
-                    <Text color="fg.error">{intl.formatMessage({ id: "chart.error" })}</Text>
-                )}
+                {state.kind === "error" && <Text color="fg.error">{intl.formatMessage({ id: "chart.error" })}</Text>}
                 {state.kind === "loaded" && state.observations.length === 0 && (
                     <Text color="fg.muted">{intl.formatMessage({ id: "chart.empty" })}</Text>
                 )}
@@ -116,11 +108,7 @@ function TypedChart(props: {
     }
 }
 
-function Summary(props: {
-    observations: Observation[];
-    unit: string | undefined;
-    truncated: boolean;
-}) {
+function Summary(props: { observations: Observation[]; unit: string | undefined; truncated: boolean }) {
     const { observations, unit, truncated } = props;
     const intl = useIntl();
     const stats = useMemo(() => {

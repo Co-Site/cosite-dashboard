@@ -189,10 +189,7 @@ export function AppUI() {
                     <NumberInputRoot value={leftValue} onValueChange={(e) => setLeftValue(e.value)}>
                         <NumberInputField />
                     </NumberInputRoot>
-                    <NumberInputRoot
-                        value={rightValue}
-                        onValueChange={(e) => setRightValue(e.value)}
-                    >
+                    <NumberInputRoot value={rightValue} onValueChange={(e) => setRightValue(e.value)}>
                         <NumberInputField />
                     </NumberInputRoot>
                     <Button onClick={onMultiplyClicked}>Multiply!</Button>

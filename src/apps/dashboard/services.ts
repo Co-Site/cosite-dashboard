@@ -1,10 +1,5 @@
 import { createLogger } from "@open-pioneer/core";
-import {
-    MapConfig,
-    MapConfigProvider,
-    MapConfigProviderOptions,
-    SimpleLayer
-} from "@open-pioneer/map";
+import { MapConfig, MapConfigProvider, MapConfigProviderOptions, SimpleLayer } from "@open-pioneer/map";
 import { LocaleService, ServiceOptions } from "@open-pioneer/runtime";
 import TileLayer from "ol/layer/Tile";
 import { fromLonLat } from "ol/proj";
