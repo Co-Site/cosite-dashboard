@@ -81,7 +81,7 @@
                         "featureInfo": {
                             "fields": [
                                 {
-                                    "property": "GRAY_INDEX",
+                                    "property": "RW_HDF5",
                                     "label": {
                                         "de": "Niederschlag (1 h)",
                                         "en": "Precipitation (1 h)"
