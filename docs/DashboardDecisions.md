@@ -419,7 +419,8 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 
 - **Ablauf:** Feature-Branch von `dev` → ein Commit pro Schritt → `git merge --no-ff <feature>` nach `dev` → wenn
   `dev` stabil ist, `git merge --no-ff dev` nach `main`. `--no-ff`, damit jedes Feature als Merge-Commit sichtbar
-  bleibt.
+  bleibt. Danach `dev` mit `git merge --ff-only main` auf `main` nachziehen, damit beide auf demselben Commit stehen
+  (der Merge-Commit entsteht sonst nur auf `main`).
 - **Nachziehen:** Einen Feature-Branch vor dem Merge auf das aktuelle `dev` zu rebasen ist in Ordnung (er ist noch
   nicht geteilt). Kommt etwas direkt auf `main` (Hotfix), wird `main` in `dev` **gemergt**, nicht rebased: Ein Rebase
   würde die Commits von `dev` neu schreiben und passt dann nicht mehr zu den schon gemergten Feature-Branches.
