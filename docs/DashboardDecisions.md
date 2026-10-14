@@ -163,7 +163,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 - **Auffällig in den Daten:** Am 06.10. stehen zwei Messwerte mit genau `0` (12:34 und 12:37 UTC), vermutlich
   Sensor-Ausreißer. Bewusst nicht gefiltert, das wäre eine fachliche Entscheidung.
 - **Ergänzt (Demo):** DWD-Layer `RADOLAN-RW` („angeeichtes Radarkomposit“, gemessene Niederschlagssumme der letzten
-  Stunde, nur Deutschland; GetFeatureInfo liefert `GRAY_INDEX` in mm und `TIME`). Gewählt statt der ICON-Vorhersage
+  Stunde, nur Deutschland; GetFeatureInfo liefert `RW_HDF5` in mm und `TIME`). Gewählt statt der ICON-Vorhersage
   `Icon_reg025_fd_sl_TOTPREC`, die seit Modellstart aufsummiert und schwer zu deuten ist. Startet ausgeblendet, damit
   er die Temperatur nicht verdeckt. Dazu Datastream 15 (SMT100 Bodenfeuchte in %, gleicher Knoten und Standort wie
   Datastream 14).
