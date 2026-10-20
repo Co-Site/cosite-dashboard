@@ -24,6 +24,10 @@ messages:
       placeholder: "Sensor wählen"
       none: "Keine Sensoren konfiguriert."
       loading: "Lade Sensor …"
+    colocated:
+      label: "Weitere Sensoren am Standort"
+      noValue: "–"
+      show: "{sensor} anzeigen (letzter Wert: {value})"
   featureInfo:
     legend: "Legende"
     title: "Information"

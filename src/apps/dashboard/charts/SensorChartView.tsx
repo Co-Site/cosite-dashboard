@@ -3,9 +3,10 @@ import { Tooltip } from "@open-pioneer/chakra-snippets/tooltip";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useId } from "react";
-import { StaSensor, useDatastreamProperties } from "../dataLayers/useStaSensors";
+import { StaSensor, useColocatedSensors, useDatastreamProperties } from "../dataLayers/useStaSensors";
 import { CHART_TYPE_ICONS, CHART_TYPES, ChartType } from "./chartTypes";
 import { DatastreamChart } from "./DatastreamChart";
+import { SensorTiles } from "./SensorTiles";
 import { TimeFilter } from "./timeRange";
 
 export interface SensorChartViewProps {
@@ -27,6 +28,7 @@ export interface SensorChartViewProps {
 
 /**
  * Selection of a sensor and a chart type, and the chart of the sensor's observations.
+ * Other sensors at the same site are shown as tiles next to the chart to switch between them.
  */
 export function SensorChartView(props: SensorChartViewProps) {
     const { sensors, value, onChange, chartType, onChartTypeChange, timeFilter, label } = props;
@@ -34,6 +36,7 @@ export function SensorChartView(props: SensorChartViewProps) {
     const map = useMapModelValue();
     const selectId = useId();
     const datastream = useDatastreamProperties(map, value);
+    const colocated = useColocatedSensors(map, value);
 
     return (
         <Flex direction="column" height="100%" gap={2} minWidth={0}>
@@ -62,18 +65,21 @@ export function SensorChartView(props: SensorChartViewProps) {
                 </NativeSelect.Root>
                 <ChartTypeSelector value={chartType} onChange={onChartTypeChange} />
             </Flex>
-            <Box flex="1" minHeight={0}>
-                {datastream ? (
-                    <DatastreamChart datastream={datastream} chartType={chartType} timeFilter={timeFilter} />
-                ) : value ? (
-                    <Flex gap={2} alignItems="center">
-                        <Spinner size="sm" />
-                        <Text>{intl.formatMessage({ id: "panel.sensor.loading" })}</Text>
-                    </Flex>
-                ) : (
-                    <Text color="fg.muted">{intl.formatMessage({ id: "panel.sensor.placeholder" })}</Text>
-                )}
-            </Box>
+            <Flex flex="1" minHeight={0} gap={3}>
+                <Box flex="1" minWidth={0}>
+                    {datastream ? (
+                        <DatastreamChart datastream={datastream} chartType={chartType} timeFilter={timeFilter} />
+                    ) : value ? (
+                        <Flex gap={2} alignItems="center">
+                            <Spinner size="sm" />
+                            <Text>{intl.formatMessage({ id: "panel.sensor.loading" })}</Text>
+                        </Flex>
+                    ) : (
+                        <Text color="fg.muted">{intl.formatMessage({ id: "panel.sensor.placeholder" })}</Text>
+                    )}
+                </Box>
+                {colocated.length > 0 && <SensorTiles sensors={colocated} onSelect={onChange} />}
+            </Flex>
         </Flex>
     );
 }

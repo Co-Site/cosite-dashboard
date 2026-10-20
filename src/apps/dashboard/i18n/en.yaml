@@ -24,6 +24,10 @@ messages:
       placeholder: "Choose a sensor"
       none: "No sensors configured."
       loading: "Loading sensor …"
+    colocated:
+      label: "Other sensors at this site"
+      noValue: "–"
+      show: "Show {sensor} (latest value: {value})"
   featureInfo:
     legend: "Legend"
     title: "Information"
