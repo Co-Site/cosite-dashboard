@@ -27,6 +27,7 @@
                     "wms": {
                         "layers": ["Icon_reg025_fd_sl_T2M"],
                         "featureInfo": {
+                            "format": "application/json",
                             "fields": [
                                 {
                                     "property": "Temperature_height_level_above_ground",
@@ -79,6 +80,7 @@
                     "wms": {
                         "layers": ["RADOLAN-RW"],
                         "featureInfo": {
+                            "format": "application/json",
                             "fields": [
                                 {
                                     "property": "RW_HDF5",

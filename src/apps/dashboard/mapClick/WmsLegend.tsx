@@ -4,6 +4,7 @@ import { useReactiveSnapshot } from "@open-pioneer/reactivity";
 import { useIntl } from "open-pioneer:react-hooks";
 import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
 import { DataLayerNode, WmsLegendConfig } from "../dataLayers/types";
+import { peekWmsCapabilities } from "../dataLayers/wmsCapabilities";
 
 /**
  * Legend image(s) of a WMS layer, as configured in the data layer configuration (`wms.legend`).
@@ -47,11 +48,12 @@ function useLegendUrls(map: MapModel, layerId: string): string[] {
             ? [config.url]
             : layer.sublayers
                   .getRecursiveLayers()
-                  // Fall back to a standard GetLegendGraphic request if the capabilities
-                  // do not provide a legend URL (or could not be loaded).
+                  // Legend URL from the capabilities (loaded by the map or by the dashboard),
+                  // otherwise a standard GetLegendGraphic request.
                   .flatMap((sublayer) => {
                       const url =
                           sublayer.legend ??
+                          peekWmsCapabilities(layer.url)?.layers.find((l) => l.name === sublayer.name)?.legendUrl ??
                           (sublayer.name ? getLegendGraphicUrl(layer.url, sublayer.name) : undefined);
                       return url ? [url] : [];
                   });

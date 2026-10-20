@@ -74,6 +74,7 @@ export function normalizeWmsEndpoint(input: string): string {
 }
 
 const cache = new Map<string, Promise<WmsCapabilities>>();
+const loaded = new Map<string, WmsCapabilities>();
 
 /**
  * Loads and parses the capabilities of a WMS (once per endpoint and session, failures are not cached).
@@ -84,18 +85,17 @@ export function fetchWmsCapabilities(endpoint: string): Promise<WmsCapabilities>
     if (!capabilities) {
         capabilities = loadCapabilities(endpoint);
         cache.set(endpoint, capabilities);
-        capabilities.catch(() => cache.delete(endpoint));
+        capabilities.then(
+            (result) => loaded.set(endpoint, result),
+            () => cache.delete(endpoint)
+        );
     }
     return capabilities;
 }
 
-/** Returns the capabilities if they have already been loaded (e.g. for a synchronous fallback). */
-export async function getCachedWmsCapabilities(endpoint: string): Promise<WmsCapabilities | undefined> {
-    try {
-        return await cache.get(endpoint);
-    } catch {
-        return undefined;
-    }
+/** Returns the capabilities if they have already been loaded (no request). */
+export function peekWmsCapabilities(endpoint: string): WmsCapabilities | undefined {
+    return loaded.get(endpoint);
 }
 
 async function loadCapabilities(endpoint: string): Promise<WmsCapabilities> {

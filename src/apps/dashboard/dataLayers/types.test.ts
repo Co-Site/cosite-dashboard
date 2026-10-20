@@ -57,6 +57,16 @@ describe("parseDataLayers", () => {
         expect(parseDataLayers({ layers: [{ ...entry, description: { de: 1 } }] })).toHaveLength(0);
     });
 
+    it("requires names except for WMS layers", () => {
+        const wms = { id: "wms", type: "wms", endpoint: "https://example.com", wms: { layers: ["a"] } };
+        expect(parseDataLayers({ layers: [wms] })).toHaveLength(1);
+        expect(parseDataLayers({ layers: [{ ...wms, name: "" }] })).toHaveLength(0);
+        expect(parseDataLayers({ layers: [{ id: "g", type: "group", layers: [] }] })).toHaveLength(0);
+        expect(parseDataLayers({ layers: [{ id: "s", type: "sta-datastream", endpoint: "https://x" }] })).toHaveLength(
+            0
+        );
+    });
+
     it("validates the optional feature info configuration", () => {
         const wms = (featureInfo: unknown) => ({
             id: "wms",
@@ -67,7 +77,9 @@ describe("parseDataLayers", () => {
         });
         expect(parseDataLayers({ layers: [wms(undefined)] })).toHaveLength(1);
         expect(parseDataLayers({ layers: [wms({ fields: [{ property: "x", unit: "°C" }] })] })).toHaveLength(1);
+        expect(parseDataLayers({ layers: [wms({ format: "application/geo+json" })] })).toHaveLength(1);
         expect(parseDataLayers({ layers: [wms({ enabled: "no" })] })).toHaveLength(0);
+        expect(parseDataLayers({ layers: [wms({ format: "" })] })).toHaveLength(0);
         expect(parseDataLayers({ layers: [wms({ fields: [{ label: "x" }] })] })).toHaveLength(0);
     });
 
