@@ -176,19 +176,56 @@ export async function fetchObservations(
         if (!response.ok) {
             throw new Error(`Failed to load observations: HTTP ${response.status}`);
         }
-        const page = (await response.json()) as {
-            "value": { phenomenonTime: string; result: unknown }[];
-            "@iot.nextLink"?: string;
-        };
-        for (const { phenomenonTime, result } of page.value) {
-            // phenomenonTime may be an interval ("start/end"), use its start.
-            const time = Date.parse(phenomenonTime.split("/")[0] ?? "");
-            if (typeof result === "number" && !Number.isNaN(time)) {
-                observations.push({ time, value: result });
+        const page = (await response.json()) as ObservationPage;
+        for (const raw of page.value) {
+            const observation = parseObservation(raw);
+            if (observation) {
+                observations.push(observation);
             }
         }
         next = page["@iot.nextLink"];
     }
     /* oxlint-enable no-await-in-loop */
     return { observations: observations.slice(0, MAX_OBSERVATIONS), truncated: !!next };
+}
+
+/**
+ * Loads the newest numeric observation of a datastream (independent of any time range),
+ * or `undefined` if the newest observation is not numeric or there is none.
+ */
+export async function fetchLatestObservation(
+    observationsUrl: string,
+    signal?: AbortSignal
+): Promise<Observation | undefined> {
+    const url = new URL(observationsUrl);
+    url.searchParams.set("$orderby", "phenomenonTime desc");
+    url.searchParams.set("$select", "phenomenonTime,result");
+    url.searchParams.set("$top", "1");
+    const response = await fetch(url, { signal });
+    if (!response.ok) {
+        throw new Error(`Failed to load the latest observation: HTTP ${response.status}`);
+    }
+    const page = (await response.json()) as ObservationPage;
+    const raw = page.value[0];
+    return raw ? parseObservation(raw) : undefined;
+}
+
+/** A page of observations as returned by the server (with `$select=phenomenonTime,result`). */
+interface ObservationPage {
+    "value": RawObservation[];
+    "@iot.nextLink"?: string;
+}
+
+export interface RawObservation {
+    phenomenonTime: string;
+    result: unknown;
+}
+
+/**
+ * Converts an observation of the server, or returns `undefined` if its result is not numeric.
+ * The phenomenon time may be an interval ("start/end"), its start is used.
+ */
+export function parseObservation({ phenomenonTime, result }: RawObservation): Observation | undefined {
+    const time = Date.parse(phenomenonTime.split("/")[0] ?? "");
+    return typeof result === "number" && !Number.isNaN(time) ? { time, value: result } : undefined;
 }
