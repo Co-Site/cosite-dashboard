@@ -411,10 +411,11 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 
 ## 15. Offene Punkte und Ideen
 
-- **Legende absichern:** Bild bei Ladefehler ausblenden; Parameter unabhängig von Groß-/Kleinschreibung ersetzen
-  (siehe Abschnitt 12). Vorerst bewusst nicht umgesetzt.
-- **Upstream-Issue:** Fest eingebautes `LANGUAGE=ger` in `@open-pioneer/map` melden. Wird es behoben, nutzt die App
-  automatisch die Legenden-URLs aus den Capabilities.
+- **Upstream-Issue:** Fest eingebautes `LANGUAGE=ger` in `@open-pioneer/map` melden (dazu: eine Endpoint-URL mit
+  `?` ergibt eine kaputte Capabilities-URL). Wird es behoben, nutzt die App automatisch die Legenden-URLs aus den
+  Capabilities. Für eigene WMS umgeht die App das schon (Abschnitt 17).
+- **Eigene WMS ausbauen:** FeatureInfo für Dienste ohne GeoJSON (GML über `ol/format/WMSGetFeatureInfo`; HTML nur
+  bereinigt), Style-Auswahl (z. B. barrierefreier RADOLAN-Style), Zeitdimension, Zoom auf die Ausdehnung des Layers.
 - **Weitere Diagramme:** Linie, Balken, Boxplot und Windrose gibt es (Abschnitt 8). Weitere nach Bedarf.
 - **CI-Deploy:** Der Job `deploy` in `.github/workflows/test-and-build.yml` ist noch an das Repository
   `open-pioneer/trails-starter` gebunden (`github.repository == …`) und läuft daher auch in `Co-Site/cosite-dashboard`
@@ -454,3 +455,49 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 upstream no-push`). Updates vom Starter bei Bedarf mit `git fetch upstream` holen und in einem Feature-Branch
       mergen.
     - `toc-native` und `dashboard` liegen nur lokal.
+
+## 17. Eigene WMS-Layer (temporär)
+
+🔴 **Was:** Kundenwunsch: WMS-Layer für die aktuelle Sitzung hinzufügen, ohne etwas zu speichern, mit möglichst
+wenig Eingaben (höchstens ein Titel, nicht mehrere Textfelder).
+
+- **Entscheidung:** Ein Formular unter dem TOC-Titel mit zwei Feldern: URL des Dienstes, dann ein Suchfeld mit
+  Vorschlägen für den Layer. Der Titel kommt aus den Capabilities, getippt wird er nie.
+- **Warum Suchfeld statt Layername-Feld:** Technische Namen wie `Icon_reg025_fd_sl_T2M` kennt kaum jemand. Die
+  Capabilities müssen ohnehin geladen werden (Titel, FeatureInfo-Format, Fehlermeldungen), die Suche ist nur die
+  Oberfläche darüber. Profis tippen den exakten Namen und drücken Enter. Kein Baum und keine Komplettliste:
+  DWD hat 206 Layer (ca. 1 MB Capabilities), nach drei Buchstaben bleiben meist 5–20 Treffer, höchstens 30 werden
+  angezeigt.
+- **Was die Capabilities liefern** (geprüft an DWD, BKG TopPlusOpen, NRW DOP, BGR BÜK200, BfN, LANUV):
+    - Ja: Layerliste, Titel, `queryable`, GetFeatureInfo-Formate, Legenden-URL, CRS, Zeitdimension, Ausdehnung.
+    - Teilweise: Abstract (oft leer oder gleich dem Titel), Anbieter, Nutzungsbedingungen.
+    - Nein: englische Texte (kein Dienst ist mehrsprachig, DWD antwortet auf jedes `LANGUAGE` mit einem Fehler), brauchbare
+      Attribution (bei keinem Dienst vorhanden, nur langer Freitext in `Fees`/`AccessConstraints`), Feldlabels
+      (nur rohe Namen wie `RW_HDF5`), verlässliche Einheiten.
+    - Folge für die Konfiguration: `name` ist bei WMS optional (Titel aus den Capabilities), `featureInfo.format`
+      neu. Gepflegte Texte auf Deutsch und Englisch, Attribution, Feldlabels und Legendenparameter bleiben manuell.
+- **Wo die Layer landen:** Gewünscht war die bestehende Gruppe „WMS“. Geht nicht: Gruppen in
+  `@open-pioneer/map` 1.5.0 haben ein festes Kinder-Array (`GroupLayerCollection`), und ein Layer verlässt eine
+  Gruppe nur, wenn sie zerstört wird (mitsamt Kindern). Die WMS-Gruppe neu zu bauen hätte den Zustand der
+  konfigurierten Layer zurückgesetzt. Stattdessen eigene Gruppe „Eigene WMS“ direkt darunter, die bei jeder Änderung
+  neu gebaut wird; Sichtbarkeit und Deckkraft der eigenen Layer werden übernommen, sie laden dabei kurz neu.
+- **FeatureInfo:** Bisher war `INFO_FORMAT=application/json` fest eingebaut. Das kann nur GeoServer; ArcGIS und
+  MapServer liefern `application/geo+json`, manche Dienste gar kein JSON (4 von 5 getesteten fremden Diensten wären
+  gescheitert). Jetzt wird das Format aus den Capabilities gewählt, ohne passendes Format wird der Layer nicht
+  abgefragt (statt bei jedem Klick „Anfrage fehlgeschlagen“).
+- **Attribution:** `@open-pioneer/map` setzt ohne eigene Attribution `AccessConstraints` oder `Fees` als
+  Quellenangabe (DWD: nackte URL, BfN: „Nicht für Planungszwecke geeignet“). Die App setzt sie jetzt immer selbst
+  (leer, wenn nicht konfiguriert). Anbieter und Nutzungsbedingungen eigener Layer stehen in der Layerbeschreibung.
+- **Stolpersteine:**
+    - `ol/format/WMSCapabilities` vererbt CRS nur über eine Ebene (die Zwischenebene wird erst nach ihren Kindern
+      ergänzt). Bei DWD stehen die CRS nur an der Wurzel, die Layer liegen drei Ebenen tiefer. Die App vererbt die
+      CRS deshalb selbst.
+    - Der XML-Parser von happy-dom (Tests) bricht das DWD-Dokument nach 74 Layern ab, im Browser sind es alle 206.
+      Die Unit-Tests nutzen ein kleines Beispieldokument.
+    - Die Legenden-URL der Capabilities wird nur für eigene Layer genutzt: Bei DWD enthält sie schon
+      `width=20&height=20`, die konfigurierten Legendenparameter (`WIDTH=12`) kamen zusätzlich dazu. Parameter werden
+      jetzt unabhängig von Groß-/Kleinschreibung ersetzt, Legendenbilder mit Ladefehler ausgeblendet (BGR liefert eine
+      Legenden-URL mit `%26` statt `&`).
+    - Dienste ohne CORS lassen sich nicht hinzufügen (Fehlermeldung im Formular, kein Proxy).
+- **Offen:** siehe Abschnitt 15 (GML-FeatureInfo, Styles, Zeitdimension, Zoom auf den Layer).
+- **Commits:** `fd05554`, `2b15b8b`, `ac864aa`, `ba0a99a`, `d5ca6bb`

@@ -83,7 +83,7 @@ und stehen im TOC weiter oben.
 | ------------------------- | ----------- | ------------------------------------------------------------------------------- |
 | `id`                      | ja          | Eindeutige ID (über die ganze Datei), auch Layer-ID in der Karte                |
 | `type`                    | ja          | `group`, `wms` oder `sta-datastream`                                            |
-| `name`                    | ja          | Anzeigename im TOC (Text oder pro Sprache, s. u.)                               |
+| `name`                    | ja¹         | Anzeigename im TOC (Text oder pro Sprache, s. u.)                               |
 | `description`             | nein        | Beschreibung im ⋮-Menü des Layers (Text oder pro Sprache)                       |
 | `visible`                 | nein        | Initial sichtbar (Default `true`)                                               |
 | `opacity`                 | nein        | Deckkraft 0–1 (Default `1`)                                                     |
@@ -92,10 +92,23 @@ und stehen im TOC weiter oben.
 | `attribution`             | nein        | Quellenangabe auf der Karte                                                     |
 | `wms.layers`              | bei `wms`   | Liste der WMS-Layernamen aus den Capabilities                                   |
 | `wms.featureInfo.enabled` | nein        | GetFeatureInfo beim Kartenklick (Default `true`)                                |
+| `wms.featureInfo.format`  | nein        | Antwortformat (GeoJSON); ohne Angabe aus den Capabilities, s. u.                |
 | `wms.featureInfo.fields`  | nein        | Anzuzeigende Attribute `{ property, label?, unit? }`; ohne Angabe: alle         |
 | `wms.legend.enabled`      | nein        | Legende im FeatureInfo-Popup (Default `true`)                                   |
 | `wms.legend.url`          | nein        | Eigene Legenden-URL statt Capabilities/GetLegendGraphic                         |
 | `wms.legend.params`       | nein        | Zusätzliche URL-Parameter, z. B. `{ "LEGEND_OPTIONS": "columns:4;fontSize:9" }` |
+
+¹ Bei `wms` optional: Ohne `name` zeigt das TOC den Titel aus den Capabilities (Sprache des Dienstes, meist Deutsch),
+bis dahin den Layernamen. Ohne `description` wird der Abstract übernommen, wenn er sich vom Titel unterscheidet.
+Dafür lädt die App die Capabilities selbst (`dataLayers/wmsCapabilities.ts`, ohne `LANGUAGE`, einmal pro Dienst).
+
+**FeatureInfo-Format:** Die App liest nur GeoJSON. Ohne `format` wählt sie aus den Capabilities `application/json`
+(GeoServer), sonst `application/geo+json` (ArcGIS, MapServer). Bietet der Dienst beides nicht an oder ist der Layer
+nicht `queryable`, wird er beim Kartenklick nicht abgefragt. Ein festes `format` spart das Laden der Capabilities
+(bei DWD ca. 1 MB), deshalb steht es bei den DWD-Layern in der Konfiguration.
+
+**Attribution:** Nur `attribution` aus der Konfiguration. `@open-pioneer/map` würde sonst `AccessConstraints` oder
+`Fees` des Dienstes als Quellenangabe zeigen (bei DWD eine nackte URL).
 
 Beispiel WMS-Layer:
 
@@ -203,10 +216,35 @@ Der TOC ist das unveränderte `@open-pioneer/toc`. Eigene Inhalte pro Layer komm
 - Das Dashboard liefert so für jeden WMS-Layer einen **Transparenz-Slider** unter dem Titel
   (0 % = deckend, Startwert aus `opacity` im JSON).
 - Hintergrund und Risiken: [DashboardDecisions.md](./DashboardDecisions.md), Abschnitt 9.
-- **TOC-Panel** (`toc/TocPanel.tsx`): enthält Überschrift, Sprachumschalter und `Toc`. Es lässt sich nach links
+- Temporäre Layer (s. u.) bekommen neben dem Slider einen **Entfernen-Button**.
+- **TOC-Panel** (`toc/TocPanel.tsx`): enthält Überschrift, Sprachumschalter, „WMS hinzufügen“ und `Toc`. Es lässt sich nach links
   einklappen, dann bleibt oben links nur ein Ebenen-Button. Das Panel liegt bewusst **nicht** in einer `MapAnchor`,
   sondern als eigene Ebene über der Karte: `MapAnchor` schneidet Inhalte ab (`overflow: hidden`) und fängt in ihrem
   Bereich Kartenklicks ab. Der Rahmen hat `pointer-events: none`, nur Panel und Button reagieren auf Klicks.
+
+## Eigene WMS (temporär)
+
+Unter dem TOC-Titel öffnet „WMS hinzufügen“ ein Formular (`toc/AddWmsLayer.tsx`). Gespeichert wird nichts, nach dem
+Neuladen sind die Layer weg.
+
+1. **URL des Dienstes** eingeben und laden. Eine eingefügte GetCapabilities-URL wird bereinigt
+   (`SERVICE`, `REQUEST`, `VERSION`, `LANGUAGE` entfernt, andere Parameter wie `map=` bleiben;
+   `normalizeWmsEndpoint`). `fetchWmsCapabilities` lädt die Capabilities 1.3.0 einmal pro Dienst und Sitzung.
+2. **Layer suchen:** Suchfeld mit Vorschlägen (`searchLayers`). Exakter Name zuerst, dann Treffer im Titel, dann im
+   Namen; höchstens 30 Treffer mit Hinweis auf weitere. Pfeiltasten und Enter, Klick auf einen Treffer fügt ihn hinzu.
+3. **Hinzufügen** baut eine normale `WmsDataLayerConfig` mit `temporary: true`: Titel aus den Capabilities, Abstract
+   und Anbieter/Nutzungsbedingungen/Gebühren als Beschreibung (Info-Icon im TOC), FeatureInfo-Format wie oben oder
+   aus. Abgelehnt werden Layer ohne EPSG:3857 und doppelte Layer.
+
+Die Layer liegen in der Gruppe **„Eigene WMS“** (`user-wms`) direkt unter der Gruppe mit den konfigurierten
+WMS-Layern (`dataLayers/userWmsLayers.ts`). Gruppen in `@open-pioneer/map` haben feste Kinder, deshalb wird die Gruppe
+bei jedem Hinzufügen oder Entfernen neu gebaut; Sichtbarkeit und Deckkraft der Layer werden übernommen. Der neueste
+Layer steht oben. Ohne eigene Layer verschwindet die Gruppe. Die UI erreicht die `LayerFactory` über
+`useService("map.LayerFactory")` (in `build.config.mjs` unter `ui.references`).
+
+Für temporäre Layer lädt `WMSLayer` keine Capabilities (`fetchCapabilities: false`), die App hat sie schon. Die
+Legende kommt dann aus der `LegendURL` der Capabilities, sonst per GetLegendGraphic. Legendenbilder, die nicht laden,
+werden ausgeblendet.
 
 ## Sprache (i18n)
 
