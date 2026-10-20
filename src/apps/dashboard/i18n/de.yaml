@@ -6,6 +6,7 @@ messages:
   toc:
     collapse: "Ebenen ausblenden"
     expand: "Ebenen einblenden"
+    loadError: "Kartenbild konnte nicht geladen werden."
     transparency: "Transparenz"
   language:
     label: "Sprache"

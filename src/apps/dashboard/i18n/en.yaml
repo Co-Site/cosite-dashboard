@@ -6,6 +6,7 @@ messages:
   toc:
     collapse: "Hide layers"
     expand: "Show layers"
+    loadError: "Map image could not be loaded."
     transparency: "Transparency"
   language:
     label: "Language"

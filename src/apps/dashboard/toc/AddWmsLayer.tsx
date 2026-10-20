@@ -266,6 +266,18 @@ function AddWmsForm(props: {
                         }}
                         onKeyDown={onLayerKeyDown}
                     />
+                    {/* Directly below the input: the list can be long. */}
+                    {checking && (
+                        <Flex gap={2} alignItems="center" fontSize="xs">
+                            <Spinner size="xs" />
+                            {intl.formatMessage({ id: "addWms.checking" })}
+                        </Flex>
+                    )}
+                    {error && (
+                        <Text fontSize="xs" color="fg.error" role="alert">
+                            {error}
+                        </Text>
+                    )}
                     <Text fontSize="xs" color="fg.muted">
                         {query.trim() === ""
                             ? intl.formatMessage({ id: "addWms.hint" }, { count: results.length })
@@ -316,17 +328,6 @@ function AddWmsForm(props: {
                                 </Box>
                             ))}
                         </Box>
-                    )}
-                    {checking && (
-                        <Flex gap={2} alignItems="center" fontSize="xs">
-                            <Spinner size="xs" />
-                            {intl.formatMessage({ id: "addWms.checking" })}
-                        </Flex>
-                    )}
-                    {error && (
-                        <Text fontSize="xs" color="fg.error" role="alert">
-                            {error}
-                        </Text>
                     )}
                 </Stack>
             )}
