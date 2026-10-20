@@ -6,6 +6,7 @@ messages:
   toc:
     collapse: "Hide layers"
     expand: "Show layers"
+    loadError: "Map image could not be loaded."
     transparency: "Transparency"
   language:
     label: "Language"
@@ -40,6 +41,8 @@ messages:
     matches: "{count, plural, one {# match} other {# matches}}"
     add: "Add"
     close: "Close"
+    checking: "Checking layer …"
+    group: "Group"
     added: "“{title}” added (until the page is reloaded)."
     remove: "Remove “{title}”"
     error:
@@ -49,6 +52,7 @@ messages:
       noLayers: "The service has no layers that can be requested."
       projection: "The layer does not support the map projection (EPSG:3857)."
       duplicate: "This layer has already been added."
+      notRequestable: "The service cannot deliver this layer (often a group used only for structure). Service message: {message}"
   featureInfo:
     legend: "Legend"
     title: "Information"

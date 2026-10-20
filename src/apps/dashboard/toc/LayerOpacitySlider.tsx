@@ -1,5 +1,5 @@
 import { Box, Flex, IconButton, Slider } from "@chakra-ui/react";
-import { AnyLayer, isLayer, useMapModelValue } from "@open-pioneer/map";
+import { AnyLayer, useMapModelValue, WMSLayer } from "@open-pioneer/map";
 import BaseLayer from "ol/layer/Base";
 import { unByKey } from "ol/Observable";
 import { useIntl } from "open-pioneer:react-hooks";
@@ -8,28 +8,32 @@ import { LuTrash2 } from "react-icons/lu";
 import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
 import { DataLayerNode } from "../dataLayers/types";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
+import { LayerLoadWarning } from "./LayerLoadWarning";
 import { useUserWmsLayers } from "./useUserWmsLayers";
 
 /**
- * Additional content for TOC items: a transparency slider below every WMS layer,
- * and a remove button for the layers the user added.
+ * Additional content for TOC items: a transparency slider below every WMS layer (with a warning if its map image
+ * cannot be loaded), and a remove button for the layers the user added.
  */
 export function layerItemContent(layer: AnyLayer): ReactNode {
     const config = layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
-    if (config?.type !== "wms" || !isLayer(layer)) {
+    if (config?.type !== "wms" || !(layer instanceof WMSLayer)) {
         return undefined;
     }
-    if (config.temporary) {
-        return (
-            <Flex alignItems="flex-end" gap={2}>
-                <Box flex="1">
-                    <LayerOpacitySlider olLayer={layer.olLayer} />
-                </Box>
-                <RemoveUserLayerButton layerId={layer.id} />
-            </Flex>
-        );
-    }
-    return <LayerOpacitySlider olLayer={layer.olLayer} />;
+    const slider = <LayerOpacitySlider olLayer={layer.olLayer} />;
+    return (
+        <>
+            <LayerLoadWarning layer={layer} />
+            {config.temporary ? (
+                <Flex alignItems="flex-end" gap={2}>
+                    <Box flex="1">{slider}</Box>
+                    <RemoveUserLayerButton layerId={layer.id} />
+                </Flex>
+            ) : (
+                slider
+            )}
+        </>
+    );
 }
 
 function RemoveUserLayerButton({ layerId }: { layerId: string }) {

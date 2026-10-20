@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     chooseFeatureInfoFormat,
     normalizeWmsEndpoint,
     parseWmsCapabilities,
+    probeWmsLayer,
     searchLayers,
     WmsCapabilitiesError,
     WmsCapabilitiesLayer
@@ -79,7 +80,8 @@ describe("parseWmsCapabilities", () => {
                 attribution: "© DWD",
                 legendUrl: "https://example.org/legend.png",
                 supportsMapProjection: true,
-                path: ["Root", "Fachlayer"]
+                path: ["Root", "Fachlayer"],
+                isGroup: false
             },
             {
                 name: "Topo",
@@ -90,7 +92,8 @@ describe("parseWmsCapabilities", () => {
                 legendUrl: undefined,
                 // CRS are inherited from the parent layers.
                 supportsMapProjection: true,
-                path: ["Root", "Fachlayer"]
+                path: ["Root", "Fachlayer"],
+                isGroup: false
             }
         ]);
     });
@@ -151,5 +154,56 @@ describe("searchLayers", () => {
 
     it("returns all layers in document order without a query", () => {
         expect(searchLayers(layers, "  ")).toBe(layers);
+    });
+});
+
+describe("probeWmsLayer", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    const respond = (body: string, contentType: string, status = 200) =>
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(body, { status, headers: { "content-type": contentType } }))
+        );
+
+    it("accepts an image", async () => {
+        respond("png", "image/png");
+        await expect(probeWmsLayer("https://example.org/wms", "a", [0, 0])).resolves.toEqual({ ok: true });
+        const url = new URL(vi.mocked(fetch).mock.calls[0]![0] as URL);
+        expect(url.searchParams.get("REQUEST")).toBe("GetMap");
+        expect(url.searchParams.get("LAYERS")).toBe("a");
+        expect(url.searchParams.get("WIDTH")).toBe("1");
+    });
+
+    it("reports a service exception (sent with HTTP 200)", async () => {
+        respond(
+            `<ServiceExceptionReport><ServiceException code="LayerNotDefined" locator="layers">
+                Could not find layer Wetter</ServiceException></ServiceExceptionReport>`,
+            "text/xml"
+        );
+        await expect(probeWmsLayer("https://example.org/wms", "Wetter", [0, 0])).resolves.toEqual({
+            ok: false,
+            message: "Could not find layer Wetter"
+        });
+    });
+
+    it("reports HTTP and network errors", async () => {
+        respond("<html>Internal Server Error</html>", "text/html", 500);
+        await expect(probeWmsLayer("https://example.org/wms", "a", [0, 0])).resolves.toEqual({
+            ok: false,
+            message: "HTTP 500"
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => {
+                throw new TypeError("Failed to fetch");
+            })
+        );
+        await expect(probeWmsLayer("https://example.org/wms", "a", [0, 0])).resolves.toEqual({
+            ok: false,
+            message: "Failed to fetch"
+        });
     });
 });
