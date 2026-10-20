@@ -164,8 +164,9 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   Sensor-Ausreißer. Bewusst nicht gefiltert, das wäre eine fachliche Entscheidung.
 - **Ergänzt (Demo):** DWD-Layer `RADOLAN-RW` („angeeichtes Radarkomposit“, gemessene Niederschlagssumme der letzten
   Stunde, nur Deutschland; GetFeatureInfo liefert `RW_HDF5` in mm und `TIME`). Gewählt statt der ICON-Vorhersage
-  `Icon_reg025_fd_sl_TOTPREC`, die seit Modellstart aufsummiert und schwer zu deuten ist. Startet ausgeblendet, damit
-  er die Temperatur nicht verdeckt. Dazu Datastream 15 (SMT100 Bodenfeuchte in %, gleicher Knoten und Standort wie
+  `Icon_reg025_fd_sl_TOTPREC`, die seit Modellstart aufsummiert und schwer zu deuten ist. Startete zunächst
+  ausgeblendet, damit er die Temperatur nicht verdeckt. Seit 20.10. sind auf Wunsch alle Layer beim Start sichtbar
+  (RADOLAN mit 30 % Transparenz). Dazu Datastream 15 (SMT100 Bodenfeuchte in %, gleicher Knoten und Standort wie
   Datastream 14).
 - **Commits:** `6a1d0da`
 

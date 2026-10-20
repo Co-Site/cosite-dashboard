@@ -73,7 +73,7 @@
                         "en": "Radar composite of the German Weather Service (DWD), calibrated with station data (RADOLAN RW): precipitation of the last hour, Germany only."
                     },
                     "endpoint": "https://maps.dwd.de/geoserver/dwd/wms",
-                    "visible": false,
+                    "visible": true,
                     "opacity": 0.7,
                     "attribution": "© Deutscher Wetterdienst",
                     "wms": {
