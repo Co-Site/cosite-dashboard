@@ -183,6 +183,12 @@ function AddWmsForm(props: {
     };
 
     const optionId = (index: number) => `${listId}-${index}`;
+    // Keep the active result visible while moving through the list with the arrow keys.
+    const listRef = useRef<HTMLUListElement>(null);
+    const activeIndex = activeLayer ? results.indexOf(activeLayer) : -1;
+    useEffect(() => {
+        listRef.current?.children[activeIndex]?.scrollIntoView({ block: "nearest" });
+    }, [activeIndex]);
     return (
         <Stack id={id} gap={2} borderWidth="1px" borderRadius="md" padding={2} mt={1}>
             <Stack gap={1}>
@@ -235,7 +241,7 @@ function AddWmsForm(props: {
                         aria-autocomplete="list"
                         aria-expanded={results.length > 0}
                         aria-controls={listId}
-                        aria-activedescendant={activeLayer ? optionId(results.indexOf(activeLayer)) : undefined}
+                        aria-activedescendant={activeLayer ? optionId(activeIndex) : undefined}
                         placeholder={intl.formatMessage({ id: "addWms.layerPlaceholder" })}
                         value={query}
                         onChange={(e) => {
@@ -257,6 +263,7 @@ function AddWmsForm(props: {
                     {results.length > 0 && (
                         <Box
                             as="ul"
+                            ref={listRef}
                             id={listId}
                             role="listbox"
                             aria-label={intl.formatMessage({ id: "addWms.layer" })}
