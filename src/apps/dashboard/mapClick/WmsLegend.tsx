@@ -2,6 +2,7 @@ import { Box, Image, Stack, Text } from "@chakra-ui/react";
 import { MapModel, WMSLayer } from "@open-pioneer/map";
 import { useReactiveSnapshot } from "@open-pioneer/reactivity";
 import { useIntl } from "open-pioneer:react-hooks";
+import { useState } from "react";
 import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
 import { DataLayerNode, WmsLegendConfig } from "../dataLayers/types";
 import { peekWmsCapabilities } from "../dataLayers/wmsCapabilities";
@@ -11,7 +12,9 @@ import { peekWmsCapabilities } from "../dataLayers/wmsCapabilities";
  */
 export function WmsLegend({ map, layerId }: { map: MapModel; layerId: string }) {
     const intl = useIntl();
-    const urls = useLegendUrls(map, layerId);
+    // Legends that fail to load are hidden (e.g. broken legend URLs in a service's capabilities).
+    const [failed, setFailed] = useState<string[]>([]);
+    const urls = useLegendUrls(map, layerId).filter((url) => !failed.includes(url));
     if (!urls.length) {
         return null;
     }
@@ -23,7 +26,13 @@ export function WmsLegend({ map, layerId }: { map: MapModel; layerId: string }) 
             </Text>
             <Stack gap={2} alignItems="flex-start">
                 {urls.map((url) => (
-                    <Image key={url} src={url} alt={title} maxWidth="100%" />
+                    <Image
+                        key={url}
+                        src={url}
+                        alt={title}
+                        maxWidth="100%"
+                        onError={() => setFailed((current) => [...current, url])}
+                    />
                 ))}
             </Stack>
         </Box>
@@ -41,33 +50,41 @@ function useLegendUrls(map: MapModel, layerId: string): string[] {
             return [];
         }
         const config = getLegendConfig(layer);
-        if (!config || config.enabled === false) {
+        if (!config || config.legend.enabled === false) {
             return [];
         }
-        const sources = config.url
-            ? [config.url]
+        const sources = config.legend.url
+            ? [config.legend.url]
             : layer.sublayers
                   .getRecursiveLayers()
-                  // Legend URL from the capabilities (loaded by the map or by the dashboard),
-                  // otherwise a standard GetLegendGraphic request.
+                  // Legend URL from the capabilities (loaded by the map, or by the dashboard for the user's
+                  // layers), otherwise a standard GetLegendGraphic request.
                   .flatMap((sublayer) => {
                       const url =
                           sublayer.legend ??
-                          peekWmsCapabilities(layer.url)?.layers.find((l) => l.name === sublayer.name)?.legendUrl ??
+                          (config.temporary ? capabilitiesLegendUrl(layer.url, sublayer.name) : undefined) ??
                           (sublayer.name ? getLegendGraphicUrl(layer.url, sublayer.name) : undefined);
                       return url ? [url] : [];
                   });
-        return sources.map((url) => withParams(url, config.params));
+        return sources.map((url) => withParams(url, config.legend.params));
     }, [map, layerId]);
     return urls;
 }
 
-function getLegendConfig(layer: WMSLayer): WmsLegendConfig | undefined {
+function getLegendConfig(layer: WMSLayer): { legend: WmsLegendConfig; temporary: boolean } | undefined {
     const config = layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
     if (config?.type !== "wms") {
         return undefined;
     }
-    return config.wms.legend ?? {};
+    return { legend: config.wms.legend ?? {}, temporary: !!config.temporary };
+}
+
+/**
+ * Legend URL from the capabilities loaded by the dashboard. Only used for the user's layers:
+ * the map does not load their capabilities, and configured layers keep their configured legend.
+ */
+function capabilitiesLegendUrl(serviceUrl: string, layerName: string | undefined): string | undefined {
+    return peekWmsCapabilities(serviceUrl)?.layers.find((layer) => layer.name === layerName)?.legendUrl;
 }
 
 /** Builds a `GetLegendGraphic` request (supported by GeoServer, MapServer, QGIS Server, ...). */
@@ -81,12 +98,18 @@ export function getLegendGraphicUrl(serviceUrl: string, layerName: string): stri
     return url.href;
 }
 
-function withParams(url: string, params: Record<string, string> | undefined): string {
+export function withParams(url: string, params: Record<string, string> | undefined): string {
     if (!params) {
         return url;
     }
     const result = new URL(url);
     for (const [key, value] of Object.entries(params)) {
+        // WMS parameter names are case-insensitive: replace e.g. `width` from the capabilities by `WIDTH`.
+        for (const existing of [...result.searchParams.keys()]) {
+            if (existing.toLowerCase() === key.toLowerCase()) {
+                result.searchParams.delete(existing);
+            }
+        }
         result.searchParams.set(key, value);
     }
     return result.href;
