@@ -201,17 +201,13 @@ export function chooseFeatureInfoFormat(formats: string[]): string | undefined {
 }
 
 /**
- * Finds layers by name or title (case-insensitive).
- * An exact name comes first, then title matches, then name matches; at most `limit` results.
+ * Filters layers by name or title (case-insensitive); without a query all layers are returned, in document order.
+ * An exact name comes first, then title matches, then name matches.
  */
-export function searchLayers(
-    layers: WmsCapabilitiesLayer[],
-    query: string,
-    limit = 30
-): { results: WmsCapabilitiesLayer[]; total: number } {
+export function searchLayers(layers: WmsCapabilitiesLayer[], query: string): WmsCapabilitiesLayer[] {
     const term = query.trim().toLowerCase();
     if (!term) {
-        return { results: [], total: 0 };
+        return layers;
     }
     const rank = (layer: WmsCapabilitiesLayer) => {
         if (layer.name.toLowerCase() === term) {
@@ -222,13 +218,13 @@ export function searchLayers(
         }
         return layer.name.toLowerCase().includes(term) ? 2 : undefined;
     };
-    const matches = layers
+    return layers
         .map((layer, index) => ({ layer, index, rank: rank(layer) }))
         .filter(
             (match): match is { layer: WmsCapabilitiesLayer; index: number; rank: number } => match.rank !== undefined
         )
-        .sort((a, b) => a.rank - b.rank || a.index - b.index);
-    return { results: matches.slice(0, limit).map((match) => match.layer), total: matches.length };
+        .sort((a, b) => a.rank - b.rank || a.index - b.index)
+        .map((match) => match.layer);
 }
 
 /** Subset of the object returned by `ol/format/WMSCapabilities`. */

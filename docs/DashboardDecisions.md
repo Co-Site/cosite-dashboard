@@ -465,9 +465,12 @@ wenig Eingaben (höchstens ein Titel, nicht mehrere Textfelder).
   Vorschlägen für den Layer. Der Titel kommt aus den Capabilities, getippt wird er nie.
 - **Warum Suchfeld statt Layername-Feld:** Technische Namen wie `Icon_reg025_fd_sl_T2M` kennt kaum jemand. Die
   Capabilities müssen ohnehin geladen werden (Titel, FeatureInfo-Format, Fehlermeldungen), die Suche ist nur die
-  Oberfläche darüber. Profis tippen den exakten Namen und drücken Enter. Kein Baum und keine Komplettliste:
-  DWD hat 206 Layer (ca. 1 MB Capabilities), nach drei Buchstaben bleiben meist 5–20 Treffer, höchstens 30 werden
-  angezeigt.
+  Oberfläche darüber. Profis tippen den exakten Namen und drücken Enter.
+- **Liste statt nur Suche (Nachbesserung):** Zuerst zeigte die Liste nur Suchtreffer (höchstens 30). Wunsch des
+  Nutzers: auch ohne Suchbegriff blättern können. Jetzt stehen ohne Eingabe alle Layer in Dokumentreihenfolge in
+  einer scrollbaren Liste (`min(22rem, 40vh)` hoch), die Suche filtert sie nur. Kein Baum: DWD hat 206 Layer (ca.
+  1 MB Capabilities), der Pfad (übergeordnete Titel) steht klein unter jedem Eintrag. Benannte Gruppenlayer (z. B.
+  „Fachlayer“) erscheinen mit, sie zeigen beim Hinzufügen alle ihre Unterlayer.
 - **Was die Capabilities liefern** (geprüft an DWD, BKG TopPlusOpen, NRW DOP, BGR BÜK200, BfN, LANUV):
     - Ja: Layerliste, Titel, `queryable`, GetFeatureInfo-Formate, Legenden-URL, CRS, Zeitdimension, Ausdehnung.
     - Teilweise: Abstract (oft leer oder gleich dem Titel), Anbieter, Nutzungsbedingungen.

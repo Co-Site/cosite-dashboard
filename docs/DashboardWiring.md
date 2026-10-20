@@ -230,8 +230,9 @@ Neuladen sind die Layer weg.
 1. **URL des Dienstes** eingeben und laden. Eine eingefügte GetCapabilities-URL wird bereinigt
    (`SERVICE`, `REQUEST`, `VERSION`, `LANGUAGE` entfernt, andere Parameter wie `map=` bleiben;
    `normalizeWmsEndpoint`). `fetchWmsCapabilities` lädt die Capabilities 1.3.0 einmal pro Dienst und Sitzung.
-2. **Layer suchen:** Suchfeld mit Vorschlägen (`searchLayers`). Exakter Name zuerst, dann Treffer im Titel, dann im
-   Namen; höchstens 30 Treffer mit Hinweis auf weitere. Pfeiltasten und Enter, Klick auf einen Treffer fügt ihn hinzu.
+2. **Layer wählen:** Ohne Eingabe stehen alle Layer in einer scrollbaren Liste. Das Suchfeld filtert sie
+   (`searchLayers`): exakter Name zuerst, dann Treffer im Titel, dann im Namen. Pfeiltasten und Enter, Klick auf einen
+   Eintrag fügt ihn hinzu.
 3. **Hinzufügen** baut eine normale `WmsDataLayerConfig` mit `temporary: true`: Titel aus den Capabilities, Abstract
    und Anbieter/Nutzungsbedingungen/Gebühren als Beschreibung (Info-Icon im TOC), FeatureInfo-Format wie oben oder
    aus. Abgelehnt werden Layer ohne EPSG:3857 und doppelte Layer.

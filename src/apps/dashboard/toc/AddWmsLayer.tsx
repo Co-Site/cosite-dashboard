@@ -152,7 +152,7 @@ function AddWmsForm(props: {
         () => (service.kind === "loaded" ? searchLayers(service.capabilities.layers, query) : undefined),
         [service, query]
     );
-    const results = search?.results ?? [];
+    const results = search ?? [];
     const activeLayer = results[Math.min(active, results.length - 1)];
 
     const add = (layer: WmsCapabilitiesLayer | undefined) => {
@@ -253,12 +253,10 @@ function AddWmsForm(props: {
                     />
                     <Text fontSize="xs" color="fg.muted">
                         {query.trim() === ""
-                            ? intl.formatMessage({ id: "addWms.hint" }, { count: service.capabilities.layers.length })
+                            ? intl.formatMessage({ id: "addWms.hint" }, { count: results.length })
                             : results.length === 0
                               ? intl.formatMessage({ id: "addWms.noResults" })
-                              : search.total > results.length
-                                ? intl.formatMessage({ id: "addWms.more" }, { count: search.total - results.length })
-                                : null}
+                              : intl.formatMessage({ id: "addWms.matches" }, { count: results.length })}
                     </Text>
                     {results.length > 0 && (
                         <Box
@@ -267,7 +265,8 @@ function AddWmsForm(props: {
                             id={listId}
                             role="listbox"
                             aria-label={intl.formatMessage({ id: "addWms.layer" })}
-                            maxHeight="12rem"
+                            // All layers can be browsed; the TOC panel itself is at most 60vh high.
+                            maxHeight="min(22rem, 40vh)"
                             overflowY="auto"
                             borderWidth="1px"
                             borderRadius="sm"

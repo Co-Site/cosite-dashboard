@@ -141,7 +141,7 @@ describe("searchLayers", () => {
         layer("RADOLAN-RW", "Angeeichtes Radarkomposit (RW)"),
         layer("T2M", "Temperatur")
     ];
-    const names = (query: string, limit?: number) => searchLayers(layers, query, limit).results.map((l) => l.name);
+    const names = (query: string) => searchLayers(layers, query).map((l) => l.name);
 
     it("ranks an exact name first, then title matches, then name matches", () => {
         expect(names("radar")).toEqual(["RADOLAN-RX", "RADOLAN-RW", "radar_mask"]);
@@ -149,11 +149,7 @@ describe("searchLayers", () => {
         expect(names("t2m")).toEqual(["T2M"]);
     });
 
-    it("limits the results and reports the total", () => {
-        expect(searchLayers(layers, "radar", 1)).toEqual({ results: [layers[0]], total: 3 });
-    });
-
-    it("finds nothing without a query", () => {
-        expect(searchLayers(layers, "  ")).toEqual({ results: [], total: 0 });
+    it("returns all layers in document order without a query", () => {
+        expect(searchLayers(layers, "  ")).toBe(layers);
     });
 });
