@@ -12,7 +12,7 @@ const LOG = createLogger("dashboard:MainMapProvider");
 
 export const MAP_ID = "main";
 
-const PROJECTION = "EPSG:3857";
+export const PROJECTION = "EPSG:3857";
 
 // Cologne
 const [INITIAL_X = 0, INITIAL_Y = 0] = fromLonLat([6.9988, 50.9371], PROJECTION);
