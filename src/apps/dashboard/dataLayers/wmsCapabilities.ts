@@ -29,6 +29,12 @@ export interface WmsCapabilitiesLayer {
 
     /** Titles of the parent layers, e.g. `["Fachlayer", "Wetter"]`. */
     path: string[];
+
+    /**
+     * Whether the layer has child layers. Such groups should be requestable if they have a name (WMS 1.3.0,
+     * 7.2.4.6.3), but some services list folders with a name that cannot be requested (e.g. DWD).
+     */
+    isGroup: boolean;
 }
 
 /** Why the capabilities could not be loaded. */
@@ -171,7 +177,8 @@ function collectLayers(
             attribution: text(layer.Attribution?.Title),
             legendUrl: layer.Style?.[0]?.LegendURL?.[0]?.OnlineResource,
             supportsMapProjection: crs.includes(MAP_PROJECTION),
-            path
+            path,
+            isGroup: (layer.Layer ?? []).length > 0
         });
     }
     const childPath = title ? [...path, title] : path;
@@ -189,6 +196,55 @@ function text(value: string | undefined): string | undefined {
 function meaningful(value: string | undefined): string | undefined {
     const trimmed = text(value);
     return trimmed && trimmed.toLowerCase() !== "none" ? trimmed : undefined;
+}
+
+/** Result of {@link probeWmsLayer}. */
+export interface WmsLayerProbe {
+    ok: boolean;
+
+    /** Error message of the service (e.g. from a ServiceException), if any. */
+    message?: string;
+}
+
+/**
+ * Requests a tiny map image (1 × 1 pixel around `center`, EPSG:3857) to find out whether the service can deliver the
+ * layer. Services answer errors with HTTP 200 and an XML exception, so only an image counts as success.
+ */
+export async function probeWmsLayer(
+    endpoint: string,
+    layerName: string,
+    center: [number, number]
+): Promise<WmsLayerProbe> {
+    const [x, y] = center;
+    const url = new URL(endpoint);
+    const params: Record<string, string> = {
+        SERVICE: "WMS",
+        VERSION: "1.3.0",
+        REQUEST: "GetMap",
+        LAYERS: layerName,
+        STYLES: "",
+        CRS: MAP_PROJECTION,
+        BBOX: [x - 50, y - 50, x + 50, y + 50].join(","),
+        WIDTH: "1",
+        HEIGHT: "1",
+        FORMAT: "image/png",
+        TRANSPARENT: "TRUE"
+    };
+    for (const [key, value] of Object.entries(params)) {
+        url.searchParams.set(key, value);
+    }
+    try {
+        const response = await fetch(url);
+        const contentType = response.headers.get("content-type") ?? "";
+        if (response.ok && contentType.startsWith("image/")) {
+            return { ok: true };
+        }
+        const text = await response.text();
+        const exception = /<(?:\w+:)?(?:ServiceException|ExceptionText)(?=[\s>])[^>]*>([^<]*)</.exec(text)?.[1]?.trim();
+        return { ok: false, message: exception || `HTTP ${response.status}` };
+    } catch (error) {
+        return { ok: false, message: error instanceof Error ? error.message : String(error) };
+    }
 }
 
 /** GetFeatureInfo formats the dashboard can read, in order of preference. */

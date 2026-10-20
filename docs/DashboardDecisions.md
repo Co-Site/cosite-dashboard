@@ -502,5 +502,21 @@ wenig Eingaben (höchstens ein Titel, nicht mehrere Textfelder).
       jetzt unabhängig von Groß-/Kleinschreibung ersetzt, Legendenbilder mit Ladefehler ausgeblendet (BGR liefert eine
       Legenden-URL mit `%26` statt `&`).
     - Dienste ohne CORS lassen sich nicht hinzufügen (Fehlermeldung im Formular, kein Proxy).
+    - **DWD-Gruppen mit Namen sind nicht abrufbar:** 16 Ordnergruppen (Fachlayer, Wetter, Radar, Satellit, Warnungen,
+      Klima, Basislayer, …) haben in den Capabilities einen `<Name>`, GetMap antwortet aber mit HTTP 200 und
+      `ServiceException code="LayerNotDefined"` (auch mit `dwd:`-Präfix und über `/geoserver/wms`). Nach WMS 1.3.0
+      §7.2.4.6.3 hat ein Layer genau dann einen Namen, wenn er abrufbar ist; das ist also ein Fehler beim DWD
+      (vermutlich Konfiguration der Layergruppen in GeoServer). Folge in der App war ein leerer Layer und nur
+      „Image load error“ in der Konsole.
+    - **Rückmeldung an den Nutzer** (deshalb, und für ausgefallene Dienste):
+        - Vor dem Hinzufügen fragt die App ein 1 × 1-Pixel-Bild ab (`probeWmsLayer`). Nur eine Bild-Antwort zählt;
+          sonst erscheint die Meldung des Dienstes im Formular und nichts wird hinzugefügt. Gruppen sind in der Liste
+          markiert.
+        - Im TOC zeigt jeder WMS-Layer (auch konfigurierte) einen Hinweis, solange sein Kartenbild nicht lädt
+          (`toc/LayerLoadWarning.tsx`, Ereignisse `imageloaderror`/`imageloadend` der OpenLayers-Quelle). Der
+          `loadState` des Layers hilft nicht, `@open-pioneer/map` setzt ihn nur bei Fehlern der Initialisierung.
+        - Stolperstein: Bei HTTP-Fehlern (z. B. 500) loggt `@open-pioneer/map` nur und lässt das Bild unvollendet,
+          OpenLayers meldet dann nichts. Die App umhüllt die Ladefunktion der Quelle und lässt ein solches Bild
+          scheitern (`reportFailedImageRequests` in `createDataLayer.ts`).
 - **Offen:** siehe Abschnitt 15 (GML-FeatureInfo, Styles, Zeitdimension, Zoom auf den Layer).
-- **Commits:** `fd05554`, `2b15b8b`, `ac864aa`, `ba0a99a`, `d5ca6bb`
+- **Commits:** `fd05554`, `2b15b8b`, `ac864aa`, `ba0a99a`, `d5ca6bb`; Rückmeldung: `20f6df2`, `ba62eac`

@@ -76,7 +76,30 @@ function createWmsLayer(config: WmsDataLayerConfig, context: DataLayerContext): 
     if (config.name == null) {
         applyCapabilitiesTitles(layer, config);
     }
+    reportFailedImageRequests(layer);
     return layer;
+}
+
+/**
+ * `@open-pioneer/map` loads WMS images itself and only logs failed requests (e.g. HTTP 500): the image is never
+ * completed, so OpenLayers neither fires `imageloaderror` nor retries. Failing such an image lets the TOC warn about it
+ * (see `toc/LayerLoadWarning.tsx`).
+ */
+function reportFailedImageRequests(layer: WMSLayer): void {
+    const source = layer.olSource;
+    if (!source) {
+        return;
+    }
+    const load = source.getImageLoadFunction();
+    source.setImageLoadFunction((wrapper, src) => {
+        // The original function returns a promise that resolves after success and after failure.
+        void Promise.resolve(load(wrapper, src) as unknown).then(() => {
+            const image = wrapper.getImage();
+            if (image instanceof HTMLImageElement && !image.src) {
+                image.src = "data:,"; // not an image: fires the error event
+            }
+        });
+    });
 }
 
 /** Uses the titles (and the abstract) from the capabilities for a WMS layer without configured name. */
