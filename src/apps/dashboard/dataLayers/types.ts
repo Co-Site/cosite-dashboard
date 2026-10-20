@@ -8,8 +8,11 @@ export interface DataLayerNodeBase {
     /** Unique id of the layer or group. */
     id: string;
 
-    /** Human-readable name, shown in the TOC. */
-    name: LocalizedText;
+    /**
+     * Human-readable name, shown in the TOC.
+     * Required except for WMS layers, which fall back to the title from the service's capabilities.
+     */
+    name?: LocalizedText;
 
     /** Longer description, shown as layer info in the TOC. */
     description?: LocalizedText;
@@ -33,6 +36,12 @@ export interface DataLayerConfigBase extends DataLayerNodeBase {
 /** An OGC Web Map Service. */
 export interface WmsDataLayerConfig extends DataLayerConfigBase {
     type: "wms";
+
+    /**
+     * Set at runtime for layers the user added in this session (not part of the configuration file).
+     * Their capabilities are loaded by the dashboard, see `dataLayers/userWmsLayers.ts`.
+     */
+    temporary?: boolean;
     wms: {
         /** Names of the WMS layers to request. */
         layers: string[];
@@ -63,6 +72,12 @@ export interface WmsFeatureInfoConfig {
     /** Whether GetFeatureInfo is requested on map click (default: `true`). */
     enabled?: boolean;
 
+    /**
+     * Response format (GeoJSON), e.g. `application/json` or `application/geo+json`.
+     * Default: chosen from the formats in the service's capabilities (no feature info if none fits).
+     */
+    format?: string;
+
     /** Properties to show in the popup (default: all properties of the response). */
     fields?: FeatureInfoField[];
 }
@@ -81,11 +96,13 @@ export interface FeatureInfoField {
 /** A single OGC SensorThings API datastream, e.g. `.../v1.1/Datastreams(14)`. */
 export interface StaDatastreamLayerConfig extends DataLayerConfigBase {
     type: "sta-datastream";
+    name: LocalizedText;
 }
 
 /** A category that groups other layers (shown as a group in the TOC). */
 export interface DataLayerGroupConfig extends DataLayerNodeBase {
     type: "group";
+    name: LocalizedText;
     layers: DataLayerNode[];
 }
 
@@ -142,7 +159,8 @@ function validateEntry(entry: unknown): string | undefined {
             return `missing or invalid property '${key}'.`;
         }
     }
-    if (!isLocalizedText(entry.name) || entry.name === "") {
+    // WMS layers may omit the name (the title from the capabilities is used instead).
+    if ((entry.name != null || entry.type !== "wms") && (!isLocalizedText(entry.name) || entry.name === "")) {
         return "missing or invalid property 'name' (string or object with one string per language).";
     }
     if (entry.description != null && !isLocalizedText(entry.description)) {
@@ -195,6 +213,9 @@ function validateFeatureInfo(featureInfo: unknown): string | undefined {
     }
     if (featureInfo.enabled != null && typeof featureInfo.enabled !== "boolean") {
         return "'wms.featureInfo.enabled' must be a boolean.";
+    }
+    if (featureInfo.format != null && (typeof featureInfo.format !== "string" || featureInfo.format === "")) {
+        return "'wms.featureInfo.format' must be a format name, e.g. 'application/json'.";
     }
     const fields = featureInfo.fields;
     if (fields == null) {

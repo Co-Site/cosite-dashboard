@@ -27,6 +27,7 @@
                     "wms": {
                         "layers": ["Icon_reg025_fd_sl_T2M"],
                         "featureInfo": {
+                            "format": "application/json",
                             "fields": [
                                 {
                                     "property": "Temperature_height_level_above_ground",
@@ -73,12 +74,13 @@
                         "en": "Radar composite of the German Weather Service (DWD), calibrated with station data (RADOLAN RW): precipitation of the last hour, Germany only."
                     },
                     "endpoint": "https://maps.dwd.de/geoserver/dwd/wms",
-                    "visible": false,
+                    "visible": true,
                     "opacity": 0.7,
                     "attribution": "© Deutscher Wetterdienst",
                     "wms": {
                         "layers": ["RADOLAN-RW"],
                         "featureInfo": {
+                            "format": "application/json",
                             "fields": [
                                 {
                                     "property": "RW_HDF5",

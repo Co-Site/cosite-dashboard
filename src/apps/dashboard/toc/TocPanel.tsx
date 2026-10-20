@@ -4,6 +4,7 @@ import { Toc, TocApi } from "@open-pioneer/toc";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useId, useRef, useState } from "react";
 import { LuLayers, LuPanelLeftClose } from "react-icons/lu";
+import { AddWmsLayer } from "./AddWmsLayer";
 import { LanguageSelector } from "./LanguageSelector";
 import { layerItemContent } from "./LayerOpacitySlider";
 import { TocItemExtensions } from "./TocItemExtensions";
@@ -79,6 +80,7 @@ export function TocPanel() {
                         </Flex>
                     }
                 >
+                    <AddWmsLayer />
                     <Box css={INFO_ICON_CSS}>
                         <Toc
                             collapsibleGroups

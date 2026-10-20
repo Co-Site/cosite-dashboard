@@ -11,6 +11,6 @@ export default defineBuildConfig({
         }
     },
     ui: {
-        references: ["runtime.LocaleService"]
+        references: ["runtime.LocaleService", "map.LayerFactory"]
     }
 });

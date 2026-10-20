@@ -2,7 +2,8 @@ import { AnyLayer, MapModel, WMSLayer } from "@open-pioneer/map";
 import { Coordinate } from "ol/coordinate";
 import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
 import { LocalizedText } from "../dataLayers/localizedText";
-import { DataLayerNode, FeatureInfoField } from "../dataLayers/types";
+import { DataLayerNode, FeatureInfoField, WmsDataLayerConfig } from "../dataLayers/types";
+import { chooseFeatureInfoFormat, fetchWmsCapabilities } from "../dataLayers/wmsCapabilities";
 
 /** Feature info of a single WMS layer at the clicked position. */
 export interface FeatureInfoResult {
@@ -45,6 +46,7 @@ export function getQueryableWmsLayers(map: MapModel): WMSLayer[] {
 
 /**
  * Requests GetFeatureInfo (as GeoJSON) from all given WMS layers at the coordinate.
+ * Layers whose service offers no GeoJSON format (or that are not queryable) are left out of the results.
  */
 export async function queryWmsFeatureInfo(
     map: MapModel,
@@ -58,14 +60,19 @@ export async function queryWmsFeatureInfo(
         return [];
     }
     const projection = view.getProjection();
-    return Promise.all(
-        layers.map(async (layer): Promise<FeatureInfoResult> => {
+    const results = await Promise.all(
+        layers.map(async (layer): Promise<FeatureInfoResult | undefined> => {
             const result: FeatureInfoResult = {
                 layerId: layer.id,
                 features: []
             };
+            const config = getDataLayerConfig(layer);
+            const format = config?.type === "wms" ? await getFeatureInfoFormat(config) : undefined;
+            if (!format) {
+                return undefined;
+            }
             const url = layer.olSource?.getFeatureInfoUrl(coordinate, resolution, projection, {
-                INFO_FORMAT: "application/json",
+                INFO_FORMAT: format,
                 FEATURE_COUNT: 10
             });
             if (!url) {
@@ -82,7 +89,6 @@ export async function queryWmsFeatureInfo(
                         properties?: Record<string, unknown> | null;
                     }[];
                 };
-                const config = getDataLayerConfig(layer);
                 const fields = config?.type === "wms" ? config.wms.featureInfo?.fields : undefined;
                 result.features = (json.features ?? []).map((feature, index) => ({
                     id: String(feature.id ?? index),
@@ -97,6 +103,27 @@ export async function queryWmsFeatureInfo(
             return result;
         })
     );
+    return results.filter((result) => result !== undefined);
+}
+
+/**
+ * The configured GetFeatureInfo format, or a GeoJSON format from the capabilities.
+ * Falls back to `application/json` if the capabilities cannot be loaded.
+ */
+async function getFeatureInfoFormat(config: WmsDataLayerConfig): Promise<string | undefined> {
+    const format = config.wms.featureInfo?.format;
+    if (format) {
+        return format;
+    }
+    try {
+        const capabilities = await fetchWmsCapabilities(config.endpoint);
+        const queryable = config.wms.layers.some(
+            (name) => capabilities.layers.find((layer) => layer.name === name)?.queryable
+        );
+        return queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
+    } catch {
+        return "application/json";
+    }
 }
 
 function toValues(properties: Record<string, unknown>, fields: FeatureInfoField[] | undefined): FeatureInfoValue[] {

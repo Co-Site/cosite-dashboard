@@ -7,6 +7,7 @@ import { Circle, Fill, Stroke, Style } from "ol/style";
 import { localize } from "./localizedText";
 import { createDatastreamFeature, fetchDatastream } from "./sta";
 import { DataLayerGroupConfig, DataLayerNode, StaDatastreamLayerConfig, WmsDataLayerConfig } from "./types";
+import { fetchWmsCapabilities } from "./wmsCapabilities";
 
 const LOG = createLogger("dashboard:createDataLayer");
 
@@ -59,16 +60,45 @@ function createWmsLayer(config: WmsDataLayerConfig, context: DataLayerContext): 
     const tocAttributes: LayerTocAttributes = {
         listMode: config.wms.layers.length === 1 ? "hide-children" : "show"
     };
-    return context.layerFactory.create({
+    const layer = context.layerFactory.create({
         type: WMSLayer,
         ...options,
         attributes: { ...options.attributes, toc: tocAttributes },
         url: config.endpoint,
         sublayers: config.wms.layers.map((name) => ({ name, title: name })),
+        // Temporary layers were added from capabilities the dashboard has loaded already.
+        fetchCapabilities: !config.temporary,
         sourceOptions: {
-            attributions: config.attribution
+            // Never fall back to the service's access constraints or fees (long texts or bare URLs).
+            attributions: config.attribution ?? []
         }
     });
+    if (config.name == null) {
+        applyCapabilitiesTitles(layer, config);
+    }
+    return layer;
+}
+
+/** Uses the titles (and the abstract) from the capabilities for a WMS layer without configured name. */
+function applyCapabilitiesTitles(layer: WMSLayer, config: WmsDataLayerConfig): void {
+    fetchWmsCapabilities(config.endpoint)
+        .then((capabilities) => {
+            const find = (name: string | undefined) => capabilities.layers.find((l) => l.name === name);
+            const [first] = config.wms.layers.map(find);
+            if (first && config.wms.layers.length === 1) {
+                layer.setTitle(first.title);
+                if (config.description == null && first.abstract && first.abstract !== first.title) {
+                    layer.setDescription(first.abstract);
+                }
+            }
+            for (const sublayer of layer.sublayers.getRecursiveLayers()) {
+                const title = find(sublayer.name)?.title;
+                if (title) {
+                    sublayer.setTitle(title);
+                }
+            }
+        })
+        .catch((error) => LOG.warn(`Failed to load capabilities for the title of '${config.id}'.`, error));
 }
 
 function createStaDatastreamLayer(
@@ -98,7 +128,7 @@ function createStaDatastreamLayer(
 function commonOptions(config: DataLayerNode, { language }: Pick<DataLayerContext, "language">) {
     return {
         id: config.id,
-        title: localize(config.name, language),
+        title: localize(config.name, language) ?? defaultTitle(config),
         description: localize(config.description, language),
         visible: config.visible ?? true,
         attributes: { [DATA_LAYER_ATTRIBUTE]: config }
@@ -122,7 +152,17 @@ export function localizeDataLayers(map: MapModel, language: string): void {
         if (!config) {
             continue;
         }
-        layer.setTitle(localize(config.name, language));
-        layer.setDescription(localize(config.description, language) ?? "");
+        // Titles and descriptions from the capabilities are kept, they are not translated.
+        if (config.name != null) {
+            layer.setTitle(localize(config.name, language) ?? defaultTitle(config));
+        }
+        if (config.description != null) {
+            layer.setDescription(localize(config.description, language) ?? "");
+        }
     }
+}
+
+/** Title until the capabilities have been loaded (WMS layers may have no configured name). */
+function defaultTitle(config: DataLayerNode): string {
+    return config.type === "wms" ? config.wms.layers.join(", ") : config.id;
 }

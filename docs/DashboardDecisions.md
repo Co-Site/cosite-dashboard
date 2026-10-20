@@ -164,8 +164,9 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   Sensor-Ausreißer. Bewusst nicht gefiltert, das wäre eine fachliche Entscheidung.
 - **Ergänzt (Demo):** DWD-Layer `RADOLAN-RW` („angeeichtes Radarkomposit“, gemessene Niederschlagssumme der letzten
   Stunde, nur Deutschland; GetFeatureInfo liefert `RW_HDF5` in mm und `TIME`). Gewählt statt der ICON-Vorhersage
-  `Icon_reg025_fd_sl_TOTPREC`, die seit Modellstart aufsummiert und schwer zu deuten ist. Startet ausgeblendet, damit
-  er die Temperatur nicht verdeckt. Dazu Datastream 15 (SMT100 Bodenfeuchte in %, gleicher Knoten und Standort wie
+  `Icon_reg025_fd_sl_TOTPREC`, die seit Modellstart aufsummiert und schwer zu deuten ist. Startete zunächst
+  ausgeblendet, damit er die Temperatur nicht verdeckt. Seit 20.10. sind auf Wunsch alle Layer beim Start sichtbar
+  (RADOLAN mit 30 % Transparenz). Dazu Datastream 15 (SMT100 Bodenfeuchte in %, gleicher Knoten und Standort wie
   Datastream 14).
 - **Commits:** `6a1d0da`
 
@@ -244,8 +245,28 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   Icons (`LuChartLine`, `LuChartColumn`, `LuChartCandlestick`, `LuWind`). Lucide hat kein Boxplot-Icon, Kerzen kommen
   dem am nächsten. Der Name erscheint als Tooltip und ist `aria-label`. Der Tooltip übernimmt die Element-ID des
   Segments (`ids`), weil die Segment-Gruppe ihre Einträge über die ID findet.
+- **Weitere Sensoren am Standort (Feedback, Branch `feature/colocated_sensors`):** Neben dem Diagramm stehen die
+  anderen Sensoren desselben Standorts als Kacheln untereinander, in der Einzelansicht und in jeder Vergleichshälfte.
+  Eine Kachel zeigt den Layernamen (lokalisiert, wie im Dropdown), den **neuesten** Wert mit Einheit und dessen
+  Zeitpunkt. Ein Klick schaltet das Diagramm auf diesen Sensor um. Bewusst keine zusätzliche Linie im Diagramm.
+    - **Gruppierung:** Nicht aus der Klick-Liste des Popups, sondern aus allen STA-Layern. So funktioniert sie auch bei
+      Auswahl über das Dropdown, und der Auswahl-Zustand bleibt eine einzelne Layer-ID.
+    - **Standard ist der Ort**, nicht das Thing: Es ist nicht sicher, dass jeder Server Stationen sauber als Things
+      modelliert. Der Ortsschlüssel ist die Punktkoordinate in EPSG:4326, auf 6 Nachkommastellen (ca. 0,1 m)
+      gerundet (`locationKey` in `dataLayers/sta.ts`). Andere Geometrien werden nie gruppiert.
+    - **Umschaltbar** über `VITE_SENSOR_GROUPING` (`location`, `thing`, `location-or-thing`,
+      `dataLayers/colocation.ts`). Bei Datastream 14 und 15 liefern alle drei dasselbe (gleicher Ort, Thing 2).
+    - **Neuester Wert:** eigene Abfrage `$orderby=phenomenonTime desc&$top=1`, unabhängig vom Zeitfilter. Der
+      „letzte Wert“ in der Zeile über dem Diagramm ist dagegen der letzte im Zeitraum.
+    - **Viele Sensoren:** Die Spalte ist so hoch wie das Diagramm und scrollt. Platz für die Scrollbar ist von Anfang
+      an reserviert (`scrollbar-gutter: stable`), damit die Kacheln nicht schmaler werden, wenn sie erscheint. Unten
+      blendet ein Verlauf ein, solange noch Kacheln folgen (macOS zeigt Scrollbars erst beim Scrollen). Eine Kachel ist
+      ca. 78 px hoch, bei 950 px Fensterhöhe sind gut 3 sichtbar.
+    - **Stolperstein:** Die Zeitstempel des STA-Servers liegen ca. 2 h in der Zukunft (vermutlich Ortszeit mit `Z`
+      geschrieben). Die neuesten Werte fallen daher aus „bis jetzt“ heraus, die Kachel zeigt einen späteren Wert und
+      Zeitpunkt als das Diagramm.
 - **Commits:** `f71ec9a`, `0e89ebd`, `f6dfa00`, `448bffa`, `bfce880`, `20d9667`, `0331716`, `d9e9148`, `dcc943e`,
-  `ed1f5ef`
+  `ed1f5ef`; Kacheln: `8e7b250`, `ca2ea99`, `dd9d284`, `00c71ae`, `0c02156`, `3a1829e`
 
 ## 9. TOC-Erweiterung und Transparenz-Slider
 
@@ -390,17 +411,20 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 
 ## 15. Offene Punkte und Ideen
 
-- **Legende absichern:** Bild bei Ladefehler ausblenden; Parameter unabhängig von Groß-/Kleinschreibung ersetzen
-  (siehe Abschnitt 12). Vorerst bewusst nicht umgesetzt.
-- **Upstream-Issue:** Fest eingebautes `LANGUAGE=ger` in `@open-pioneer/map` melden. Wird es behoben, nutzt die App
-  automatisch die Legenden-URLs aus den Capabilities.
+- **Upstream-Issue:** Fest eingebautes `LANGUAGE=ger` in `@open-pioneer/map` melden (dazu: eine Endpoint-URL mit
+  `?` ergibt eine kaputte Capabilities-URL). Wird es behoben, nutzt die App automatisch die Legenden-URLs aus den
+  Capabilities. Für eigene WMS umgeht die App das schon (Abschnitt 17).
+- **Eigene WMS ausbauen:** FeatureInfo für Dienste ohne GeoJSON (GML über `ol/format/WMSGetFeatureInfo`; HTML nur
+  bereinigt), Style-Auswahl (z. B. barrierefreier RADOLAN-Style), Zeitdimension, Zoom auf die Ausdehnung des Layers.
 - **Weitere Diagramme:** Linie, Balken, Boxplot und Windrose gibt es (Abschnitt 8). Weitere nach Bedarf.
 - **CI-Deploy:** Der Job `deploy` in `.github/workflows/test-and-build.yml` ist noch an das Repository
   `open-pioneer/trails-starter` gebunden (`github.repository == …`) und läuft daher auch in `Co-Site/cosite-dashboard`
   nie. Build und Tests laufen dort bei jedem Push. Ob ein Deploy auf GitHub Pages gewünscht ist, ist offen.
-- **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären.
-- **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, eine
-  Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht noch aus.
+- **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären. Zeitstempel des STA-Servers ca. 2 h in
+  der Zukunft (siehe Abschnitt 8, Kacheln), beim Betreiber klären.
+- **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, im Panel
+  stehen sie als Kacheln neben dem Diagramm. Eine Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht
+  noch aus.
 - **Windrose fachlich klären:** Welche Datastreams (Richtung, Geschwindigkeit), Geschwindigkeitsklassen gestapelt pro
   Sektor, Anzahl der Sektoren. Für gestapelte Klassen reicht `polarArea` nicht, dann eigene Zeichnung oder Plugin.
 - **Balken für Niederschlag:** Summe statt Mittelwert je Abschnitt, ggf. pro Datastream in der Konfiguration.
@@ -419,7 +443,8 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 
 - **Ablauf:** Feature-Branch von `dev` → ein Commit pro Schritt → `git merge --no-ff <feature>` nach `dev` → wenn
   `dev` stabil ist, `git merge --no-ff dev` nach `main`. `--no-ff`, damit jedes Feature als Merge-Commit sichtbar
-  bleibt.
+  bleibt. Danach `dev` mit `git merge --ff-only main` auf `main` nachziehen, damit beide auf demselben Commit stehen
+  (der Merge-Commit entsteht sonst nur auf `main`).
 - **Nachziehen:** Einen Feature-Branch vor dem Merge auf das aktuelle `dev` zu rebasen ist in Ordnung (er ist noch
   nicht geteilt). Kommt etwas direkt auf `main` (Hotfix), wird `main` in `dev` **gemergt**, nicht rebased: Ein Rebase
   würde die Commits von `dev` neu schreiben und passt dann nicht mehr zu den schon gemergten Feature-Branches.
@@ -430,3 +455,52 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 upstream no-push`). Updates vom Starter bei Bedarf mit `git fetch upstream` holen und in einem Feature-Branch
       mergen.
     - `toc-native` und `dashboard` liegen nur lokal.
+
+## 17. Eigene WMS-Layer (temporär)
+
+🔴 **Was:** Kundenwunsch: WMS-Layer für die aktuelle Sitzung hinzufügen, ohne etwas zu speichern, mit möglichst
+wenig Eingaben (höchstens ein Titel, nicht mehrere Textfelder).
+
+- **Entscheidung:** Ein Formular unter dem TOC-Titel mit zwei Feldern: URL des Dienstes, dann ein Suchfeld mit
+  Vorschlägen für den Layer. Der Titel kommt aus den Capabilities, getippt wird er nie.
+- **Warum Suchfeld statt Layername-Feld:** Technische Namen wie `Icon_reg025_fd_sl_T2M` kennt kaum jemand. Die
+  Capabilities müssen ohnehin geladen werden (Titel, FeatureInfo-Format, Fehlermeldungen), die Suche ist nur die
+  Oberfläche darüber. Profis tippen den exakten Namen und drücken Enter.
+- **Liste statt nur Suche (Nachbesserung):** Zuerst zeigte die Liste nur Suchtreffer (höchstens 30). Wunsch des
+  Nutzers: auch ohne Suchbegriff blättern können. Jetzt stehen ohne Eingabe alle Layer in Dokumentreihenfolge in
+  einer scrollbaren Liste (`min(22rem, 40vh)` hoch), die Suche filtert sie nur. Kein Baum: DWD hat 206 Layer (ca.
+  1 MB Capabilities), der Pfad (übergeordnete Titel) steht klein unter jedem Eintrag. Benannte Gruppenlayer (z. B.
+  „Fachlayer“) erscheinen mit, sie zeigen beim Hinzufügen alle ihre Unterlayer.
+- **Was die Capabilities liefern** (geprüft an DWD, BKG TopPlusOpen, NRW DOP, BGR BÜK200, BfN, LANUV):
+    - Ja: Layerliste, Titel, `queryable`, GetFeatureInfo-Formate, Legenden-URL, CRS, Zeitdimension, Ausdehnung.
+    - Teilweise: Abstract (oft leer oder gleich dem Titel), Anbieter, Nutzungsbedingungen.
+    - Nein: englische Texte (kein Dienst ist mehrsprachig, DWD antwortet auf jedes `LANGUAGE` mit einem Fehler), brauchbare
+      Attribution (bei keinem Dienst vorhanden, nur langer Freitext in `Fees`/`AccessConstraints`), Feldlabels
+      (nur rohe Namen wie `RW_HDF5`), verlässliche Einheiten.
+    - Folge für die Konfiguration: `name` ist bei WMS optional (Titel aus den Capabilities), `featureInfo.format`
+      neu. Gepflegte Texte auf Deutsch und Englisch, Attribution, Feldlabels und Legendenparameter bleiben manuell.
+- **Wo die Layer landen:** Gewünscht war die bestehende Gruppe „WMS“. Geht nicht: Gruppen in
+  `@open-pioneer/map` 1.5.0 haben ein festes Kinder-Array (`GroupLayerCollection`), und ein Layer verlässt eine
+  Gruppe nur, wenn sie zerstört wird (mitsamt Kindern). Die WMS-Gruppe neu zu bauen hätte den Zustand der
+  konfigurierten Layer zurückgesetzt. Stattdessen eigene Gruppe „Eigene WMS“ direkt darunter, die bei jeder Änderung
+  neu gebaut wird; Sichtbarkeit und Deckkraft der eigenen Layer werden übernommen, sie laden dabei kurz neu.
+- **FeatureInfo:** Bisher war `INFO_FORMAT=application/json` fest eingebaut. Das kann nur GeoServer; ArcGIS und
+  MapServer liefern `application/geo+json`, manche Dienste gar kein JSON (4 von 5 getesteten fremden Diensten wären
+  gescheitert). Jetzt wird das Format aus den Capabilities gewählt, ohne passendes Format wird der Layer nicht
+  abgefragt (statt bei jedem Klick „Anfrage fehlgeschlagen“).
+- **Attribution:** `@open-pioneer/map` setzt ohne eigene Attribution `AccessConstraints` oder `Fees` als
+  Quellenangabe (DWD: nackte URL, BfN: „Nicht für Planungszwecke geeignet“). Die App setzt sie jetzt immer selbst
+  (leer, wenn nicht konfiguriert). Anbieter und Nutzungsbedingungen eigener Layer stehen in der Layerbeschreibung.
+- **Stolpersteine:**
+    - `ol/format/WMSCapabilities` vererbt CRS nur über eine Ebene (die Zwischenebene wird erst nach ihren Kindern
+      ergänzt). Bei DWD stehen die CRS nur an der Wurzel, die Layer liegen drei Ebenen tiefer. Die App vererbt die
+      CRS deshalb selbst.
+    - Der XML-Parser von happy-dom (Tests) bricht das DWD-Dokument nach 74 Layern ab, im Browser sind es alle 206.
+      Die Unit-Tests nutzen ein kleines Beispieldokument.
+    - Die Legenden-URL der Capabilities wird nur für eigene Layer genutzt: Bei DWD enthält sie schon
+      `width=20&height=20`, die konfigurierten Legendenparameter (`WIDTH=12`) kamen zusätzlich dazu. Parameter werden
+      jetzt unabhängig von Groß-/Kleinschreibung ersetzt, Legendenbilder mit Ladefehler ausgeblendet (BGR liefert eine
+      Legenden-URL mit `%26` statt `&`).
+    - Dienste ohne CORS lassen sich nicht hinzufügen (Fehlermeldung im Formular, kein Proxy).
+- **Offen:** siehe Abschnitt 15 (GML-FeatureInfo, Styles, Zeitdimension, Zoom auf den Layer).
+- **Commits:** `fd05554`, `2b15b8b`, `ac864aa`, `ba0a99a`, `d5ca6bb`
