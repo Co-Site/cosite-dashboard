@@ -217,6 +217,8 @@ Der TOC ist das unveränderte `@open-pioneer/toc`. Eigene Inhalte pro Layer komm
   (0 % = deckend, Startwert aus `opacity` im JSON).
 - Hintergrund und Risiken: [DashboardDecisions.md](./DashboardDecisions.md), Abschnitt 9.
 - Temporäre Layer (s. u.) bekommen neben dem Slider einen **Entfernen-Button**.
+- Lädt das Kartenbild eines WMS-Layers nicht (Ausnahme statt Bild, HTTP-Fehler), steht über dem Slider ein
+  **Warnhinweis**, bis wieder ein Bild lädt (`toc/LayerLoadWarning.tsx`).
 - **TOC-Panel** (`toc/TocPanel.tsx`): enthält Überschrift, Sprachumschalter, „WMS hinzufügen“ und `Toc`. Es lässt sich nach links
   einklappen, dann bleibt oben links nur ein Ebenen-Button. Das Panel liegt bewusst **nicht** in einer `MapAnchor`,
   sondern als eigene Ebene über der Karte: `MapAnchor` schneidet Inhalte ab (`overflow: hidden`) und fängt in ihrem
@@ -235,7 +237,8 @@ Neuladen sind die Layer weg.
    Eintrag fügt ihn hinzu.
 3. **Hinzufügen** baut eine normale `WmsDataLayerConfig` mit `temporary: true`: Titel aus den Capabilities, Abstract
    und Anbieter/Nutzungsbedingungen/Gebühren als Beschreibung (Info-Icon im TOC), FeatureInfo-Format wie oben oder
-   aus. Abgelehnt werden Layer ohne EPSG:3857 und doppelte Layer.
+   aus. Abgelehnt werden Layer ohne EPSG:3857, doppelte Layer und Layer, für die der Dienst kein Bild liefert
+   (Probe-GetMap mit 1 × 1 Pixel, `probeWmsLayer`; z. B. die benannten Ordnergruppen des DWD).
 
 Die Layer liegen in der Gruppe **„Eigene WMS“** (`user-wms`) direkt unter der Gruppe mit den konfigurierten
 WMS-Layern (`dataLayers/userWmsLayers.ts`). Gruppen in `@open-pioneer/map` haben feste Kinder, deshalb wird die Gruppe
