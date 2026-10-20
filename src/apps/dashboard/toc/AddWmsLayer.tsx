@@ -1,5 +1,6 @@
-import { Box, Button, chakra, Flex, Input, Spinner, Stack, Text } from "@chakra-ui/react";
+import { Badge, Box, Button, chakra, Flex, Input, Spinner, Stack, Text } from "@chakra-ui/react";
 import { createLogger } from "@open-pioneer/core";
+import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
@@ -9,6 +10,7 @@ import {
     chooseFeatureInfoFormat,
     fetchWmsCapabilities,
     normalizeWmsEndpoint,
+    probeWmsLayer,
     searchLayers,
     WmsCapabilities,
     WmsCapabilitiesError,
@@ -95,6 +97,8 @@ function AddWmsForm(props: {
     const { id, urlRef, onAdded, onClose } = props;
     const intl = useIntl();
     const userLayers = useUserWmsLayers();
+    const map = useMapModelValue();
+    const [checking, setChecking] = useState(false);
     const urlInputId = useId();
     const layerInputId = useId();
     const listId = useId();
@@ -155,8 +159,8 @@ function AddWmsForm(props: {
     const results = search ?? [];
     const activeLayer = results[Math.min(active, results.length - 1)];
 
-    const add = (layer: WmsCapabilitiesLayer | undefined) => {
-        if (service.kind !== "loaded" || !layer) {
+    const add = async (layer: WmsCapabilitiesLayer | undefined) => {
+        if (service.kind !== "loaded" || !layer || checking) {
             return;
         }
         if (!layer.supportsMapProjection) {
@@ -165,6 +169,17 @@ function AddWmsForm(props: {
         }
         if (userLayers.has(service.endpoint, layer.name)) {
             setError(intl.formatMessage({ id: "addWms.error.duplicate" }));
+            return;
+        }
+        // Some services list layers that cannot be requested (e.g. folders with a name), check before adding.
+        setChecking(true);
+        setError(undefined);
+        const center = (map.olMap.getView().getCenter() ?? [0, 0]) as [number, number];
+        const probe = await probeWmsLayer(service.endpoint, layer.name, center);
+        setChecking(false);
+        if (!probe.ok) {
+            LOG.warn(`Layer '${layer.name}' of ${service.endpoint} cannot be requested: ${probe.message}`);
+            setError(intl.formatMessage({ id: "addWms.error.notRequestable" }, { message: probe.message ?? "" }));
             return;
         }
         userLayers.add(toLayerInput(service.endpoint, service.capabilities, layer));
@@ -289,6 +304,11 @@ function AddWmsForm(props: {
                                 >
                                     <Text fontSize="xs" fontWeight="semibold" lineClamp={2}>
                                         {layer.title}
+                                        {layer.isGroup && (
+                                            <Badge size="xs" variant="outline" ms={1} verticalAlign="middle">
+                                                {intl.formatMessage({ id: "addWms.group" })}
+                                            </Badge>
+                                        )}
                                     </Text>
                                     <Text fontSize="2xs" color="fg.muted" truncate>
                                         {[layer.name, ...layer.path].join(" · ")}
@@ -296,6 +316,12 @@ function AddWmsForm(props: {
                                 </Box>
                             ))}
                         </Box>
+                    )}
+                    {checking && (
+                        <Flex gap={2} alignItems="center" fontSize="xs">
+                            <Spinner size="xs" />
+                            {intl.formatMessage({ id: "addWms.checking" })}
+                        </Flex>
                     )}
                     {error && (
                         <Text fontSize="xs" color="fg.error" role="alert">
@@ -311,7 +337,7 @@ function AddWmsForm(props: {
                     {intl.formatMessage({ id: "addWms.close" })}
                 </Button>
                 {service.kind === "loaded" && (
-                    <Button size="xs" onClick={() => add(activeLayer)} disabled={!activeLayer}>
+                    <Button size="xs" onClick={() => add(activeLayer)} disabled={!activeLayer || checking}>
                         {intl.formatMessage({ id: "addWms.add" })}
                     </Button>
                 )}

@@ -40,6 +40,8 @@ messages:
     matches: "{count, plural, one {# Treffer} other {# Treffer}}"
     add: "Hinzufügen"
     close: "Schließen"
+    checking: "Prüfe Layer …"
+    group: "Gruppe"
     added: "„{title}“ hinzugefügt (bis die Seite neu geladen wird)."
     remove: "„{title}“ entfernen"
     error:
@@ -49,6 +51,7 @@ messages:
       noLayers: "Der Dienst enthält keine abrufbaren Layer."
       projection: "Der Layer unterstützt die Kartenprojektion (EPSG:3857) nicht."
       duplicate: "Dieser Layer ist bereits hinzugefügt."
+      notRequestable: "Der Dienst kann diesen Layer nicht liefern (oft eine reine Gliederungsgruppe). Meldung des Dienstes: {message}"
   featureInfo:
     legend: "Legende"
     title: "Information"
