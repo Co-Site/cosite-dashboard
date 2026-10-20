@@ -244,8 +244,28 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   Icons (`LuChartLine`, `LuChartColumn`, `LuChartCandlestick`, `LuWind`). Lucide hat kein Boxplot-Icon, Kerzen kommen
   dem am nächsten. Der Name erscheint als Tooltip und ist `aria-label`. Der Tooltip übernimmt die Element-ID des
   Segments (`ids`), weil die Segment-Gruppe ihre Einträge über die ID findet.
+- **Weitere Sensoren am Standort (Feedback, Branch `feature/colocated_sensors`):** Neben dem Diagramm stehen die
+  anderen Sensoren desselben Standorts als Kacheln untereinander, in der Einzelansicht und in jeder Vergleichshälfte.
+  Eine Kachel zeigt den Layernamen (lokalisiert, wie im Dropdown), den **neuesten** Wert mit Einheit und dessen
+  Zeitpunkt. Ein Klick schaltet das Diagramm auf diesen Sensor um. Bewusst keine zusätzliche Linie im Diagramm.
+    - **Gruppierung:** Nicht aus der Klick-Liste des Popups, sondern aus allen STA-Layern. So funktioniert sie auch bei
+      Auswahl über das Dropdown, und der Auswahl-Zustand bleibt eine einzelne Layer-ID.
+    - **Standard ist der Ort**, nicht das Thing: Es ist nicht sicher, dass jeder Server Stationen sauber als Things
+      modelliert. Der Ortsschlüssel ist die Punktkoordinate in EPSG:4326, auf 6 Nachkommastellen (ca. 0,1 m)
+      gerundet (`locationKey` in `dataLayers/sta.ts`). Andere Geometrien werden nie gruppiert.
+    - **Umschaltbar** über `VITE_SENSOR_GROUPING` (`location`, `thing`, `location-or-thing`,
+      `dataLayers/colocation.ts`). Bei Datastream 14 und 15 liefern alle drei dasselbe (gleicher Ort, Thing 2).
+    - **Neuester Wert:** eigene Abfrage `$orderby=phenomenonTime desc&$top=1`, unabhängig vom Zeitfilter. Der
+      „letzte Wert“ in der Zeile über dem Diagramm ist dagegen der letzte im Zeitraum.
+    - **Viele Sensoren:** Die Spalte ist so hoch wie das Diagramm und scrollt. Platz für die Scrollbar ist von Anfang
+      an reserviert (`scrollbar-gutter: stable`), damit die Kacheln nicht schmaler werden, wenn sie erscheint. Unten
+      blendet ein Verlauf ein, solange noch Kacheln folgen (macOS zeigt Scrollbars erst beim Scrollen). Eine Kachel ist
+      ca. 78 px hoch, bei 950 px Fensterhöhe sind gut 3 sichtbar.
+    - **Stolperstein:** Die Zeitstempel des STA-Servers liegen ca. 2 h in der Zukunft (vermutlich Ortszeit mit `Z`
+      geschrieben). Die neuesten Werte fallen daher aus „bis jetzt“ heraus, die Kachel zeigt einen späteren Wert und
+      Zeitpunkt als das Diagramm.
 - **Commits:** `f71ec9a`, `0e89ebd`, `f6dfa00`, `448bffa`, `bfce880`, `20d9667`, `0331716`, `d9e9148`, `dcc943e`,
-  `ed1f5ef`
+  `ed1f5ef`; Kacheln: `8e7b250`, `ca2ea99`, `dd9d284`, `00c71ae`, `0c02156`, `3a1829e`
 
 ## 9. TOC-Erweiterung und Transparenz-Slider
 
@@ -398,9 +418,11 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 - **CI-Deploy:** Der Job `deploy` in `.github/workflows/test-and-build.yml` ist noch an das Repository
   `open-pioneer/trails-starter` gebunden (`github.repository == …`) und läuft daher auch in `Co-Site/cosite-dashboard`
   nie. Build und Tests laufen dort bei jedem Push. Ob ein Deploy auf GitHub Pages gewünscht ist, ist offen.
-- **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären.
-- **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, eine
-  Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht noch aus.
+- **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären. Zeitstempel des STA-Servers ca. 2 h in
+  der Zukunft (siehe Abschnitt 8, Kacheln), beim Betreiber klären.
+- **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, im Panel
+  stehen sie als Kacheln neben dem Diagramm. Eine Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht
+  noch aus.
 - **Windrose fachlich klären:** Welche Datastreams (Richtung, Geschwindigkeit), Geschwindigkeitsklassen gestapelt pro
   Sektor, Anzahl der Sektoren. Für gestapelte Klassen reicht `polarArea` nicht, dann eigene Zeichnung oder Plugin.
 - **Balken für Niederschlag:** Summe statt Mittelwert je Abschnitt, ggf. pro Datastream in der Konfiguration.
