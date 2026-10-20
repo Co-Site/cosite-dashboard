@@ -257,11 +257,15 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
       `dataLayers/colocation.ts`). Bei Datastream 14 und 15 liefern alle drei dasselbe (gleicher Ort, Thing 2).
     - **Neuester Wert:** eigene Abfrage `$orderby=phenomenonTime desc&$top=1`, unabhängig vom Zeitfilter. Der
       „letzte Wert“ in der Zeile über dem Diagramm ist dagegen der letzte im Zeitraum.
+    - **Viele Sensoren:** Die Spalte ist so hoch wie das Diagramm und scrollt. Platz für die Scrollbar ist von Anfang
+      an reserviert (`scrollbar-gutter: stable`), damit die Kacheln nicht schmaler werden, wenn sie erscheint. Unten
+      blendet ein Verlauf ein, solange noch Kacheln folgen (macOS zeigt Scrollbars erst beim Scrollen). Eine Kachel ist
+      ca. 78 px hoch, bei 950 px Fensterhöhe sind gut 3 sichtbar.
     - **Stolperstein:** Die Zeitstempel des STA-Servers liegen ca. 2 h in der Zukunft (vermutlich Ortszeit mit `Z`
       geschrieben). Die neuesten Werte fallen daher aus „bis jetzt“ heraus, die Kachel zeigt einen späteren Wert und
       Zeitpunkt als das Diagramm.
 - **Commits:** `f71ec9a`, `0e89ebd`, `f6dfa00`, `448bffa`, `bfce880`, `20d9667`, `0331716`, `d9e9148`, `dcc943e`,
-  `ed1f5ef`; Kacheln: `8e7b250`, `ca2ea99`, `dd9d284`, `00c71ae`, `0c02156`
+  `ed1f5ef`; Kacheln: `8e7b250`, `ca2ea99`, `dd9d284`, `00c71ae`, `0c02156`, `3a1829e`
 
 ## 9. TOC-Erweiterung und Transparenz-Slider
 
