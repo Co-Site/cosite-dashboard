@@ -252,8 +252,14 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - **Gruppierung:** Nicht aus der Klick-Liste des Popups, sondern aus allen STA-Layern. So funktioniert sie auch bei
       Auswahl über das Dropdown, und der Auswahl-Zustand bleibt eine einzelne Layer-ID.
     - **Standard ist der Ort**, nicht das Thing: Es ist nicht sicher, dass jeder Server Stationen sauber als Things
-      modelliert. Der Ortsschlüssel ist die Punktkoordinate in EPSG:4326, auf 6 Nachkommastellen (ca. 0,1 m)
-      gerundet (`locationKey` in `dataLayers/sta.ts`). Andere Geometrien werden nie gruppiert.
+      modelliert. Gleicher Ort heißt: Die Punktkoordinaten (EPSG:4326 aus dem GeoJSON, `position` in
+      `dataLayers/sta.ts`) liegen höchstens `VITE_SENSOR_GROUPING_RADIUS` Meter auseinander (Standard 1 m,
+      Großkreisabstand mit `getDistance` aus `ol/sphere`). Andere Geometrien werden nie gruppiert.
+    - **Abstand statt gerundeter Koordinaten:** Früher wurde der auf 6 Nachkommastellen gerundete Koordinaten-String
+      verglichen. Dabei wurden leicht versetzt eingetragene Sensoren nie gruppiert, und fast gleiche Punkte fielen an
+      Rundungskanten auseinander (`7.6284004` → `…400`, `7.6284006` → `…401`). Ein Abstand ist dasselbe wie ein
+      Buffer um den Punkt, eine Projektion ist nicht nötig. Die Gruppierung gilt relativ zum gewählten Sensor und ist
+      nicht transitiv: Liegen A–B und B–C je 0,8 m auseinander, zeigt A nur B, B zeigt A und C.
     - **Umschaltbar** über `VITE_SENSOR_GROUPING` (`location`, `thing`, `location-or-thing`,
       `dataLayers/colocation.ts`). Bei Datastream 14 und 15 liefern alle drei dasselbe (gleicher Ort, Thing 2).
     - **Neuester Wert:** eigene Abfrage `$orderby=phenomenonTime desc&$top=1`, unabhängig vom Zeitfilter. Der

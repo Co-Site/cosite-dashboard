@@ -14,4 +14,9 @@ interface ImportMetaEnv {
      * How sensors at the same site are recognized: `location` (default), `thing` or `location-or-thing`.
      */
     readonly VITE_SENSOR_GROUPING?: string;
+
+    /**
+     * Distance in meters up to which point locations count as the same site (default 1).
+     */
+    readonly VITE_SENSOR_GROUPING_RADIUS?: string;
 }

@@ -5,7 +5,7 @@ import VectorLayer from "ol/layer/Vector";
 import { unByKey } from "ol/Observable";
 import VectorSource from "ol/source/Vector";
 import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
-import { colocatedSensors, SENSOR_GROUPING } from "./colocation";
+import { colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
 import { DATA_LAYER_ATTRIBUTE } from "./createDataLayer";
 import { getDatastreamProperties, StaDatastreamProperties } from "./sta";
 import { DataLayerNode } from "./types";
@@ -57,7 +57,8 @@ export function useDatastreamProperties(
 }
 
 /**
- * Returns the other SensorThings sensors at the site of the given sensor (see {@link SENSOR_GROUPING}),
+ * Returns the other SensorThings sensors at the site of the given sensor
+ * (see {@link SENSOR_GROUPING} and {@link SENSOR_GROUPING_RADIUS}),
  * in configuration order. Sensors appear once their datastream has been loaded.
  */
 export function useColocatedSensors(map: MapModel, dataLayerId: string | undefined): StaDatastreamProperties[] {
@@ -88,7 +89,7 @@ export function useColocatedSensors(map: MapModel, dataLayerId: string | undefin
     return useMemo(() => {
         const all = features.map(getDatastreamProperties).filter((datastream) => datastream !== undefined);
         const selected = all.find((datastream) => datastream.dataLayerId === dataLayerId);
-        return selected ? colocatedSensors(selected, all, SENSOR_GROUPING) : [];
+        return selected ? colocatedSensors(selected, all, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS) : [];
     }, [features, dataLayerId]);
 }
 

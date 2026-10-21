@@ -197,8 +197,8 @@ Im Bottom-Panel:
 - **Weitere Sensoren am Standort** (`charts/SensorTiles.tsx`): `SensorChartView` holt über `useColocatedSensors`
   (`dataLayers/useStaSensors.ts`) die anderen Sensoren am Standort des gewählten Sensors. Der Hook hört auf alle
   STA-Quellen, die Kacheln erscheinen also, sobald die Datastreams geladen sind. Gruppiert wird nach
-  `VITE_SENSOR_GROUPING` (`location` = Standard, `thing`, `location-or-thing`; `dataLayers/colocation.ts`), dafür
-  tragen die Features `locationKey` und `thingId`. Jede Kachel lädt den neuesten Wert (`fetchLatestObservation`),
+  `VITE_SENSOR_GROUPING` (`location` = Standard, `thing`, `location-or-thing`; `dataLayers/colocation.ts`) und
+  `VITE_SENSOR_GROUPING_RADIUS` (Meter, Standard 1), dafür tragen die Features `position` und `thingId`. Jede Kachel lädt den neuesten Wert (`fetchLatestObservation`),
   ein Klick ruft das `onChange` des Dropdowns auf.
 - **Chart.js statt recharts**: Trails rendert die App im Shadow DOM. recharts sucht Portale über `document`
   und musste dafür gepatcht werden (siehe alter Branch `origin/test/charts`). Chart.js zeichnet auf Canvas und braucht das nicht.

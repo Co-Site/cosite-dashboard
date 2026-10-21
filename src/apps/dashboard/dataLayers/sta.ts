@@ -37,8 +37,11 @@ export interface StaDatastreamProperties {
     /** Id of the datastream's thing (groups sensors of the same station). */
     thingId: string | undefined;
 
-    /** Rounded position of a point location (groups sensors at the same site), see {@link locationKey}. */
-    locationKey: string | undefined;
+    /**
+     * Longitude/latitude (EPSG:4326) of a point location (groups sensors at the same site), see {@link pointPosition}.
+     * Taken from the GeoJSON, not from the feature geometry, which is in the map projection.
+     */
+    position: [number, number] | undefined;
 }
 
 /**
@@ -82,21 +85,18 @@ export function createDatastreamFeature(
         observedProperty: datastream.ObservedProperty?.name,
         thing: datastream.Thing?.name,
         thingId: datastream.Thing?.["@iot.id"] === undefined ? undefined : String(datastream.Thing["@iot.id"]),
-        locationKey: locationKey(geometry)
+        position: pointPosition(geometry)
     };
     const feature = new Feature<Geometry>({ geometry: olGeometry, ...properties });
     feature.setId(String(datastream["@iot.id"]));
     return feature;
 }
 
-/** Decimal places of the coordinates in a {@link locationKey} (about 0.1 m). */
-const LOCATION_KEY_DECIMALS = 6;
-
 /**
- * Returns a key for a point location (longitude/latitude in EPSG:4326, rounded),
- * equal for sensors at the same site. Other geometries have no key.
+ * Returns the longitude/latitude (EPSG:4326, as in GeoJSON) of a point location.
+ * Other geometries have no position.
  */
-export function locationKey(geometry: GeoJSONGeometry | undefined): string | undefined {
+export function pointPosition(geometry: GeoJSONGeometry | undefined): [number, number] | undefined {
     if (geometry?.type !== "Point" || !Array.isArray(geometry.coordinates)) {
         return undefined;
     }
@@ -104,7 +104,7 @@ export function locationKey(geometry: GeoJSONGeometry | undefined): string | und
     if (typeof x !== "number" || typeof y !== "number") {
         return undefined;
     }
-    return `${x.toFixed(LOCATION_KEY_DECIMALS)},${y.toFixed(LOCATION_KEY_DECIMALS)}`;
+    return [x, y];
 }
 
 /** Unit symbols (e.g. UCUM codes) that have a more common display form. */
@@ -136,7 +136,7 @@ export function getDatastreamProperties(feature: FeatureLike): StaDatastreamProp
         observedProperty: properties.observedProperty,
         thing: properties.thing,
         thingId: properties.thingId,
-        locationKey: properties.locationKey
+        position: properties.position
     };
 }
 
