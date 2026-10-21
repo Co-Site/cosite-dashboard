@@ -2,7 +2,7 @@ import { Box, chakra, Flex, NativeSelect, SegmentGroup, Spinner, Text } from "@c
 import { Tooltip } from "@open-pioneer/chakra-snippets/tooltip";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
-import { useId } from "react";
+import { ChangeEvent, useId } from "react";
 import {
     StaSensor,
     useColocatedSensors,
@@ -44,6 +44,8 @@ export function SensorChartView(props: SensorChartViewProps) {
     const loadFailed = useSensorLoadFailed(map, value);
     const colocated = useColocatedSensors(map, value);
 
+    const selectSensor = (event: ChangeEvent<HTMLSelectElement>) => onChange(event.currentTarget.value);
+
     return (
         <Flex direction="column" height="100%" gap={2} minWidth={0}>
             <Flex alignItems="center" gap={2} wrap="wrap">
@@ -51,11 +53,7 @@ export function SensorChartView(props: SensorChartViewProps) {
                     {label}
                 </chakra.label>
                 <NativeSelect.Root size="xs" maxWidth="sm">
-                    <NativeSelect.Field
-                        id={selectId}
-                        value={value ?? ""}
-                        onChange={(e) => onChange(e.currentTarget.value)}
-                    >
+                    <NativeSelect.Field id={selectId} value={value ?? ""} onChange={selectSensor}>
                         {value === undefined && (
                             <option value="" disabled>
                                 {intl.formatMessage({ id: "panel.sensor.placeholder" })}
@@ -99,17 +97,20 @@ function ChartTypeSelector(props: { value: ChartType; onChange(value: ChartType)
     // The tooltip must use the segment's id as trigger id, the segment group looks up its items by id.
     const baseId = useId();
     const itemId = (type: string) => `${baseId}-chart-type-${type}`;
+
+    const changeType = (details: SegmentGroup.ValueChangeDetails) => {
+        if (details.value) {
+            onChange(details.value as ChartType);
+        }
+    };
+
     return (
         <SegmentGroup.Root
             ids={{ item: itemId }}
             size="xs"
             aria-label={intl.formatMessage({ id: "chartType.label" })}
             value={value}
-            onValueChange={(details) => {
-                if (details.value) {
-                    onChange(details.value as ChartType);
-                }
-            }}
+            onValueChange={changeType}
         >
             <SegmentGroup.Indicator />
             {CHART_TYPES.map((type) => {

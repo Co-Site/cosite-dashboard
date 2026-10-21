@@ -80,6 +80,9 @@ function SensorTile(props: { sensor: StaDatastreamProperties; onSelect(sensorId:
         ? createValueFormatter(intl, sensor.unit)(observation.value)
         : intl.formatMessage({ id: "panel.colocated.noValue" });
     const time = observation && formatTime(intl, observation.time);
+
+    const select = () => onSelect(sensor.dataLayerId);
+
     return (
         <Button
             variant="outline"
@@ -96,7 +99,7 @@ function SensorTile(props: { sensor: StaDatastreamProperties; onSelect(sensorId:
                 { id: "panel.colocated.show" },
                 { sensor: title, value: latest.kind === "loading" ? "…" : value }
             )}
-            onClick={() => onSelect(sensor.dataLayerId)}
+            onClick={select}
         >
             <Text fontSize="xs" fontWeight="semibold" lineClamp={2}>
                 {title}

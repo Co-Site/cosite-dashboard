@@ -1,7 +1,14 @@
 import { Button, chakra, Flex, Group, Input, Text } from "@chakra-ui/react";
 import { useIntl } from "open-pioneer:react-hooks";
-import { useId, useState } from "react";
-import { fromLocalInputValue, presetFilter, TIME_RANGE_PRESETS, TimeFilter, toLocalInputValue } from "./timeRange";
+import { ChangeEvent, useId, useState } from "react";
+import {
+    fromLocalInputValue,
+    presetFilter,
+    TIME_RANGE_PRESETS,
+    TimeFilter,
+    TimeRangePreset,
+    toLocalInputValue
+} from "./timeRange";
 
 export interface TimeRangeFilterProps {
     value: TimeFilter;
@@ -38,6 +45,13 @@ export function TimeRangeFilter({ value, onChange }: TimeRangeFilterProps) {
         }
     };
 
+    const selectPreset = (preset: TimeRangePreset) => {
+        setDraft(undefined);
+        onChange(presetFilter(preset));
+    };
+    const changeFrom = (event: ChangeEvent<HTMLInputElement>) => updateRange(event.target.value, to);
+    const changeTo = (event: ChangeEvent<HTMLInputElement>) => updateRange(from, event.target.value);
+
     return (
         <Flex
             role="group"
@@ -53,10 +67,7 @@ export function TimeRangeFilter({ value, onChange }: TimeRangeFilterProps) {
                         size="xs"
                         variant={value.preset === preset ? "solid" : "outline"}
                         aria-pressed={value.preset === preset}
-                        onClick={() => {
-                            setDraft(undefined);
-                            onChange(presetFilter(preset));
-                        }}
+                        onClick={() => selectPreset(preset)}
                     >
                         {intl.formatMessage({ id: `timeFilter.preset.${preset}` })}
                     </Button>
@@ -74,7 +85,7 @@ export function TimeRangeFilter({ value, onChange }: TimeRangeFilterProps) {
                     value={from}
                     max={to}
                     aria-invalid={invalid}
-                    onChange={(e) => updateRange(e.target.value, to)}
+                    onChange={changeFrom}
                 />
                 <chakra.label htmlFor={toId} fontSize="sm">
                     {intl.formatMessage({ id: "timeFilter.to" })}
@@ -87,7 +98,7 @@ export function TimeRangeFilter({ value, onChange }: TimeRangeFilterProps) {
                     value={to}
                     min={from}
                     aria-invalid={invalid}
-                    onChange={(e) => updateRange(from, e.target.value)}
+                    onChange={changeTo}
                 />
             </Flex>
             {invalid && (
