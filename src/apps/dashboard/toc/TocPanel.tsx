@@ -2,8 +2,9 @@ import { Box, Flex, IconButton } from "@chakra-ui/react";
 import { SectionHeading, TitledSection } from "@open-pioneer/react-utils";
 import { Toc, TocApi, TocReadyEvent } from "@open-pioneer/toc";
 import { useIntl } from "open-pioneer:react-hooks";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import { LuLayers, LuPanelLeftClose } from "react-icons/lu";
+import { usePanelToggle } from "../usePanelToggle";
 import { AddWmsLayer } from "./AddWmsLayer";
 import { LanguageSelector } from "./LanguageSelector";
 import { layerItemContent } from "./layerItemContent";
@@ -40,22 +41,9 @@ export function TocPanel() {
     const intl = useIntl();
     const headingId = useId();
     const panelId = useId();
-    const [open, setOpen] = useState(true);
+    const { open, toggle, openButtonRef, closeButtonRef } = usePanelToggle(true);
     const [tocApi, setTocApi] = useState<TocApi>();
 
-    // Move the focus to the button that is visible after toggling.
-    const openButtonRef = useRef<HTMLButtonElement>(null);
-    const closeButtonRef = useRef<HTMLButtonElement>(null);
-    const toggled = useRef(false);
-    useEffect(() => {
-        if (toggled.current) {
-            (open ? closeButtonRef : openButtonRef).current?.focus();
-        }
-    }, [open]);
-    const toggle = (value: boolean) => {
-        toggled.current = true;
-        setOpen(value);
-    };
     const collapse = () => toggle(false);
     const expand = () => toggle(true);
     const connectToc = (event: TocReadyEvent) => setTocApi(event.api);
