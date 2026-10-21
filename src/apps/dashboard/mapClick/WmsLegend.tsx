@@ -17,6 +17,9 @@ export function WmsLegend({ map, layerId }: { map: MapModel; layerId: string }) 
         return null;
     }
     const title = intl.formatMessage({ id: "featureInfo.legend" });
+
+    const hideLegend = (url: string) => setFailed((current) => [...current, url]);
+
     return (
         <Box mt={2}>
             <Text fontSize="xs" color="fg.muted" mb={1}>
@@ -24,13 +27,7 @@ export function WmsLegend({ map, layerId }: { map: MapModel; layerId: string }) 
             </Text>
             <Stack gap={2} alignItems="flex-start">
                 {urls.map((url) => (
-                    <Image
-                        key={url}
-                        src={url}
-                        alt={title}
-                        maxWidth="100%"
-                        onError={() => setFailed((current) => [...current, url])}
-                    />
+                    <Image key={url} src={url} alt={title} maxWidth="100%" onError={() => hideLegend(url)} />
                 ))}
             </Stack>
         </Box>

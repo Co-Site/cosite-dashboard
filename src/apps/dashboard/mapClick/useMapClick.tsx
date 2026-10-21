@@ -79,6 +79,11 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
             marker?.destroy();
             marker = undefined;
         };
+        const showDatastream = (dataLayerId: string) => {
+            // Keep the sensor marked while it is shown in the analysis panel.
+            closeOverlay();
+            optionsRef.current.onShowDatastream?.(dataLayerId);
+        };
 
         const pointerKey = olMap.on("pointermove", (event) => {
             if (event.dragging) {
@@ -106,11 +111,7 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
                         datastreams={datastreams}
                         maxHeight={maxHeight}
                         onClose={closePopup}
-                        onShow={(dataLayerId) => {
-                            // Keep the sensor marked while it is shown in the analysis panel.
-                            closeOverlay();
-                            optionsRef.current.onShowDatastream?.(dataLayerId);
-                        }}
+                        onShow={showDatastream}
                     />
                 );
                 return;

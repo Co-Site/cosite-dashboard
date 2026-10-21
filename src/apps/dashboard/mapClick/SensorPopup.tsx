@@ -38,6 +38,9 @@ function SensorEntry(props: { map: MapModel; datastream: StaDatastreamProperties
     // Localized name from the data layer configuration; the datastream name comes from the server.
     const title = useLayerTitle(map, datastream.dataLayerId) ?? datastream.name;
     const details = [datastream.observedProperty, datastream.thing].filter(Boolean).join(" · ");
+
+    const show = () => onShow(datastream.dataLayerId);
+
     return (
         <Box>
             <Text fontSize="sm" fontWeight="semibold">
@@ -48,7 +51,7 @@ function SensorEntry(props: { map: MapModel; datastream: StaDatastreamProperties
                     {details}
                 </Text>
             )}
-            <Button size="xs" variant="outline" mt={1} onClick={() => onShow(datastream.dataLayerId)}>
+            <Button size="xs" variant="outline" mt={1} onClick={show}>
                 <LuChartLine />
                 {intl.formatMessage({ id: "sensorPopup.show" })}
             </Button>
