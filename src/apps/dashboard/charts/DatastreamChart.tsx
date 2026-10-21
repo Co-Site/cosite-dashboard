@@ -66,11 +66,16 @@ function Summary(props: { observations: Observation[]; unit: string | undefined;
     return (
         <Text fontSize="sm" color="fg.muted">
             {intl.formatMessage({ id: "chart.count" }, { count: observations.length })}
-            {stats &&
-                ` · ${intl.formatMessage(
-                    { id: "chart.stats" },
-                    { min: format(stats.min), max: format(stats.max), last: format(stats.last) }
-                )}`}
+            {stats && (
+                <>
+                    {" · "}
+                    {/* The labels are bold (in the message), the values normal. */}
+                    {intl.formatRichMessage(
+                        { id: "chart.stats" },
+                        { min: format(stats.min), max: format(stats.max), last: format(stats.last) }
+                    )}
+                </>
+            )}
             {truncated && ` · ${intl.formatMessage({ id: "chart.truncated" })}`}
         </Text>
     );

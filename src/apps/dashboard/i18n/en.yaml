@@ -100,5 +100,5 @@ messages:
     error: "Observations could not be loaded."
     empty: "No observations in the selected time range."
     count: "{count, plural, one {# observation} other {# observations}}"
-    stats: "Min {min} · Max {max} · Latest {last}"
+    stats: "<b>Min</b> {min} · <b>Max</b> {max} · <b>Latest</b> {last}"
     truncated: "truncated, please choose a shorter time range"

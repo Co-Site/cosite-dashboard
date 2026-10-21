@@ -100,5 +100,5 @@ messages:
     error: "Messwerte konnten nicht geladen werden."
     empty: "Keine Messwerte im gewählten Zeitraum."
     count: "{count, plural, one {# Messwert} other {# Messwerte}}"
-    stats: "Min {min} · Max {max} · Letzter {last}"
+    stats: "<b>Min</b> {min} · <b>Max</b> {max} · <b>Letzter</b> {last}"
     truncated: "gekürzt, bitte Zeitraum verkleinern"
