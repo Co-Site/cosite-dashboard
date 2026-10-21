@@ -230,7 +230,8 @@ Der TOC ist das unveränderte `@open-pioneer/toc`. Eigene Inhalte pro Layer komm
 
 ## Eigene WMS (temporär)
 
-Unter dem TOC-Titel öffnet „WMS hinzufügen“ ein Formular (`toc/AddWmsLayer.tsx`). Gespeichert wird nichts, nach dem
+Unter dem TOC-Titel öffnet „WMS hinzufügen“ ein Formular (`toc/AddWmsLayer.tsx`; Dienst laden in
+`toc/useWmsService.ts`, Layersuche in `toc/WmsLayerSearch.tsx`, Layer-Konfiguration in `userWmsLayerInput`). Gespeichert wird nichts, nach dem
 Neuladen sind die Layer weg.
 
 1. **URL des Dienstes** eingeben und laden. Eine eingefügte GetCapabilities-URL wird bereinigt

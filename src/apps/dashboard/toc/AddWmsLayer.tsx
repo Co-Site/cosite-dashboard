@@ -1,13 +1,14 @@
-import { Badge, Box, Button, chakra, Flex, Input, Spinner, Stack, Text } from "@chakra-ui/react";
+import { Box, Button, chakra, Flex, Input, Spinner, Stack, Text } from "@chakra-ui/react";
 import { createLogger } from "@open-pioneer/core";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
-import { KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
 import { userWmsLayerInput } from "../dataLayers/userWmsLayers";
-import { probeWmsLayer, searchLayers, WmsCapabilitiesLayer } from "../dataLayers/wmsCapabilities";
+import { probeWmsLayer, WmsCapabilitiesLayer } from "../dataLayers/wmsCapabilities";
 import { useUserWmsLayers } from "./useUserWmsLayers";
 import { useWmsService } from "./useWmsService";
+import { useWmsLayerSearch, WmsLayerList } from "./WmsLayerSearch";
 
 const LOG = createLogger("dashboard:AddWmsLayer");
 
@@ -86,16 +87,14 @@ function AddWmsForm(props: {
     const [checking, setChecking] = useState(false);
     const urlInputId = useId();
     const layerInputId = useId();
-    const listId = useId();
     const { url, setUrl, service, load } = useWmsService();
-    const [query, setQuery] = useState("");
-    const [active, setActive] = useState(0);
+    const search = useWmsLayerSearch(service.kind === "loaded" ? service.capabilities.layers : undefined);
     const [error, setError] = useState<string>();
     const layerRef = useRef<HTMLInputElement>(null);
 
     const loadService = () => {
         setError(undefined);
-        setActive(0);
+        search.setActive(0);
         load();
     };
 
@@ -106,13 +105,6 @@ function AddWmsForm(props: {
             layerRef.current?.focus();
         }
     }, [loaded]);
-
-    const search = useMemo(
-        () => (service.kind === "loaded" ? searchLayers(service.capabilities.layers, query) : undefined),
-        [service, query]
-    );
-    const results = search ?? [];
-    const activeLayer = results[Math.min(active, results.length - 1)];
 
     const add = async (layer: WmsCapabilitiesLayer | undefined) => {
         if (service.kind !== "loaded" || !layer || checking) {
@@ -144,21 +136,13 @@ function AddWmsForm(props: {
     const onLayerKeyDown = (event: KeyboardEvent) => {
         if (event.key === "ArrowDown" || event.key === "ArrowUp") {
             event.preventDefault();
-            const step = event.key === "ArrowDown" ? 1 : -1;
-            setActive((index) => Math.max(0, Math.min(results.length - 1, index + step)));
+            search.move(event.key === "ArrowDown" ? 1 : -1);
         } else if (event.key === "Enter") {
             event.preventDefault();
-            add(activeLayer);
+            add(search.activeLayer);
         }
     };
 
-    const optionId = (index: number) => `${listId}-${index}`;
-    // Keep the active result visible while moving through the list with the arrow keys.
-    const listRef = useRef<HTMLUListElement>(null);
-    const activeIndex = activeLayer ? results.indexOf(activeLayer) : -1;
-    useEffect(() => {
-        listRef.current?.children[activeIndex]?.scrollIntoView({ block: "nearest" });
-    }, [activeIndex]);
     return (
         <Stack id={id} gap={2} borderWidth="1px" borderRadius="md" padding={2} mt={1}>
             <Stack gap={1}>
@@ -198,7 +182,7 @@ function AddWmsForm(props: {
                 )}
             </Stack>
 
-            {service.kind === "loaded" && search && (
+            {service.kind === "loaded" && (
                 <Stack gap={1}>
                     <chakra.label htmlFor={layerInputId} fontSize="xs" fontWeight="semibold">
                         {intl.formatMessage({ id: "addWms.layer" })}
@@ -209,14 +193,13 @@ function AddWmsForm(props: {
                         size="xs"
                         role="combobox"
                         aria-autocomplete="list"
-                        aria-expanded={results.length > 0}
-                        aria-controls={listId}
-                        aria-activedescendant={activeLayer ? optionId(activeIndex) : undefined}
+                        aria-expanded={search.results.length > 0}
+                        aria-controls={search.listId}
+                        aria-activedescendant={search.activeLayer ? search.optionId(search.activeIndex) : undefined}
                         placeholder={intl.formatMessage({ id: "addWms.layerPlaceholder" })}
-                        value={query}
+                        value={search.query}
                         onChange={(e) => {
-                            setQuery(e.currentTarget.value);
-                            setActive(0);
+                            search.changeQuery(e.currentTarget.value);
                             setError(undefined);
                         }}
                         onKeyDown={onLayerKeyDown}
@@ -234,56 +217,13 @@ function AddWmsForm(props: {
                         </Text>
                     )}
                     <Text fontSize="xs" color="fg.muted">
-                        {query.trim() === ""
-                            ? intl.formatMessage({ id: "addWms.hint" }, { count: results.length })
-                            : results.length === 0
+                        {search.query.trim() === ""
+                            ? intl.formatMessage({ id: "addWms.hint" }, { count: search.results.length })
+                            : search.results.length === 0
                               ? intl.formatMessage({ id: "addWms.noResults" })
-                              : intl.formatMessage({ id: "addWms.matches" }, { count: results.length })}
+                              : intl.formatMessage({ id: "addWms.matches" }, { count: search.results.length })}
                     </Text>
-                    {results.length > 0 && (
-                        <Box
-                            as="ul"
-                            ref={listRef}
-                            id={listId}
-                            role="listbox"
-                            aria-label={intl.formatMessage({ id: "addWms.layer" })}
-                            // All layers can be browsed; the TOC panel itself is at most 60vh high.
-                            maxHeight="min(22rem, 40vh)"
-                            overflowY="auto"
-                            borderWidth="1px"
-                            borderRadius="sm"
-                            listStyleType="none"
-                        >
-                            {results.map((layer, index) => (
-                                <Box
-                                    as="li"
-                                    key={layer.name}
-                                    id={optionId(index)}
-                                    role="option"
-                                    aria-selected={layer === activeLayer}
-                                    paddingX={2}
-                                    paddingY={1}
-                                    cursor="pointer"
-                                    backgroundColor={layer === activeLayer ? "bg.emphasized" : undefined}
-                                    _hover={{ backgroundColor: "bg.muted" }}
-                                    onMouseEnter={() => setActive(index)}
-                                    onClick={() => add(layer)}
-                                >
-                                    <Text fontSize="xs" fontWeight="semibold" lineClamp={2}>
-                                        {layer.title}
-                                        {layer.isGroup && (
-                                            <Badge size="xs" variant="outline" ms={1} verticalAlign="middle">
-                                                {intl.formatMessage({ id: "addWms.group" })}
-                                            </Badge>
-                                        )}
-                                    </Text>
-                                    <Text fontSize="2xs" color="fg.muted" truncate>
-                                        {[layer.name, ...layer.path].join(" · ")}
-                                    </Text>
-                                </Box>
-                            ))}
-                        </Box>
-                    )}
+                    <WmsLayerList search={search} onPick={add} />
                 </Stack>
             )}
 
@@ -293,7 +233,11 @@ function AddWmsForm(props: {
                     {intl.formatMessage({ id: "addWms.close" })}
                 </Button>
                 {service.kind === "loaded" && (
-                    <Button size="xs" onClick={() => add(activeLayer)} disabled={!activeLayer || checking}>
+                    <Button
+                        size="xs"
+                        onClick={() => add(search.activeLayer)}
+                        disabled={!search.activeLayer || checking}
+                    >
                         {intl.formatMessage({ id: "addWms.add" })}
                     </Button>
                 )}
