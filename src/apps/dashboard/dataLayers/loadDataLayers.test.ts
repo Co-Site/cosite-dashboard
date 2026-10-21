@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import shippedConfig from "../../../public/config/dataLayers.json?raw";
-import { DataLayerNode, parseDataLayers } from "./types";
+import { parseDataLayers } from "./loadDataLayers";
+import { DataLayerNode } from "./types";
 
 describe("parseDataLayers", () => {
     it("accepts the shipped configuration", () => {

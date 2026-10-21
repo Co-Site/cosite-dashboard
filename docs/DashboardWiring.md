@@ -24,19 +24,19 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
 
 ## App-Aufbau (`src/apps/dashboard`)
 
-| Datei              | Zweck                                                                                                     |
-| ------------------ | --------------------------------------------------------------------------------------------------------- |
-| `package.json`     | Paketname + Abhängigkeiten (alle über `catalog:`)                                                         |
-| `build.config.mjs` | `defineBuildConfig({ i18n, styles, services, ui })` – Sprachen, CSS, Service-Registrierung, UI-Referenzen |
-| `app.ts`           | `createCustomElement({ component, appMetadata })` + `customElements.define("dashboard-app", ...)`         |
-| `services.ts`      | Service-Klassen, z. B. `MainMapProvider` (Kartenkonfiguration)                                            |
-| `DashboardApp.tsx` | Root-Komponente: Karte, TOC, Kartenwerkzeuge, Bottom-Panel                                                |
-| `BottomPanel.tsx`  | Einklappbares Analyse-Panel unten, Tabs „Einzelsensor“ / „Sensorvergleich“, gemeinsamer Zeitfilter        |
-| `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                             |
-| `dataLayers/`      | Datenlayer: JSON-Schema + Parser (`types.ts`), Loader, Layer-Fabrik, SensorThings-Helfer (`sta.ts`)       |
-| `mapClick/`        | Kartenklick: Popup mit allen Sensoren an der Stelle oder WMS-GetFeatureInfo                               |
-| `charts/`          | Zeitfilter, Sensor- und Typauswahl, Messwerte laden, Diagramme: Linie, Balken, Boxplot, Windrose          |
-| `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen             |
+| Datei              | Zweck                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `package.json`     | Paketname + Abhängigkeiten (alle über `catalog:`)                                                                         |
+| `build.config.mjs` | `defineBuildConfig({ i18n, styles, services, ui })` – Sprachen, CSS, Service-Registrierung, UI-Referenzen                 |
+| `app.ts`           | `createCustomElement({ component, appMetadata })` + `customElements.define("dashboard-app", ...)`                         |
+| `services.ts`      | Service-Klassen, z. B. `MainMapProvider` (Kartenkonfiguration)                                                            |
+| `DashboardApp.tsx` | Root-Komponente: Karte, TOC, Kartenwerkzeuge, Bottom-Panel                                                                |
+| `BottomPanel.tsx`  | Einklappbares Analyse-Panel unten, Tabs „Einzelsensor“ / „Sensorvergleich“, gemeinsamer Zeitfilter                        |
+| `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                                             |
+| `dataLayers/`      | Datenlayer: JSON-Schema (`types.ts`), Loader + Parser (`loadDataLayers.ts`), Layer-Fabrik, SensorThings-Helfer (`sta.ts`) |
+| `mapClick/`        | Kartenklick: Popup mit allen Sensoren an der Stelle oder WMS-GetFeatureInfo                                               |
+| `charts/`          | Zeitfilter, Sensor- und Typauswahl, Messwerte laden, Diagramme: Linie, Balken, Boxplot, Windrose                          |
+| `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen                             |
 
 ## Datenlayer (`src/public/config/dataLayers.json`)
 
@@ -161,9 +161,9 @@ Darüber findet der Kartenklick z. B. die `featureInfo`-Einstellungen eines WMS-
 ### Neuen Layertyp hinzufügen
 
 1. In `dataLayers/types.ts` ein neues Interface mit eigenem `type` anlegen, in die Union `DataLayerConfig` aufnehmen
-   und in `validateEntry` die typspezifischen Felder prüfen.
+   und in `validateEntry` (`dataLayers/loadDataLayers.ts`) die typspezifischen Felder prüfen.
 2. In `dataLayers/createDataLayer.ts` einen `case` für den neuen Typ ergänzen. TypeScript meldet fehlende Fälle.
-3. Test in `dataLayers/types.test.ts` erweitern und den Typ hier in der Doku eintragen.
+3. Test in `dataLayers/loadDataLayers.test.ts` erweitern und den Typ hier in der Doku eintragen.
 
 ## Kartenklick, Popup und Diagramme
 
