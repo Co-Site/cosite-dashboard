@@ -105,7 +105,8 @@ export function BoxPlotChart({ observations, label, unit }: BoxPlotChartProps) {
         chart.data.labels = [label];
         dataset.data = [observations.map((o) => o.value)];
         chart.update();
-    }, [observations, label]);
+        // `intl`, `unit`: the chart is recreated empty when they change.
+    }, [observations, label, intl, unit]);
 
     return (
         <Box position="relative" height="100%" width="100%">

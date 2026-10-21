@@ -103,7 +103,8 @@ export function WindRoseChart({ observations, label, unit }: WindRoseChartProps)
         }
         dataset.data = frequencies;
         chart.update();
-    }, [frequencies]);
+        // `intl`: the chart is recreated empty when the language changes.
+    }, [frequencies, intl]);
 
     return (
         <Flex direction="column" height="100%" width="100%">
