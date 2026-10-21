@@ -194,6 +194,10 @@ Im Bottom-Panel:
   Zeitraum (`fetchObservations` in `dataLayers/sta.ts`, folgt `@iot.nextLink`, max. 20.000 Werte) und zeigt sie als
   Liniendiagramm mit Tooltip und Fadenkreuz. Lücken in den Daten bleiben als Lücke sichtbar. Darüber stehen
   Anzahl, Min, Max und letzter Wert.
+- **Sensor nicht verfügbar**: Scheitert das Laden des Datastreams (Fehler, Zeitlimit 30 s, kein Standort), setzt
+  `createStaDatastreamLayer` die Quelle auf `error`. Daraus wird `layer.loadState`: Das TOC markiert den Layer, das
+  Panel zeigt über `useSensorLoadFailed` (`dataLayers/useStaSensors.ts`) einen roten Hinweis statt des Spinners.
+  Annahmen der STA-Hooks (ein Layer, ein Datastream) stehen in `DashboardDecisions.md`, Abschnitt 8.
 - **Weitere Sensoren am Standort** (`charts/SensorTiles.tsx`): `SensorChartView` holt über `useColocatedSensors`
   (`dataLayers/useStaSensors.ts`) die anderen Sensoren am Standort des gewählten Sensors. Der Hook hört auf alle
   STA-Quellen, die Kacheln erscheinen also, sobald die Datastreams geladen sind. Gruppiert wird nach

@@ -124,21 +124,32 @@ function applyCapabilitiesTitles(layer: WMSLayer, config: WmsDataLayerConfig): v
         .catch((error) => LOG.warn(`Failed to load capabilities for the title of '${config.id}'.`, error));
 }
 
+/** Time after which a datastream that has not been loaded counts as failed (instead of loading forever). */
+const DATASTREAM_TIMEOUT_MS = 30_000;
+
 function createStaDatastreamLayer(
     config: StaDatastreamLayerConfig,
     { layerFactory, mapProjection, language }: DataLayerContext
 ): Layer {
     const source = new VectorSource({ attributions: config.attribution });
-    fetchDatastream(config.endpoint)
+    // The layer's `loadState` follows the source state, so the TOC and the sensor panel show failures.
+    source.setState("loading");
+    fetchDatastream(config.endpoint, AbortSignal.timeout(DATASTREAM_TIMEOUT_MS))
         .then((datastream) => {
             const feature = createDatastreamFeature(config.id, config.endpoint, datastream, mapProjection);
             if (feature) {
                 source.addFeature(feature);
+                source.setState("ready");
             } else {
+                // The dashboard is explored on the map: a sensor without location is not available.
                 LOG.warn(`Datastream '${config.endpoint}' has no location.`);
+                source.setState("error");
             }
         })
-        .catch((error) => LOG.error(`Failed to load data layer '${config.id}'.`, error));
+        .catch((error) => {
+            LOG.error(`Failed to load data layer '${config.id}'.`, error);
+            source.setState("error");
+        });
 
     return layerFactory.create({
         type: SimpleLayer,

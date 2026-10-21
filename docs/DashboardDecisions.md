@@ -239,6 +239,29 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
       Datastreams kommen aus dem Feature des Layers (`dataLayers/useStaSensors.ts`).
     - Dropdown als natives `<select>` (`NativeSelect`), damit kein Popup im Shadow DOM positioniert werden muss.
     - Nur der aktive Tab lädt Messwerte (`lazyMount`, `unmountOnExit`).
+- **Sensor nicht verfügbar** (`createStaDatastreamLayer` in `dataLayers/createDataLayer.ts`, `useSensorLoadFailed` in
+  `dataLayers/useStaSensors.ts`): Statt eines endlosen Spinners steht im Panel in Rot „Sensor nicht verfügbar …“.
+  Das TOC markiert den Layer wie jeden anderen nicht verfügbaren Layer.
+    - **Auslöser:** Das Laden des Datastreams scheitert, dauert länger als 30 s (`DATASTREAM_TIMEOUT_MS`), der
+      Datastream hat keinen Standort, oder der `healthCheck` des Endpoints schlägt fehl.
+    - **Mechanik:** Die Quelle des Layers durchläuft die Zustände `loading` → `ready` bzw. `error`.
+      `@open-pioneer/map` leitet daraus (zusammen mit dem Health-Check) `layer.loadState` ab. Das TOC zeigt bei
+      `error` von sich aus einen roten Hinweis und deaktiviert den Layer.
+    - **Fehler statt reinem Zeitlimit:** Ein Fehler ist sofort bekannt. Das Zeitlimit fängt nur Anfragen ab, die nie
+      antworten. Ein Zeitlimit allein würde langsame Server fälschlich als Fehler zeigen.
+    - **Ohne Standort kein Sensor** (Entscheidung des Nutzers, 2026-10-21): Das Dashboard wird über die Karte
+      erkundet, es geht darum, _wo_ ein Sensor steht. Ein Datastream ohne Standort wird deshalb nicht ohne
+      Kartenpunkt angezeigt, sondern gilt als nicht verfügbar. So fällt der Konfigurationsfehler auf.
+- **Annahmen der STA-Hooks** (`dataLayers/useStaSensors.ts`):
+    - **Ein Layer, ein Datastream:** Die Hooks lesen nur das erste Feature der Quelle (`datastreamFeature`). Wird
+      künftig z. B. ein ganzes Thing mit mehreren Datastreams als _ein_ Layer importiert, zeigen Dropdown, Diagramm
+      und Kacheln stillschweigend nur den ersten. Dann entweder pro Datastream einen eigenen Layer erzeugen
+      (`createStaDatastreamLayer`) oder `datastreamFeature`, `useDatastreamProperties` und `useColocatedSensors`
+      anpassen.
+    - **`useDatastreamProperties` sucht die Quelle nur einmal pro Layer-ID**, nicht reaktiv. Heute unkritisch,
+      weil die ID immer aus der Liste vorhandener Layer kommt (`useStaSensors`). Wird der Hook mit einer festen ID
+      aufgerufen, solange die Konfiguration noch lädt, bleibt das Ergebnis `undefined`. `useColocatedSensors` ist
+      über `useStaSensors` reaktiv und nicht betroffen.
 - **Sensor-Popup:** Ein Klick auf einen Sensorpunkt wählt nicht mehr direkt aus, sondern zeigt ein Popup mit **allen**
   Sensoren an der Stelle. Datastream 14 und 15 liegen am selben Ort, vorher war nur der zuletzt gezeichnete
   erreichbar. Der Button „In Auswertung anzeigen“ wählt den Sensor in der Einzelansicht und öffnet das Panel.
@@ -451,6 +474,8 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 - **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, im Panel
   stehen sie als Kacheln neben dem Diagramm. Eine Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht
   noch aus.
+- **Ganzes Thing als Layer:** Gut möglich, dass einmal ein Thing mit allen Datastreams importiert wird. Dann die
+  Annahme „ein Layer, ein Datastream“ beachten (Abschnitt 8, Annahmen der STA-Hooks).
 - **Windrose fachlich klären:** Welche Datastreams (Richtung, Geschwindigkeit), Geschwindigkeitsklassen gestapelt pro
   Sektor, Anzahl der Sektoren. Für gestapelte Klassen reicht `polarArea` nicht, dann eigene Zeichnung oder Plugin.
 - **Balken für Niederschlag:** Summe statt Mittelwert je Abschnitt, ggf. pro Datastream in der Konfiguration.

@@ -25,6 +25,7 @@ messages:
       placeholder: "Choose a sensor"
       none: "No sensors configured."
       loading: "Loading sensor …"
+      error: "Sensor not available: the datastream could not be loaded or has no location."
     colocated:
       label: "Other sensors at this site"
       noValue: "–"

@@ -40,20 +40,42 @@ function isStaLayer(layer: AnyLayer): boolean {
 }
 
 /**
+ * The feature of a SensorThings layer. A layer holds exactly one datastream, further features would be ignored
+ * (see `docs/DashboardDecisions.md`, section 8, "Annahmen der STA-Hooks").
+ */
+function datastreamFeature(source: VectorSource<FeatureLike> | undefined): FeatureLike | undefined {
+    return source?.getFeatures()[0];
+}
+
+/**
  * Returns the datastream properties of a SensorThings layer,
- * or `undefined` while the datastream is still loading (or for unknown layers).
+ * or `undefined` while the datastream is still loading, if it failed (see {@link useSensorLoadFailed})
+ * or for unknown layers.
  */
 export function useDatastreamProperties(
     map: MapModel,
     dataLayerId: string | undefined
 ): StaDatastreamProperties | undefined {
+    // Looked up once per id, not reactively: the layer must already be in the map
+    // (see `docs/DashboardDecisions.md`, section 8, "Annahmen der STA-Hooks").
     const source = useMemo(() => getSensorSource(map, dataLayerId), [map, dataLayerId]);
     const subscribe = useCallback(
         (onChange: () => void) => subscribeSources(source ? [source] : [], onChange),
         [source]
     );
-    const feature = useSyncExternalStore(subscribe, () => source?.getFeatures()[0]);
+    const feature = useSyncExternalStore(subscribe, () => datastreamFeature(source));
     return useMemo(() => (feature ? getDatastreamProperties(feature) : undefined), [feature]);
+}
+
+/**
+ * Whether a SensorThings layer is not available: its datastream could not be loaded (error or timeout),
+ * has no location, or the endpoint fails the layer's health check.
+ */
+export function useSensorLoadFailed(map: MapModel, dataLayerId: string | undefined): boolean {
+    return useReactiveSnapshot(
+        () => (dataLayerId ? map.layers.getLayerById(dataLayerId)?.loadState === "error" : false),
+        [map, dataLayerId]
+    );
 }
 
 /**
@@ -78,7 +100,7 @@ export function useColocatedSensors(map: MapModel, dataLayerId: string | undefin
     // The snapshot must stay the same object as long as no feature changed.
     const snapshot = useRef<FeatureLike[]>([]);
     const features = useSyncExternalStore(subscribe, () => {
-        const current = sources.map((source) => source.getFeatures()[0]).filter((feature) => feature !== undefined);
+        const current = sources.map(datastreamFeature).filter((feature) => feature !== undefined);
         const previous = snapshot.current;
         if (current.length !== previous.length || current.some((feature, index) => feature !== previous[index])) {
             snapshot.current = current;

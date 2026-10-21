@@ -3,7 +3,12 @@ import { Tooltip } from "@open-pioneer/chakra-snippets/tooltip";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useId } from "react";
-import { StaSensor, useColocatedSensors, useDatastreamProperties } from "../dataLayers/useStaSensors";
+import {
+    StaSensor,
+    useColocatedSensors,
+    useDatastreamProperties,
+    useSensorLoadFailed
+} from "../dataLayers/useStaSensors";
 import { CHART_TYPE_ICONS, CHART_TYPES, ChartType } from "./chartTypes";
 import { DatastreamChart } from "./DatastreamChart";
 import { SensorTiles } from "./SensorTiles";
@@ -36,6 +41,7 @@ export function SensorChartView(props: SensorChartViewProps) {
     const map = useMapModelValue();
     const selectId = useId();
     const datastream = useDatastreamProperties(map, value);
+    const loadFailed = useSensorLoadFailed(map, value);
     const colocated = useColocatedSensors(map, value);
 
     return (
@@ -69,6 +75,8 @@ export function SensorChartView(props: SensorChartViewProps) {
                 <Box flex="1" minWidth={0}>
                     {datastream ? (
                         <DatastreamChart datastream={datastream} chartType={chartType} timeFilter={timeFilter} />
+                    ) : loadFailed ? (
+                        <Text color="fg.error">{intl.formatMessage({ id: "panel.sensor.error" })}</Text>
                     ) : value ? (
                         <Flex gap={2} alignItems="center">
                             <Spinner size="sm" />
