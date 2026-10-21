@@ -3,8 +3,8 @@ import { MapModel, WMSLayer } from "@open-pioneer/map";
 import { useReactiveSnapshot } from "@open-pioneer/reactivity";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useState } from "react";
-import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
-import { DataLayerNode, WmsLegendConfig } from "../dataLayers/types";
+import { getDataLayerConfig } from "../dataLayers/createDataLayer";
+import { WmsLegendConfig } from "../dataLayers/types";
 import { peekWmsCapabilities } from "../dataLayers/wmsCapabilities";
 
 /**
@@ -72,7 +72,7 @@ function useLegendUrls(map: MapModel, layerId: string): string[] {
 }
 
 function getLegendConfig(layer: WMSLayer): { legend: WmsLegendConfig; temporary: boolean } | undefined {
-    const config = layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
+    const config = getDataLayerConfig(layer);
     if (config?.type !== "wms") {
         return undefined;
     }

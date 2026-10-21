@@ -1,8 +1,8 @@
 import { AnyLayer, MapModel, WMSLayer } from "@open-pioneer/map";
 import { Coordinate } from "ol/coordinate";
-import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
+import { getDataLayerConfig } from "../dataLayers/createDataLayer";
 import { LocalizedText } from "../dataLayers/localizedText";
-import { DataLayerNode, FeatureInfoField, WmsDataLayerConfig } from "../dataLayers/types";
+import { FeatureInfoField, WmsDataLayerConfig } from "../dataLayers/types";
 import { chooseFeatureInfoFormat, fetchWmsCapabilities } from "../dataLayers/wmsCapabilities";
 
 /** Feature info of a single WMS layer at the clicked position. */
@@ -142,10 +142,6 @@ function toValues(properties: Record<string, unknown>, fields: FeatureInfoField[
             value: properties[field.property],
             unit: field.unit
         }));
-}
-
-function getDataLayerConfig(layer: AnyLayer): DataLayerNode | undefined {
-    return layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
 }
 
 /** A layer is only visible on the map if all of its parents are visible as well. */

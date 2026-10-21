@@ -1,5 +1,5 @@
 import { createLogger } from "@open-pioneer/core";
-import { GroupLayer, Layer, LayerFactory, MapModel, SimpleLayer, WMSLayer } from "@open-pioneer/map";
+import { AnyLayer, GroupLayer, Layer, LayerFactory, MapModel, SimpleLayer, WMSLayer } from "@open-pioneer/map";
 import { LayerTocAttributes } from "@open-pioneer/toc";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
@@ -12,7 +12,12 @@ import { fetchWmsCapabilities } from "./wmsCapabilities";
 const LOG = createLogger("dashboard:createDataLayer");
 
 /** Key of the layer attribute that holds the original {@link DataLayerNode}. */
-export const DATA_LAYER_ATTRIBUTE = "dataLayer";
+const DATA_LAYER_ATTRIBUTE = "dataLayer";
+
+/** The configuration a map layer was created from, or `undefined` for other layers (e.g. base layers). */
+export function getDataLayerConfig(layer: AnyLayer): DataLayerNode | undefined {
+    return layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
+}
 
 /**
  * Creates a map layer from a data layer configuration entry (groups are created recursively).
@@ -182,7 +187,7 @@ const SENSOR_STYLE = new Style({
  */
 export function localizeDataLayers(map: MapModel, language: string): void {
     for (const layer of map.layers.getRecursiveLayers({ filter: "operational" })) {
-        const config = layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
+        const config = getDataLayerConfig(layer);
         if (!config) {
             continue;
         }

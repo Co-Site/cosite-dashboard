@@ -6,9 +6,8 @@ import { unByKey } from "ol/Observable";
 import VectorSource from "ol/source/Vector";
 import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import { colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
-import { DATA_LAYER_ATTRIBUTE } from "./createDataLayer";
+import { getDataLayerConfig } from "./createDataLayer";
 import { getDatastreamProperties, StaDatastreamProperties } from "./sta";
-import { DataLayerNode } from "./types";
 
 /** A SensorThings datastream layer of the map. */
 export interface StaSensor {
@@ -35,8 +34,7 @@ export function useStaSensors(map: MapModel): StaSensor[] {
 }
 
 function isStaLayer(layer: AnyLayer): boolean {
-    const config = layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
-    return config?.type === "sta-datastream";
+    return getDataLayerConfig(layer)?.type === "sta-datastream";
 }
 
 /**

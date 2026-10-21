@@ -5,8 +5,7 @@ import { unByKey } from "ol/Observable";
 import { useIntl } from "open-pioneer:react-hooks";
 import { ReactNode, useEffect, useState } from "react";
 import { LuTrash2 } from "react-icons/lu";
-import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
-import { DataLayerNode } from "../dataLayers/types";
+import { getDataLayerConfig } from "../dataLayers/createDataLayer";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { LayerLoadWarning } from "./LayerLoadWarning";
 import { useUserWmsLayers } from "./useUserWmsLayers";
@@ -16,7 +15,7 @@ import { useUserWmsLayers } from "./useUserWmsLayers";
  * cannot be loaded), and a remove button for the layers the user added.
  */
 export function layerItemContent(layer: AnyLayer): ReactNode {
-    const config = layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
+    const config = getDataLayerConfig(layer);
     if (config?.type !== "wms" || !(layer instanceof WMSLayer)) {
         return undefined;
     }

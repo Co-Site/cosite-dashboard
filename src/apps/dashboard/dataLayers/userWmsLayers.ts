@@ -1,7 +1,7 @@
 import { AnyLayer, isLayer, Layer, MapModel } from "@open-pioneer/map";
-import { createDataLayer, DATA_LAYER_ATTRIBUTE, DataLayerContext } from "./createDataLayer";
+import { createDataLayer, DataLayerContext, getDataLayerConfig } from "./createDataLayer";
 import { LocalizedText } from "./localizedText";
-import { DataLayerNode, WmsDataLayerConfig } from "./types";
+import { WmsDataLayerConfig } from "./types";
 
 /** Id of the group that holds the WMS layers added by the user. */
 export const USER_WMS_GROUP_ID = "user-wms";
@@ -114,7 +114,7 @@ function findConfiguredWmsLayer(map: MapModel): Layer | undefined {
         .filter((layer): layer is Layer => isLayer(layer) && layer.id !== USER_WMS_GROUP_ID)
         .find((layer) =>
             [layer, ...(layer.layers?.getRecursiveLayers() ?? [])].some((candidate) => {
-                const config = candidate.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
+                const config = getDataLayerConfig(candidate);
                 return config?.type === "wms" && !config.temporary;
             })
         );
