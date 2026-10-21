@@ -5,27 +5,14 @@ import { useIntl } from "open-pioneer:react-hooks";
 import { KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
 import { userWmsLayerInput } from "../dataLayers/userWmsLayers";
-import {
-    fetchWmsCapabilities,
-    normalizeWmsEndpoint,
-    probeWmsLayer,
-    searchLayers,
-    WmsCapabilities,
-    WmsCapabilitiesError,
-    WmsCapabilitiesLayer
-} from "../dataLayers/wmsCapabilities";
+import { probeWmsLayer, searchLayers, WmsCapabilitiesLayer } from "../dataLayers/wmsCapabilities";
 import { useUserWmsLayers } from "./useUserWmsLayers";
+import { useWmsService } from "./useWmsService";
 
 const LOG = createLogger("dashboard:AddWmsLayer");
 
 /** How long the confirmation of an added layer is shown (ms). */
 const STATUS_DURATION = 8000;
-
-type ServiceState =
-    | { kind: "idle" }
-    | { kind: "loading" }
-    | { kind: "error"; message: string }
-    | { kind: "loaded"; endpoint: string; capabilities: WmsCapabilities };
 
 /**
  * Row below the TOC title to add a WMS layer for this session:
@@ -100,46 +87,16 @@ function AddWmsForm(props: {
     const urlInputId = useId();
     const layerInputId = useId();
     const listId = useId();
-    const [url, setUrl] = useState(lastUrl);
-    const [service, setService] = useState<ServiceState>({ kind: "idle" });
+    const { url, setUrl, service, load } = useWmsService();
     const [query, setQuery] = useState("");
     const [active, setActive] = useState(0);
     const [error, setError] = useState<string>();
     const layerRef = useRef<HTMLInputElement>(null);
-    const request = useRef(0);
 
-    const load = () => {
-        let endpoint: string;
-        try {
-            endpoint = normalizeWmsEndpoint(url);
-        } catch {
-            setService({ kind: "error", message: intl.formatMessage({ id: "addWms.error.invalidUrl" }) });
-            return;
-        }
-        const current = ++request.current;
-        lastUrl = url;
-        setService({ kind: "loading" });
+    const loadService = () => {
         setError(undefined);
-        fetchWmsCapabilities(endpoint)
-            .then((capabilities) => {
-                if (current !== request.current) {
-                    return;
-                }
-                if (capabilities.layers.length === 0) {
-                    setService({ kind: "error", message: intl.formatMessage({ id: "addWms.error.noLayers" }) });
-                    return;
-                }
-                setService({ kind: "loaded", endpoint, capabilities });
-                setActive(0);
-            })
-            .catch((e: unknown) => {
-                if (current !== request.current) {
-                    return;
-                }
-                LOG.warn(`Failed to load the capabilities of ${endpoint}.`, e);
-                const kind = e instanceof WmsCapabilitiesError ? e.kind : "invalid";
-                setService({ kind: "error", message: intl.formatMessage({ id: `addWms.error.${kind}` }) });
-            });
+        setActive(0);
+        load();
     };
 
     // Continue with the layer search once the service has been loaded.
@@ -220,11 +177,11 @@ function AddWmsForm(props: {
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault();
-                                load();
+                                loadService();
                             }
                         }}
                     />
-                    <Button size="xs" variant="outline" onClick={load} disabled={!url.trim()}>
+                    <Button size="xs" variant="outline" onClick={loadService} disabled={!url.trim()}>
                         {intl.formatMessage({ id: "addWms.load" })}
                     </Button>
                 </Flex>
@@ -344,6 +301,3 @@ function AddWmsForm(props: {
         </Stack>
     );
 }
-
-/** The last loaded URL, offered again for the next layer (session only). */
-let lastUrl = "";
