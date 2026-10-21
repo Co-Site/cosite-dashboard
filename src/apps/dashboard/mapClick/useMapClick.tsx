@@ -2,6 +2,7 @@ import { createLogger, isAbortError } from "@open-pioneer/core";
 import { Highlight, MapModel, Overlay } from "@open-pioneer/map";
 import { Coordinate } from "ol/coordinate";
 import { Point } from "ol/geom";
+import OlMap from "ol/Map";
 import { unByKey } from "ol/Observable";
 import { Pixel } from "ol/pixel";
 import { ReactNode, useEffect, useRef } from "react";
@@ -22,6 +23,28 @@ export interface MapClickOptions {
 /** Pixel tolerance for hitting a sensor point. */
 const HIT_TOLERANCE = 5;
 
+/** All sensors at the pixel (several sensors may share a location) and the location of the first one. */
+function sensorsAt(
+    olMap: OlMap,
+    pixel: Pixel
+): { datastreams: StaDatastreamProperties[]; location: Coordinate | undefined } {
+    const datastreams: StaDatastreamProperties[] = [];
+    let location: Coordinate | undefined;
+    olMap.forEachFeatureAtPixel(
+        pixel,
+        (feature) => {
+            const datastream = getDatastreamProperties(feature);
+            if (datastream && !datastreams.some((d) => d.dataLayerId === datastream.dataLayerId)) {
+                datastreams.push(datastream);
+                const geometry = feature.getGeometry();
+                location ??= geometry instanceof Point ? geometry.getCoordinates() : undefined;
+            }
+        },
+        { hitTolerance: HIT_TOLERANCE }
+    );
+    return { datastreams, location };
+}
+
 /**
  * Handles clicks into the map:
  * - a click on a sensor point marks it and shows a popup with all sensors at that position; each one
@@ -40,6 +63,7 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
             return;
         }
 
+        const olMap = map.olMap;
         let popup: Overlay | undefined;
         let marker: Highlight | undefined;
         let popupResizeObserver: ResizeObserver | undefined;
@@ -87,33 +111,13 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
             return overlay;
         };
 
-        const olMap = map.olMap;
-        // All sensors at the position (several sensors may share a location) and the location of the first one.
-        const sensorsAt = (pixel: Pixel) => {
-            const datastreams: StaDatastreamProperties[] = [];
-            let location: Coordinate | undefined;
-            olMap.forEachFeatureAtPixel(
-                pixel,
-                (feature) => {
-                    const datastream = getDatastreamProperties(feature);
-                    if (datastream && !datastreams.some((d) => d.dataLayerId === datastream.dataLayerId)) {
-                        datastreams.push(datastream);
-                        const geometry = feature.getGeometry();
-                        location ??= geometry instanceof Point ? geometry.getCoordinates() : undefined;
-                    }
-                },
-                { hitTolerance: HIT_TOLERANCE }
-            );
-            return { datastreams, location };
-        };
-
         const pointerKey = olMap.on("pointermove", (event) => {
             if (event.dragging) {
                 return;
             }
             const target = olMap.getTargetElement();
             if (target) {
-                target.style.cursor = sensorsAt(event.pixel).datastreams.length ? "pointer" : "";
+                target.style.cursor = sensorsAt(olMap, event.pixel).datastreams.length ? "pointer" : "";
             }
         });
 
@@ -121,7 +125,7 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
         const clickKey = olMap.on("singleclick", (event) => {
             closePopup();
             const maxHeight = getPopupMaxHeight(olMap.getSize()?.[1] ?? 0);
-            const { datastreams, location = event.coordinate } = sensorsAt(event.pixel);
+            const { datastreams, location = event.coordinate } = sensorsAt(olMap, event.pixel);
             if (datastreams.length) {
                 // The sensor stays marked until the next click into the map (or the popup is closed).
                 marker = addSensorSelection(map, location);
