@@ -3,14 +3,7 @@ import { BarController, BarElement, Chart, ChartConfiguration, LinearScale, Tool
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback, useMemo } from "react";
 import { Observation } from "../dataLayers/sta";
-import {
-    createValueFormatter,
-    formatTimeTick,
-    GRID_COLOR,
-    SERIES_COLOR,
-    SERIES_FILL,
-    TEXT_SECONDARY
-} from "./chartStyle";
+import { createValueFormatter, SERIES_COLOR, SERIES_FILL, timeScale, valueScale } from "./chartStyle";
 import { Bucket, bucketSize, meanPerBucket } from "./statistics";
 import { TimeRange } from "./timeRange";
 import { useChart } from "./useChart";
@@ -60,26 +53,8 @@ export function BarChart({ observations, label, unit, range }: BarChartProps) {
                     }
                 },
                 scales: {
-                    x: {
-                        type: "linear",
-                        grid: { display: false },
-                        border: { color: GRID_COLOR },
-                        ticks: {
-                            color: TEXT_SECONDARY,
-                            maxTicksLimit: 8,
-                            maxRotation: 0,
-                            callback: (value) => formatTimeTick(intl, Number(value))
-                        }
-                    },
-                    y: {
-                        grid: { color: GRID_COLOR },
-                        border: { display: false },
-                        ticks: {
-                            color: TEXT_SECONDARY,
-                            maxTicksLimit: 6,
-                            callback: (value) => formatValue(Number(value))
-                        }
-                    }
+                    x: timeScale(intl),
+                    y: valueScale(formatValue)
                 },
                 plugins: {
                     tooltip: {

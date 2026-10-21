@@ -12,7 +12,7 @@ import {
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback } from "react";
 import { Observation } from "../dataLayers/sta";
-import { createValueFormatter, formatTimeTick, GRID_COLOR, SERIES_COLOR, TEXT_SECONDARY } from "./chartStyle";
+import { createValueFormatter, SERIES_COLOR, timeScale, valueScale } from "./chartStyle";
 import { TimeRange } from "./timeRange";
 import { useChart } from "./useChart";
 
@@ -66,26 +66,8 @@ export function ObservationChart({ observations, label, unit, range }: Observati
                     }
                 },
                 scales: {
-                    x: {
-                        type: "linear",
-                        grid: { display: false },
-                        border: { color: GRID_COLOR },
-                        ticks: {
-                            color: TEXT_SECONDARY,
-                            maxTicksLimit: 8,
-                            maxRotation: 0,
-                            callback: (value) => formatTimeTick(intl, Number(value))
-                        }
-                    },
-                    y: {
-                        grid: { color: GRID_COLOR },
-                        border: { display: false },
-                        ticks: {
-                            color: TEXT_SECONDARY,
-                            maxTicksLimit: 6,
-                            callback: (value) => formatValue(Number(value))
-                        }
-                    }
+                    x: timeScale(intl),
+                    y: valueScale(formatValue)
                 },
                 plugins: {
                     tooltip: {

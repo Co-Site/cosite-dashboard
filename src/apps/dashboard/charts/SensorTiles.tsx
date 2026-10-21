@@ -5,6 +5,7 @@ import { useIntl } from "open-pioneer:react-hooks";
 import { RefObject, useEffect, useRef, useState } from "react";
 import { fetchLatestObservation, Observation, StaDatastreamProperties } from "../dataLayers/sta";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
+import { createValueFormatter } from "./chartStyle";
 
 const LOG = createLogger("dashboard:SensorTiles");
 
@@ -75,7 +76,7 @@ function SensorTile(props: { sensor: StaDatastreamProperties; onSelect(sensorId:
 
     const observation = latest.kind === "loaded" ? latest.observation : undefined;
     const value = observation
-        ? `${intl.formatNumber(observation.value, { maximumFractionDigits: 2 })}${sensor.unit ? ` ${sensor.unit}` : ""}`
+        ? createValueFormatter(intl, sensor.unit)(observation.value)
         : intl.formatMessage({ id: "panel.colocated.noValue" });
     const time = observation && formatTime(intl, observation.time);
     return (

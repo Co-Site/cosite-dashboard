@@ -4,7 +4,7 @@ import { CategoryScale, Chart, ChartConfiguration, LinearScale, Tooltip } from "
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback } from "react";
 import { Observation } from "../dataLayers/sta";
-import { createValueFormatter, GRID_COLOR, SERIES_COLOR, SERIES_FILL, TEXT_SECONDARY } from "./chartStyle";
+import { createValueFormatter, GRID_COLOR, SERIES_COLOR, SERIES_FILL, TEXT_SECONDARY, valueScale } from "./chartStyle";
 import { useChart } from "./useChart";
 
 Chart.register(BoxPlotController, BoxAndWiskers, CategoryScale, LinearScale, Tooltip);
@@ -51,15 +51,7 @@ export function BoxPlotChart({ observations, label, unit }: BoxPlotChartProps) {
                         border: { color: GRID_COLOR },
                         ticks: { color: TEXT_SECONDARY }
                     },
-                    y: {
-                        grid: { color: GRID_COLOR },
-                        border: { display: false },
-                        ticks: {
-                            color: TEXT_SECONDARY,
-                            maxTicksLimit: 6,
-                            callback: (value) => formatValue(Number(value))
-                        }
-                    }
+                    y: valueScale(formatValue)
                 },
                 plugins: {
                     tooltip: {

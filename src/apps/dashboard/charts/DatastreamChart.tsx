@@ -7,6 +7,7 @@ import { fetchObservations, Observation, StaDatastreamProperties } from "../data
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { BarChart } from "./BarChart";
 import { BoxPlotChart } from "./BoxPlotChart";
+import { createValueFormatter } from "./chartStyle";
 import { ChartType } from "./chartTypes";
 import { ObservationChart } from "./ObservationChart";
 import { displayRange, TimeFilter, TimeRange } from "./timeRange";
@@ -124,8 +125,7 @@ function Summary(props: { observations: Observation[]; unit: string | undefined;
         return { min, max, last: observations[observations.length - 1]?.value ?? NaN };
     }, [observations]);
 
-    const format = (value: number) =>
-        `${intl.formatNumber(value, { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ""}`;
+    const format = createValueFormatter(intl, unit);
     return (
         <Text fontSize="sm" color="fg.muted">
             {intl.formatMessage({ id: "chart.count" }, { count: observations.length })}
