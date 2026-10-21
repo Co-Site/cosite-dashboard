@@ -1,16 +1,17 @@
 import { createLogger, isAbortError } from "@open-pioneer/core";
-import { Highlight, MapModel, Overlay } from "@open-pioneer/map";
+import { Highlight, MapModel } from "@open-pioneer/map";
 import { Coordinate } from "ol/coordinate";
 import { Point } from "ol/geom";
 import OlMap from "ol/Map";
 import { unByKey } from "ol/Observable";
 import { Pixel } from "ol/pixel";
-import { ReactNode, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { getDatastreamProperties, StaDatastreamProperties } from "../dataLayers/sta";
 import { addClickMarker, addSensorSelection } from "./clickMarker";
 import { FeatureInfoResult, getQueryableWmsLayers, queryWmsFeatureInfo } from "./featureInfo";
 import { FeatureInfoPopup } from "./FeatureInfoPopup";
-import { getPopupMaxHeight, getPopupOffset } from "./popupPlacement";
+import { createMapPopup } from "./mapPopup";
+import { getPopupMaxHeight } from "./popupPlacement";
 import { SensorPopup } from "./SensorPopup";
 
 const LOG = createLogger("dashboard:useMapClick");
@@ -64,51 +65,19 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
         }
 
         const olMap = map.olMap;
-        let popup: Overlay | undefined;
+        const popup = createMapPopup(map);
         let marker: Highlight | undefined;
-        let popupResizeObserver: ResizeObserver | undefined;
         let pendingRequest: AbortController | undefined;
         const closeOverlay = () => {
             pendingRequest?.abort();
             pendingRequest = undefined;
-            popupResizeObserver?.disconnect();
-            popupResizeObserver = undefined;
-            popup?.destroy();
-            popup = undefined;
+            popup.close();
         };
         // Closes the popup and removes the marker (click position or selected sensor).
         const closePopup = () => {
             closeOverlay();
             marker?.destroy();
             marker = undefined;
-        };
-
-        // Places the popup next to the clicked position, fully visible within the map.
-        // Called again whenever the popup or the map changes its size.
-        const placePopup = () => {
-            const coordinate = popup?.currentCoordinate;
-            const size = olMap.getSize();
-            if (!popup || !coordinate || !size) {
-                return;
-            }
-            const pixel = olMap.getPixelFromCoordinate(coordinate);
-            const rect = popup.element.getBoundingClientRect();
-            if (pixel) {
-                popup.setOffset(getPopupOffset(pixel, size, [rect.width, rect.height]));
-            }
-        };
-
-        const openPopup = (coordinate: Coordinate, pixel: Pixel, content: ReactNode) => {
-            const overlay = (popup = map.overlays.add({
-                position: coordinate,
-                positioning: "top-left",
-                offset: getPopupOffset(pixel, olMap.getSize() ?? [0, 0], [0, 0]),
-                stopEvent: true,
-                content
-            }));
-            popupResizeObserver = new ResizeObserver(placePopup);
-            popupResizeObserver.observe(overlay.element);
-            return overlay;
         };
 
         const pointerKey = olMap.on("pointermove", (event) => {
@@ -129,7 +98,7 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
             if (datastreams.length) {
                 // The sensor stays marked until the next click into the map (or the popup is closed).
                 marker = addSensorSelection(map, location);
-                openPopup(
+                popup.open(
                     location,
                     olMap.getPixelFromCoordinate(location) ?? event.pixel,
                     <SensorPopup
@@ -157,7 +126,7 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
                 <FeatureInfoPopup map={map} results={results} maxHeight={maxHeight} onClose={closePopup} />
             );
             marker = addClickMarker(map, event.coordinate);
-            const overlay = openPopup(event.coordinate, event.pixel, content(undefined));
+            const overlay = popup.open(event.coordinate, event.pixel, content(undefined));
 
             queryWmsFeatureInfo(map, layers, event.coordinate, request.signal)
                 .then((results) => {
@@ -172,11 +141,10 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
                 });
         });
 
-        const sizeKey = olMap.on("change:size", placePopup);
-
         return () => {
-            unByKey([pointerKey, clickKey, sizeKey]);
+            unByKey([pointerKey, clickKey]);
             closePopup();
+            popup.destroy();
         };
     }, [map]);
 }
