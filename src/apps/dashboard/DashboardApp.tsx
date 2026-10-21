@@ -28,12 +28,13 @@ export function DashboardApp() {
 
     const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => presetFilter("7d"));
     const [selection, setSelection] = useState<AnalysisSelection>(INITIAL_SELECTION);
-    useMapClick(map, {
-        onShowDatastream(dataLayerId) {
-            setSelection((current) => ({ ...current, tab: "single", single: dataLayerId }));
-            setPanelOpen(true);
-        }
-    });
+    const showDatastream = (dataLayerId: string) => {
+        setSelection((current) => ({ ...current, tab: "single", single: dataLayerId }));
+        setPanelOpen(true);
+    };
+    useMapClick(map, { onShowDatastream: showDatastream });
+
+    const openPanel = () => togglePanel(true);
 
     return (
         // Size container: the analysis panel's height is relative to the app (`cqh` units).
@@ -74,7 +75,7 @@ export function DashboardApp() {
                                 title={intl.formatMessage({ id: "panel.expand" })}
                                 aria-controls={panelId}
                                 aria-expanded={false}
-                                onClick={() => togglePanel(true)}
+                                onClick={openPanel}
                             >
                                 <LuChartLine />
                             </IconButton>

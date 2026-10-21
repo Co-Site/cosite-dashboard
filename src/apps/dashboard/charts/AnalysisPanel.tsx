@@ -1,4 +1,4 @@
-import { Box, Collapsible, Flex, IconButton, Spacer, Tabs, Text } from "@chakra-ui/react";
+import { Box, Collapsible, Flex, IconButton, Spacer, Tabs, TabsValueChangeDetails, Text } from "@chakra-ui/react";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { Ref } from "react";
@@ -62,6 +62,11 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
         onSelectionChange(withCompareSensor(selection, index, sensorId));
     const setChartType = (view: AnalysisView, chartType: ChartType) =>
         onSelectionChange(withChartType(selection, view, chartType));
+    const changeTab = (details: TabsValueChangeDetails) =>
+        onSelectionChange({ ...selection, tab: details.value as AnalysisTab });
+    const closePanel = () => onOpenChange(false);
+    const selectSingle = (single: string) => onSelectionChange({ ...selection, single });
+    const changeSingleChartType = (type: ChartType) => setChartType("single", type);
 
     return (
         <Collapsible.Root open={open}>
@@ -76,7 +81,7 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
                 >
                     <Tabs.Root
                         value={selection.tab}
-                        onValueChange={(e) => onSelectionChange({ ...selection, tab: e.value as AnalysisTab })}
+                        onValueChange={changeTab}
                         variant="line"
                         size="lg"
                         // Only the active tab loads and renders its charts.
@@ -111,7 +116,7 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
                                     aria-expanded={true}
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => onOpenChange(false)}
+                                    onClick={closePanel}
                                 >
                                     <LuPanelBottomClose />
                                 </IconButton>
@@ -126,9 +131,9 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
                                     <SensorChartView
                                         sensors={sensors}
                                         value={selection.single}
-                                        onChange={(single) => onSelectionChange({ ...selection, single })}
+                                        onChange={selectSingle}
                                         chartType={selection.charts.single}
-                                        onChartTypeChange={(type) => setChartType("single", type)}
+                                        onChartTypeChange={changeSingleChartType}
                                         timeFilter={timeFilter}
                                         label={intl.formatMessage({ id: "panel.sensor.label" })}
                                     />
