@@ -7,6 +7,7 @@ import { fetchObservations, Observation, StaDatastreamProperties } from "../data
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { BarChart } from "./BarChart";
 import { BoxPlotChart } from "./BoxPlotChart";
+import { createValueFormatter } from "./chartStyle";
 import { ChartType } from "./chartTypes";
 import { ObservationChart } from "./ObservationChart";
 import { displayRange, TimeFilter, TimeRange } from "./timeRange";
@@ -23,6 +24,61 @@ export interface DatastreamChartProps {
     datastream: StaDatastreamProperties;
     chartType: ChartType;
     timeFilter: TimeFilter;
+}
+
+function TypedChart(props: {
+    type: ChartType;
+    observations: Observation[];
+    label: string;
+    unit: string | undefined;
+    range: TimeRange;
+}) {
+    const { type, ...chartProps } = props;
+    switch (type) {
+        case "line":
+            return <ObservationChart {...chartProps} />;
+        case "bar":
+            return <BarChart {...chartProps} />;
+        case "boxplot":
+            return <BoxPlotChart {...chartProps} />;
+        case "windrose":
+            return <WindRoseChart {...chartProps} />;
+    }
+}
+
+function Summary(props: { observations: Observation[]; unit: string | undefined; truncated: boolean }) {
+    const { observations, unit, truncated } = props;
+    const intl = useIntl();
+    const stats = useMemo(() => {
+        if (observations.length === 0) {
+            return undefined;
+        }
+        let min = Infinity;
+        let max = -Infinity;
+        for (const { value } of observations) {
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+        }
+        return { min, max, last: observations[observations.length - 1]?.value ?? NaN };
+    }, [observations]);
+
+    const format = createValueFormatter(intl, unit);
+    return (
+        <Text fontSize="sm" color="fg.muted">
+            {intl.formatMessage({ id: "chart.count" }, { count: observations.length })}
+            {stats && (
+                <>
+                    {" · "}
+                    {/* The labels are bold (in the message), the values normal. */}
+                    {intl.formatRichMessage(
+                        { id: "chart.stats" },
+                        { min: format(stats.min), max: format(stats.max), last: format(stats.last) }
+                    )}
+                </>
+            )}
+            {truncated && ` · ${intl.formatMessage({ id: "chart.truncated" })}`}
+        </Text>
+    );
 }
 
 /**
@@ -85,56 +141,5 @@ export function DatastreamChart({ datastream, chartType, timeFilter }: Datastrea
                 )}
             </Box>
         </Flex>
-    );
-}
-
-function TypedChart(props: {
-    type: ChartType;
-    observations: Observation[];
-    label: string;
-    unit: string | undefined;
-    range: TimeRange;
-}) {
-    const { type, ...chartProps } = props;
-    switch (type) {
-        case "line":
-            return <ObservationChart {...chartProps} />;
-        case "bar":
-            return <BarChart {...chartProps} />;
-        case "boxplot":
-            return <BoxPlotChart {...chartProps} />;
-        case "windrose":
-            return <WindRoseChart {...chartProps} />;
-    }
-}
-
-function Summary(props: { observations: Observation[]; unit: string | undefined; truncated: boolean }) {
-    const { observations, unit, truncated } = props;
-    const intl = useIntl();
-    const stats = useMemo(() => {
-        if (observations.length === 0) {
-            return undefined;
-        }
-        let min = Infinity;
-        let max = -Infinity;
-        for (const { value } of observations) {
-            min = Math.min(min, value);
-            max = Math.max(max, value);
-        }
-        return { min, max, last: observations[observations.length - 1]?.value ?? NaN };
-    }, [observations]);
-
-    const format = (value: number) =>
-        `${intl.formatNumber(value, { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ""}`;
-    return (
-        <Text fontSize="sm" color="fg.muted">
-            {intl.formatMessage({ id: "chart.count" }, { count: observations.length })}
-            {stats &&
-                ` · ${intl.formatMessage(
-                    { id: "chart.stats" },
-                    { min: format(stats.min), max: format(stats.max), last: format(stats.last) }
-                )}`}
-            {truncated && ` · ${intl.formatMessage({ id: "chart.truncated" })}`}
-        </Text>
     );
 }

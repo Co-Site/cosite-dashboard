@@ -16,6 +16,33 @@ export interface SensorPopupProps {
     onShow(dataLayerId: string): void;
 }
 
+function SensorEntry(props: { map: MapModel; datastream: StaDatastreamProperties; onShow(dataLayerId: string): void }) {
+    const { map, datastream, onShow } = props;
+    const intl = useIntl();
+    // Localized name from the data layer configuration; the datastream name comes from the server.
+    const title = useLayerTitle(map, datastream.dataLayerId) ?? datastream.name;
+    const details = [datastream.observedProperty, datastream.thing].filter(Boolean).join(" · ");
+
+    const show = () => onShow(datastream.dataLayerId);
+
+    return (
+        <Box>
+            <Text fontSize="sm" fontWeight="semibold">
+                {title}
+            </Text>
+            {details && (
+                <Text fontSize="xs" color="fg.muted">
+                    {details}
+                </Text>
+            )}
+            <Button size="xs" variant="outline" mt={1} onClick={show}>
+                <LuChartLine />
+                {intl.formatMessage({ id: "sensorPopup.show" })}
+            </Button>
+        </Box>
+    );
+}
+
 /**
  * Lists the sensors at the clicked position (several sensors may share a location).
  */
@@ -29,29 +56,5 @@ export function SensorPopup({ map, datastreams, maxHeight, onClose, onShow }: Se
                 ))}
             </Stack>
         </PopupFrame>
-    );
-}
-
-function SensorEntry(props: { map: MapModel; datastream: StaDatastreamProperties; onShow(dataLayerId: string): void }) {
-    const { map, datastream, onShow } = props;
-    const intl = useIntl();
-    // Localized name from the data layer configuration; the datastream name comes from the server.
-    const title = useLayerTitle(map, datastream.dataLayerId) ?? datastream.name;
-    const details = [datastream.observedProperty, datastream.thing].filter(Boolean).join(" · ");
-    return (
-        <Box>
-            <Text fontSize="sm" fontWeight="semibold">
-                {title}
-            </Text>
-            {details && (
-                <Text fontSize="xs" color="fg.muted">
-                    {details}
-                </Text>
-            )}
-            <Button size="xs" variant="outline" mt={1} onClick={() => onShow(datastream.dataLayerId)}>
-                <LuChartLine />
-                {intl.formatMessage({ id: "sensorPopup.show" })}
-            </Button>
-        </Box>
     );
 }

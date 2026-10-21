@@ -7,6 +7,22 @@ import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 
+/** Whether the last image request of the source failed. */
+function useImageLoadError(source: ImageWMS | undefined): boolean {
+    const [failed, setFailed] = useState(false);
+    useEffect(() => {
+        if (!source) {
+            return;
+        }
+        const keys = [
+            source.on("imageloaderror", () => setFailed(true)),
+            source.on("imageloadend", () => setFailed(false))
+        ];
+        return () => unByKey(keys);
+    }, [source]);
+    return failed;
+}
+
 /**
  * Warning in the TOC while the map image of a visible WMS layer cannot be loaded
  * (e.g. the service is down or rejects the layer). Disappears once an image loads again.
@@ -28,20 +44,4 @@ export function LayerLoadWarning({ layer }: { layer: WMSLayer }) {
             )}
         </Flex>
     );
-}
-
-/** Whether the last image request of the source failed. */
-function useImageLoadError(source: ImageWMS | undefined): boolean {
-    const [failed, setFailed] = useState(false);
-    useEffect(() => {
-        if (!source) {
-            return;
-        }
-        const keys = [
-            source.on("imageloaderror", () => setFailed(true)),
-            source.on("imageloadend", () => setFailed(false))
-        ];
-        return () => unByKey(keys);
-    }, [source]);
-    return failed;
 }

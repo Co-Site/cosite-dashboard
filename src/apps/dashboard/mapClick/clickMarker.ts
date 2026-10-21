@@ -3,8 +3,11 @@ import { Coordinate } from "ol/coordinate";
 import { Point } from "ol/geom";
 import { Circle, Icon, Stroke, Style } from "ol/style";
 
+/** Color of the click marker and of the sensor selection ring. */
+const MARKER_COLOR = "#2a78d6";
+
 const PIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40">
-<path d="M14 1C7 1 1.5 6.5 1.5 13.5 1.5 23 14 39 14 39s12.5-16 12.5-25.5C26.5 6.5 21 1 14 1z" fill="#2a78d6" stroke="#ffffff" stroke-width="2"/>
+<path d="M14 1C7 1 1.5 6.5 1.5 13.5 1.5 23 14 39 14 39s12.5-16 12.5-25.5C26.5 6.5 21 1 14 1z" fill="${MARKER_COLOR}" stroke="#ffffff" stroke-width="2"/>
 <circle cx="14" cy="13.5" r="4.5" fill="#ffffff"/>
 </svg>`;
 
@@ -30,7 +33,7 @@ const SENSOR_SELECTION_STYLE = [
         image: new Circle({ radius: 13, stroke: new Stroke({ color: "#ffffff", width: 5 }) })
     }),
     new Style({
-        image: new Circle({ radius: 13, stroke: new Stroke({ color: "#2a78d6", width: 3 }) })
+        image: new Circle({ radius: 13, stroke: new Stroke({ color: MARKER_COLOR, width: 3 }) })
     })
 ];
 

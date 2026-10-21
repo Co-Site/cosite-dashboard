@@ -1,58 +1,17 @@
-import { Box, Flex, IconButton, Slider } from "@chakra-ui/react";
-import { AnyLayer, useMapModelValue, WMSLayer } from "@open-pioneer/map";
+import { Flex, Slider } from "@chakra-ui/react";
 import BaseLayer from "ol/layer/Base";
 import { unByKey } from "ol/Observable";
 import { useIntl } from "open-pioneer:react-hooks";
-import { ReactNode, useEffect, useState } from "react";
-import { LuTrash2 } from "react-icons/lu";
-import { DATA_LAYER_ATTRIBUTE } from "../dataLayers/createDataLayer";
-import { DataLayerNode } from "../dataLayers/types";
-import { useLayerTitle } from "../dataLayers/useLayerTitle";
-import { LayerLoadWarning } from "./LayerLoadWarning";
-import { useUserWmsLayers } from "./useUserWmsLayers";
+import { useEffect, useState } from "react";
 
-/**
- * Additional content for TOC items: a transparency slider below every WMS layer (with a warning if its map image
- * cannot be loaded), and a remove button for the layers the user added.
- */
-export function layerItemContent(layer: AnyLayer): ReactNode {
-    const config = layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
-    if (config?.type !== "wms" || !(layer instanceof WMSLayer)) {
-        return undefined;
-    }
-    const slider = <LayerOpacitySlider olLayer={layer.olLayer} />;
-    return (
-        <>
-            <LayerLoadWarning layer={layer} />
-            {config.temporary ? (
-                <Flex alignItems="flex-end" gap={2}>
-                    <Box flex="1">{slider}</Box>
-                    <RemoveUserLayerButton layerId={layer.id} />
-                </Flex>
-            ) : (
-                slider
-            )}
-        </>
-    );
-}
-
-function RemoveUserLayerButton({ layerId }: { layerId: string }) {
-    const intl = useIntl();
-    const map = useMapModelValue();
-    const userLayers = useUserWmsLayers();
-    const title = useLayerTitle(map, layerId) ?? layerId;
-    const label = intl.formatMessage({ id: "addWms.remove" }, { title });
-    return (
-        <IconButton
-            size="xs"
-            variant="ghost"
-            aria-label={label}
-            title={label}
-            onClick={() => userLayers.remove(layerId)}
-        >
-            <LuTrash2 />
-        </IconButton>
-    );
+/** Transparency in percent, kept in sync with the layer (e.g. if changed elsewhere). */
+function useTransparency(olLayer: BaseLayer): number {
+    const [opacity, setOpacity] = useState(() => olLayer.getOpacity());
+    useEffect(() => {
+        const key = olLayer.on("change:opacity", () => setOpacity(olLayer.getOpacity()));
+        return () => unByKey(key);
+    }, [olLayer]);
+    return Math.round((1 - opacity) * 100);
 }
 
 /**
@@ -62,6 +21,11 @@ export function LayerOpacitySlider({ olLayer }: { olLayer: BaseLayer }) {
     const intl = useIntl();
     const transparency = useTransparency(olLayer);
 
+    const changeTransparency = (details: Slider.ValueChangeDetails) => {
+        const value = details.value[0] ?? 0;
+        olLayer.setOpacity(1 - value / 100);
+    };
+
     return (
         <Slider.Root
             size="sm"
@@ -70,10 +34,7 @@ export function LayerOpacitySlider({ olLayer }: { olLayer: BaseLayer }) {
             max={100}
             step={5}
             value={[transparency]}
-            onValueChange={(details) => {
-                const value = details.value[0] ?? 0;
-                olLayer.setOpacity(1 - value / 100);
-            }}
+            onValueChange={changeTransparency}
             getAriaValueText={(details) => `${details.value} %`}
         >
             <Flex justifyContent="space-between" fontSize="xs" color="fg.muted">
@@ -90,14 +51,4 @@ export function LayerOpacitySlider({ olLayer }: { olLayer: BaseLayer }) {
             </Slider.Control>
         </Slider.Root>
     );
-}
-
-/** Transparency in percent, kept in sync with the layer (e.g. if changed elsewhere). */
-function useTransparency(olLayer: BaseLayer): number {
-    const [opacity, setOpacity] = useState(() => olLayer.getOpacity());
-    useEffect(() => {
-        const key = olLayer.on("change:opacity", () => setOpacity(olLayer.getOpacity()));
-        return () => unByKey(key);
-    }, [olLayer]);
-    return Math.round((1 - opacity) * 100);
 }

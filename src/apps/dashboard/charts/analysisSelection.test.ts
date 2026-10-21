@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { INITIAL_SELECTION, withDefaultSensors } from "./analysisSelection";
+import { INITIAL_SELECTION, withChartType, withCompareSensor, withDefaultSensors } from "./analysisSelection";
 
 describe("withDefaultSensors", () => {
     it("selects the first sensor (single) and the first two sensors (compare)", () => {
@@ -29,6 +29,32 @@ describe("withDefaultSensors", () => {
             ...INITIAL_SELECTION,
             single: undefined,
             compare: [undefined, undefined]
+        });
+    });
+});
+
+describe("withCompareSensor", () => {
+    it("changes only the given half of the compare view", () => {
+        const selection = { ...INITIAL_SELECTION, compare: ["a", "b"] as [string, string] };
+        expect(withCompareSensor(selection, 1, "c")).toEqual({ ...selection, compare: ["a", "c"] });
+        expect(withCompareSensor(selection, 0, "c").compare).toEqual(["c", "b"]);
+        expect(selection.compare).toEqual(["a", "b"]);
+    });
+});
+
+describe("withChartType", () => {
+    it("changes only the chart type of the given view", () => {
+        expect(withChartType(INITIAL_SELECTION, "single", "bar").charts).toEqual({
+            single: "bar",
+            compare: ["line", "line"]
+        });
+        expect(withChartType(INITIAL_SELECTION, 0, "boxplot").charts).toEqual({
+            single: "line",
+            compare: ["boxplot", "line"]
+        });
+        expect(withChartType(INITIAL_SELECTION, 1, "windrose").charts).toEqual({
+            single: "line",
+            compare: ["line", "windrose"]
         });
     });
 });

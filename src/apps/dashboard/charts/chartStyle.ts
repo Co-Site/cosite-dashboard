@@ -20,3 +20,31 @@ export function formatTimeTick(intl: PackageIntl, value: number): string {
         minute: "2-digit"
     });
 }
+
+/** Linear x axis of a time series: ticks show the time (milliseconds since epoch). */
+export function timeScale(intl: PackageIntl) {
+    return {
+        type: "linear" as const,
+        grid: { display: false },
+        border: { color: GRID_COLOR },
+        ticks: {
+            color: TEXT_SECONDARY,
+            maxTicksLimit: 8,
+            maxRotation: 0,
+            callback: (value: number | string) => formatTimeTick(intl, Number(value))
+        }
+    };
+}
+
+/** y axis of observed values, ticks formatted with `formatValue` (see {@link createValueFormatter}). */
+export function valueScale(formatValue: (value: number) => string) {
+    return {
+        grid: { color: GRID_COLOR },
+        border: { display: false },
+        ticks: {
+            color: TEXT_SECONDARY,
+            maxTicksLimit: 6,
+            callback: (value: number | string) => formatValue(Number(value))
+        }
+    };
+}

@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import shippedConfig from "../../../public/config/dataLayers.json?raw";
-import { DataLayerNode, parseDataLayers } from "./types";
+import { parseDataLayers } from "./loadDataLayers";
+import { DataLayerNode } from "./types";
+
+type Summary = [string, string] | [string, string, Summary[]];
+
+function summarize(nodes: DataLayerNode[]): Summary[] {
+    return nodes.map((node) =>
+        node.type === "group" ? [node.id, node.type, summarize(node.layers)] : [node.id, node.type]
+    );
+}
 
 describe("parseDataLayers", () => {
     it("accepts the shipped configuration", () => {
@@ -128,11 +137,3 @@ describe("parseDataLayers", () => {
         expect(summarize(layers)).toEqual([["outer", "group", [["inner", "group", [["a", "sta-datastream"]]]]]]);
     });
 });
-
-type Summary = [string, string] | [string, string, Summary[]];
-
-function summarize(nodes: DataLayerNode[]): Summary[] {
-    return nodes.map((node) =>
-        node.type === "group" ? [node.id, node.type, summarize(node.layers)] : [node.id, node.type]
-    );
-}

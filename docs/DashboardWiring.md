@@ -24,19 +24,18 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
 
 ## App-Aufbau (`src/apps/dashboard`)
 
-| Datei              | Zweck                                                                                                     |
-| ------------------ | --------------------------------------------------------------------------------------------------------- |
-| `package.json`     | Paketname + Abhängigkeiten (alle über `catalog:`)                                                         |
-| `build.config.mjs` | `defineBuildConfig({ i18n, styles, services, ui })` – Sprachen, CSS, Service-Registrierung, UI-Referenzen |
-| `app.ts`           | `createCustomElement({ component, appMetadata })` + `customElements.define("dashboard-app", ...)`         |
-| `services.ts`      | Service-Klassen, z. B. `MainMapProvider` (Kartenkonfiguration)                                            |
-| `DashboardApp.tsx` | Root-Komponente: Karte, TOC, Kartenwerkzeuge, Bottom-Panel                                                |
-| `BottomPanel.tsx`  | Einklappbares Analyse-Panel unten, Tabs „Einzelsensor“ / „Sensorvergleich“, gemeinsamer Zeitfilter        |
-| `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                             |
-| `dataLayers/`      | Datenlayer: JSON-Schema + Parser (`types.ts`), Loader, Layer-Fabrik, SensorThings-Helfer (`sta.ts`)       |
-| `mapClick/`        | Kartenklick: Popup mit allen Sensoren an der Stelle oder WMS-GetFeatureInfo                               |
-| `charts/`          | Zeitfilter, Sensor- und Typauswahl, Messwerte laden, Diagramme: Linie, Balken, Boxplot, Windrose          |
-| `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen             |
+| Datei              | Zweck                                                                                                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `package.json`     | Paketname + Abhängigkeiten (alle über `catalog:`)                                                                                                                                    |
+| `build.config.mjs` | `defineBuildConfig({ i18n, styles, services, ui })` – Sprachen, CSS, Service-Registrierung, UI-Referenzen                                                                            |
+| `app.ts`           | `createCustomElement({ component, appMetadata })` + `customElements.define("dashboard-app", ...)`                                                                                    |
+| `services.ts`      | Service-Klassen, z. B. `MainMapProvider` (Kartenkonfiguration)                                                                                                                       |
+| `DashboardApp.tsx` | Root-Komponente: Karte, TOC, Kartenwerkzeuge, Analyse-Panel                                                                                                                          |
+| `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                                                                                                        |
+| `dataLayers/`      | Datenlayer: JSON-Schema (`types.ts`), Loader + Parser (`loadDataLayers.ts`), Layer-Fabrik, SensorThings-Helfer (`sta.ts`)                                                            |
+| `mapClick/`        | Kartenklick: Popup mit allen Sensoren an der Stelle oder WMS-GetFeatureInfo                                                                                                          |
+| `charts/`          | Analyse-Panel unten (`AnalysisPanel.tsx`, Tabs „Einzelsensor“ / „Sensorvergleich“), Zeitfilter, Sensor- und Typauswahl, Messwerte laden, Diagramme: Linie, Balken, Boxplot, Windrose |
+| `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen                                                                                        |
 
 ## Datenlayer (`src/public/config/dataLayers.json`)
 
@@ -161,20 +160,20 @@ Darüber findet der Kartenklick z. B. die `featureInfo`-Einstellungen eines WMS-
 ### Neuen Layertyp hinzufügen
 
 1. In `dataLayers/types.ts` ein neues Interface mit eigenem `type` anlegen, in die Union `DataLayerConfig` aufnehmen
-   und in `validateEntry` die typspezifischen Felder prüfen.
+   und in `validateEntry` (`dataLayers/loadDataLayers.ts`) die typspezifischen Felder prüfen.
 2. In `dataLayers/createDataLayer.ts` einen `case` für den neuen Typ ergänzen. TypeScript meldet fehlende Fälle.
-3. Test in `dataLayers/types.test.ts` erweitern und den Typ hier in der Doku eintragen.
+3. Test in `dataLayers/loadDataLayers.test.ts` erweitern und den Typ hier in der Doku eintragen.
 
 ## Kartenklick, Popup und Diagramme
 
 `mapClick/useMapClick.tsx` hört auf Klicks in die Karte:
 
 1. **Sensorpunkt getroffen** (5 px Toleranz, Mauszeiger wird zur Hand): Der Datastream wird ausgewählt und das
-   Bottom-Panel geöffnet. Der Zustand (`datastream`, `timeFilter`, `panelOpen`) liegt in `DashboardApp.tsx`.
+   Analyse-Panel (`charts/AnalysisPanel.tsx`) geöffnet. Der Zustand (`datastream`, `timeFilter`, `panelOpen`) liegt in `DashboardApp.tsx`.
 2. **Sonst**: Alle sichtbaren WMS-Layer mit aktiver FeatureInfo werden per `GetFeatureInfo` (GeoJSON) abgefragt
    (`mapClick/featureInfo.ts`). Das Ergebnis erscheint als Popup (`map.overlays`) an der Klickposition.
    Zahlen werden lokalisiert, ISO-Zeitstempel in Ortszeit angezeigt. Darunter steht die **Legende** des Layers
-   (`mapClick/WmsLegend.tsx`). Wird das Popup zu hoch, scrollt nur der Inhalt; Titel und ✕ bleiben sichtbar.
+   (`mapClick/WmsLegend.tsx`, URLs in `mapClick/legendUrls.ts`). Wird das Popup zu hoch, scrollt nur der Inhalt; Titel und ✕ bleiben sichtbar.
    An der Klickposition erscheint ein **Marker** (`mapClick/clickMarker.ts`, über `map.highlights`). Das Popup steht
    **neben** dem Marker, mit der Oberkante unterhalb des Klicks (am rechten Rand links davon). Passt es unten nicht hin,
    wird es so weit hochgeschoben, dass es zwischen Analyse-Panel und Kartenoberkante ganz sichtbar ist
@@ -186,7 +185,7 @@ darauf mit einem Fehler, und die Karte bekommt dann keine Legenden-URL. Mit `wms
 serverseitig kompakt zeichnen (GeoServer: `LEGEND_OPTIONS`, `WIDTH`, `HEIGHT`). Das ist schärfer als ein im Browser
 verkleinertes Bild.
 
-Im Bottom-Panel:
+Im Analyse-Panel (`charts/AnalysisPanel.tsx`):
 
 - **Zeitfilter** (`charts/TimeRangeFilter.tsx`): Presets 24 Stunden, 7 Tage (Default), 30 Tage oder eigener Zeitraum von/bis.
   Ungültige Eingaben (von ≥ bis) werden markiert, der letzte gültige Zeitraum bleibt aktiv.
@@ -194,11 +193,15 @@ Im Bottom-Panel:
   Zeitraum (`fetchObservations` in `dataLayers/sta.ts`, folgt `@iot.nextLink`, max. 20.000 Werte) und zeigt sie als
   Liniendiagramm mit Tooltip und Fadenkreuz. Lücken in den Daten bleiben als Lücke sichtbar. Darüber stehen
   Anzahl, Min, Max und letzter Wert.
+- **Sensor nicht verfügbar**: Scheitert das Laden des Datastreams (Fehler, Zeitlimit 30 s, kein Standort), setzt
+  `createStaDatastreamLayer` die Quelle auf `error`. Daraus wird `layer.loadState`: Das TOC markiert den Layer, das
+  Panel zeigt über `useSensorLoadFailed` (`dataLayers/useStaSensors.ts`) einen roten Hinweis statt des Spinners.
+  Annahmen der STA-Hooks (ein Layer, ein Datastream) stehen in `DashboardDecisions.md`, Abschnitt 8.
 - **Weitere Sensoren am Standort** (`charts/SensorTiles.tsx`): `SensorChartView` holt über `useColocatedSensors`
   (`dataLayers/useStaSensors.ts`) die anderen Sensoren am Standort des gewählten Sensors. Der Hook hört auf alle
   STA-Quellen, die Kacheln erscheinen also, sobald die Datastreams geladen sind. Gruppiert wird nach
-  `VITE_SENSOR_GROUPING` (`location` = Standard, `thing`, `location-or-thing`; `dataLayers/colocation.ts`), dafür
-  tragen die Features `locationKey` und `thingId`. Jede Kachel lädt den neuesten Wert (`fetchLatestObservation`),
+  `VITE_SENSOR_GROUPING` (`location` = Standard, `thing`, `location-or-thing`; `dataLayers/colocation.ts`) und
+  `VITE_SENSOR_GROUPING_RADIUS` (Meter, Standard 1), dafür tragen die Datastream-Properties am Feature (`getDatastreamProperties`) `position` und `thingId`. Jede Kachel lädt den neuesten Wert (`fetchLatestObservation`),
   ein Klick ruft das `onChange` des Dropdowns auf.
 - **Chart.js statt recharts**: Trails rendert die App im Shadow DOM. recharts sucht Portale über `document`
   und musste dafür gepatcht werden (siehe alter Branch `origin/test/charts`). Chart.js zeichnet auf Canvas und braucht das nicht.
@@ -211,7 +214,7 @@ Der TOC ist das unveränderte `@open-pioneer/toc`. Eigene Inhalte pro Layer komm
 
 - `Toc` meldet in `onReady` eine `TocApi`. `TocItemExtensions` liest daraus reaktiv alle Einträge (`api.getItems()`)
   und deren DOM-Element (`TocItem.htmlElement`).
-- Für jeden Layer ruft es `layerItemContent(layer)` auf (`toc/LayerOpacitySlider.tsx`). Kommt Inhalt zurück, wird ein
+- Für jeden Layer ruft es `layerItemContent(layer)` auf (`toc/layerItemContent.tsx`). Kommt Inhalt zurück, wird ein
   `<div class="toc-layer-item-extra">` ans Ende des Eintrags gehängt und der Inhalt per `createPortal` hineingerendert.
 - Das Dashboard liefert so für jeden WMS-Layer einen **Transparenz-Slider** unter dem Titel
   (0 % = deckend, Startwert aus `opacity` im JSON).
@@ -226,7 +229,8 @@ Der TOC ist das unveränderte `@open-pioneer/toc`. Eigene Inhalte pro Layer komm
 
 ## Eigene WMS (temporär)
 
-Unter dem TOC-Titel öffnet „WMS hinzufügen“ ein Formular (`toc/AddWmsLayer.tsx`). Gespeichert wird nichts, nach dem
+Unter dem TOC-Titel öffnet „WMS hinzufügen“ ein Formular (`toc/AddWmsLayer.tsx`; Dienst laden in
+`toc/useWmsService.ts`, Layersuche in `toc/WmsLayerSearch.tsx`, Layer-Konfiguration in `userWmsLayerInput`). Gespeichert wird nichts, nach dem
 Neuladen sind die Layer weg.
 
 1. **URL des Dienstes** eingeben und laden. Eine eingefügte GetCapabilities-URL wird bereinigt

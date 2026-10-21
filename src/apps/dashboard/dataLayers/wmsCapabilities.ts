@@ -1,18 +1,11 @@
+/*
+ * Designed and written by Claude (AI-generated, not reviewed in detail).
+ *
+ * WMS client helpers: loads and parses GetCapabilities (WMS 1.3.0) and makes the layers available to the TOC,
+ * the legend and the feature info. Besides that it normalizes WMS URLs entered by the user, checks single layers
+ * with a 1 × 1 pixel GetMap request, picks the GetFeatureInfo format and searches the layers by name and title.
+ */
 import WMSCapabilities from "ol/format/WMSCapabilities";
-
-/** What the dashboard uses from a WMS GetCapabilities document (version 1.3.0). */
-export interface WmsCapabilities {
-    serviceTitle: string | undefined;
-    contactOrganization: string | undefined;
-    fees: string | undefined;
-    accessConstraints: string | undefined;
-
-    /** Formats offered for GetFeatureInfo, e.g. `application/json`. */
-    featureInfoFormats: string[];
-
-    /** All layers that can be requested (i.e. have a name), in document order. */
-    layers: WmsCapabilitiesLayer[];
-}
 
 export interface WmsCapabilitiesLayer {
     name: string;
@@ -35,6 +28,20 @@ export interface WmsCapabilitiesLayer {
      * 7.2.4.6.3), but some services list folders with a name that cannot be requested (e.g. DWD).
      */
     isGroup: boolean;
+}
+
+/** What the dashboard uses from a WMS GetCapabilities document (version 1.3.0). */
+export interface WmsCapabilities {
+    serviceTitle: string | undefined;
+    contactOrganization: string | undefined;
+    fees: string | undefined;
+    accessConstraints: string | undefined;
+
+    /** Formats offered for GetFeatureInfo, e.g. `application/json`. */
+    featureInfoFormats: string[];
+
+    /** All layers that can be requested (i.e. have a name), in document order. */
+    layers: WmsCapabilitiesLayer[];
 }
 
 /** Why the capabilities could not be loaded. */
@@ -79,80 +86,40 @@ export function normalizeWmsEndpoint(input: string): string {
     return url.href.replace(/\?$/, "");
 }
 
-const cache = new Map<string, Promise<WmsCapabilities>>();
-const loaded = new Map<string, WmsCapabilities>();
-
-/**
- * Loads and parses the capabilities of a WMS (once per endpoint and session, failures are not cached).
- * Unlike `@open-pioneer/map`, no `LANGUAGE` parameter is sent and existing URL parameters are kept.
- */
-export function fetchWmsCapabilities(endpoint: string): Promise<WmsCapabilities> {
-    let capabilities = cache.get(endpoint);
-    if (!capabilities) {
-        capabilities = loadCapabilities(endpoint);
-        cache.set(endpoint, capabilities);
-        capabilities.then(
-            (result) => loaded.set(endpoint, result),
-            () => cache.delete(endpoint)
-        );
-    }
-    return capabilities;
+interface RawLayer {
+    Name?: string;
+    Title?: string;
+    Abstract?: string;
+    queryable?: boolean;
+    CRS?: string[];
+    Attribution?: { Title?: string };
+    Style?: { LegendURL?: { OnlineResource?: string }[] }[];
+    Layer?: RawLayer[];
 }
 
-/** Returns the capabilities if they have already been loaded (no request). */
-export function peekWmsCapabilities(endpoint: string): WmsCapabilities | undefined {
-    return loaded.get(endpoint);
-}
-
-async function loadCapabilities(endpoint: string): Promise<WmsCapabilities> {
-    const url = new URL(endpoint);
-    url.searchParams.set("SERVICE", "WMS");
-    url.searchParams.set("REQUEST", "GetCapabilities");
-    url.searchParams.set("VERSION", "1.3.0");
-    let response: Response;
-    try {
-        response = await fetch(url);
-    } catch (error) {
-        throw new WmsCapabilitiesError("unreachable", `Failed to load capabilities from ${endpoint}.`, {
-            cause: error
-        });
-    }
-    if (!response.ok) {
-        throw new WmsCapabilitiesError(
-            "invalid",
-            `Failed to load capabilities from ${endpoint}: HTTP ${response.status}`
-        );
-    }
-    return parseWmsCapabilities(await response.text());
-}
-
-/**
- * Parses a WMS 1.3.0 capabilities document.
- * Throws a {@link WmsCapabilitiesError} for exception reports and other documents.
- */
-export function parseWmsCapabilities(xml: string): WmsCapabilities {
-    const document = new DOMParser().parseFromString(xml, "application/xml");
-    const root = document.documentElement;
-    if (root?.localName !== "WMS_Capabilities") {
-        const exception = root?.textContent?.trim().replace(/\s+/g, " ");
-        throw new WmsCapabilitiesError(
-            "invalid",
-            `Not a WMS 1.3.0 capabilities document${exception ? `: ${exception.slice(0, 300)}` : "."}`
-        );
-    }
-
-    const parsed = new WMSCapabilities().read(document) as RawCapabilities;
-    const service = parsed.Service ?? {};
-    const layers: WmsCapabilitiesLayer[] = [];
-    collectLayers(parsed.Capability?.Layer, [], layers);
-    return {
-        serviceTitle: text(service.Title),
-        contactOrganization: text(service.ContactInformation?.ContactPersonPrimary?.ContactOrganization),
-        fees: meaningful(service.Fees),
-        accessConstraints: meaningful(service.AccessConstraints),
-        featureInfoFormats: parsed.Capability?.Request?.GetFeatureInfo?.Format ?? [],
-        layers
+/** Subset of the object returned by `ol/format/WMSCapabilities`. */
+interface RawCapabilities {
+    Service?: {
+        Title?: string;
+        Fees?: string;
+        AccessConstraints?: string;
+        ContactInformation?: { ContactPersonPrimary?: { ContactOrganization?: string } };
     };
+    Capability?: {
+        Request?: { GetFeatureInfo?: { Format?: string[] } };
+        Layer?: RawLayer;
+    };
+}
+
+function text(value: string | undefined): string | undefined {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : undefined;
+}
+
+/** `none` is a common value for fees and access constraints, it carries no information. */
+function meaningful(value: string | undefined): string | undefined {
+    const trimmed = text(value);
+    return trimmed && trimmed.toLowerCase() !== "none" ? trimmed : undefined;
 }
 
 function collectLayers(
@@ -187,15 +154,80 @@ function collectLayers(
     }
 }
 
-function text(value: string | undefined): string | undefined {
-    const trimmed = value?.trim();
-    return trimmed ? trimmed : undefined;
+/**
+ * Parses a WMS 1.3.0 capabilities document.
+ * Throws a {@link WmsCapabilitiesError} for exception reports and other documents.
+ */
+export function parseWmsCapabilities(xml: string): WmsCapabilities {
+    const document = new DOMParser().parseFromString(xml, "application/xml");
+    const root = document.documentElement;
+    if (root?.localName !== "WMS_Capabilities") {
+        const exception = root?.textContent?.trim().replace(/\s+/g, " ");
+        throw new WmsCapabilitiesError(
+            "invalid",
+            `Not a WMS 1.3.0 capabilities document${exception ? `: ${exception.slice(0, 300)}` : "."}`
+        );
+    }
+
+    const parsed = new WMSCapabilities().read(document) as RawCapabilities;
+    const service = parsed.Service ?? {};
+    const layers: WmsCapabilitiesLayer[] = [];
+    collectLayers(parsed.Capability?.Layer, [], layers);
+    return {
+        serviceTitle: text(service.Title),
+        contactOrganization: text(service.ContactInformation?.ContactPersonPrimary?.ContactOrganization),
+        fees: meaningful(service.Fees),
+        accessConstraints: meaningful(service.AccessConstraints),
+        featureInfoFormats: parsed.Capability?.Request?.GetFeatureInfo?.Format ?? [],
+        layers
+    };
 }
 
-/** `none` is a common value for fees and access constraints, it carries no information. */
-function meaningful(value: string | undefined): string | undefined {
-    const trimmed = text(value);
-    return trimmed && trimmed.toLowerCase() !== "none" ? trimmed : undefined;
+async function loadCapabilities(endpoint: string): Promise<WmsCapabilities> {
+    const url = new URL(endpoint);
+    url.searchParams.set("SERVICE", "WMS");
+    url.searchParams.set("REQUEST", "GetCapabilities");
+    url.searchParams.set("VERSION", "1.3.0");
+    let response: Response;
+    try {
+        response = await fetch(url);
+    } catch (error) {
+        throw new WmsCapabilitiesError("unreachable", `Failed to load capabilities from ${endpoint}.`, {
+            cause: error
+        });
+    }
+    if (!response.ok) {
+        throw new WmsCapabilitiesError(
+            "invalid",
+            `Failed to load capabilities from ${endpoint}: HTTP ${response.status}`
+        );
+    }
+    return parseWmsCapabilities(await response.text());
+}
+
+const cache = new Map<string, Promise<WmsCapabilities>>();
+const loaded = new Map<string, WmsCapabilities>();
+
+/**
+ * Loads and parses the capabilities of a WMS (once per endpoint and session, failures are not cached).
+ * Unlike `@open-pioneer/map`, no `LANGUAGE` parameter is sent and existing URL parameters are kept.
+ */
+export function fetchWmsCapabilities(endpoint: string): Promise<WmsCapabilities> {
+    let capabilities = cache.get(endpoint);
+    if (!capabilities) {
+        capabilities = loadCapabilities(endpoint);
+        cache.set(endpoint, capabilities);
+        capabilities.then(
+            (result) => loaded.set(endpoint, result),
+            () => cache.delete(endpoint)
+        );
+    }
+    return capabilities;
+}
+
+/** Returns the capabilities if they have already been loaded (no request). */
+export function peekWmsCapabilities(endpoint: string): WmsCapabilities | undefined {
+    return loaded.get(endpoint);
 }
 
 /** Result of {@link probeWmsLayer}. */
@@ -281,29 +313,4 @@ export function searchLayers(layers: WmsCapabilitiesLayer[], query: string): Wms
         )
         .sort((a, b) => a.rank - b.rank || a.index - b.index)
         .map((match) => match.layer);
-}
-
-/** Subset of the object returned by `ol/format/WMSCapabilities`. */
-interface RawCapabilities {
-    Service?: {
-        Title?: string;
-        Fees?: string;
-        AccessConstraints?: string;
-        ContactInformation?: { ContactPersonPrimary?: { ContactOrganization?: string } };
-    };
-    Capability?: {
-        Request?: { GetFeatureInfo?: { Format?: string[] } };
-        Layer?: RawLayer;
-    };
-}
-
-interface RawLayer {
-    Name?: string;
-    Title?: string;
-    Abstract?: string;
-    queryable?: boolean;
-    CRS?: string[];
-    Attribution?: { Title?: string };
-    Style?: { LegendURL?: { OnlineResource?: string }[] }[];
-    Layer?: RawLayer[];
 }
