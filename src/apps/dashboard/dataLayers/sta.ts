@@ -158,32 +158,14 @@ export async function fetchObservations(
     range: { from: Date; to: Date },
     signal?: AbortSignal
 ): Promise<{ observations: Observation[]; truncated: boolean }> {
-    const url = new URL(observationsUrl);
-    url.searchParams.set(
-        "$filter",
-        `phenomenonTime ge ${range.from.toISOString()} and phenomenonTime le ${range.to.toISOString()}`
-    );
-    url.searchParams.set("$orderby", "phenomenonTime asc");
-    url.searchParams.set("$select", "phenomenonTime,result");
-    url.searchParams.set("$top", "1000");
-
     const observations: Observation[] = [];
-    let next: string | undefined = url.href;
+    let next: string | undefined = observationsQueryUrl(observationsUrl, { order: "asc", top: 1000, range });
     // Pages must be fetched one after another (each response links to the next page).
     /* oxlint-disable no-await-in-loop */
     while (next && observations.length < MAX_OBSERVATIONS) {
-        const response = await fetch(next, { signal });
-        if (!response.ok) {
-            throw new Error(`Failed to load observations: HTTP ${response.status}`);
-        }
-        const page = (await response.json()) as ObservationPage;
-        for (const raw of page.value) {
-            const observation = parseObservation(raw);
-            if (observation) {
-                observations.push(observation);
-            }
-        }
-        next = page["@iot.nextLink"];
+        const page = await fetchObservationPage(next, signal);
+        observations.push(...page.observations);
+        next = page.nextLink;
     }
     /* oxlint-enable no-await-in-loop */
     return { observations: observations.slice(0, MAX_OBSERVATIONS), truncated: !!next };
@@ -197,17 +179,51 @@ export async function fetchLatestObservation(
     observationsUrl: string,
     signal?: AbortSignal
 ): Promise<Observation | undefined> {
+    const url = observationsQueryUrl(observationsUrl, { order: "desc", top: 1 });
+    const { observations } = await fetchObservationPage(url, signal);
+    return observations[0];
+}
+
+/**
+ * Query for the observations of a datastream.
+ * Observations are always sorted and filtered by their phenomenon time (when the value was measured).
+ */
+interface ObservationQuery {
+    order: "asc" | "desc";
+    top: number;
+    range?: { from: Date; to: Date };
+}
+
+function observationsQueryUrl(observationsUrl: string, { order, top, range }: ObservationQuery): string {
     const url = new URL(observationsUrl);
-    url.searchParams.set("$orderby", "phenomenonTime desc");
+    if (range) {
+        url.searchParams.set(
+            "$filter",
+            `phenomenonTime ge ${range.from.toISOString()} and phenomenonTime le ${range.to.toISOString()}`
+        );
+    }
+    // No `@iot.id` as second order: FROST then pages with `$skipFilter=(phenomenonTime gt …)`,
+    // which would drop observations with the same time at a page boundary.
+    url.searchParams.set("$orderby", `phenomenonTime ${order}`);
     url.searchParams.set("$select", "phenomenonTime,result");
-    url.searchParams.set("$top", "1");
+    url.searchParams.set("$top", String(top));
+    return url.href;
+}
+
+/** Loads one page of observations, keeping only the numeric ones. */
+async function fetchObservationPage(
+    url: string,
+    signal?: AbortSignal
+): Promise<{ observations: Observation[]; nextLink: string | undefined }> {
     const response = await fetch(url, { signal });
     if (!response.ok) {
-        throw new Error(`Failed to load the latest observation: HTTP ${response.status}`);
+        throw new Error(`Failed to load observations: HTTP ${response.status}`);
     }
     const page = (await response.json()) as ObservationPage;
-    const raw = page.value[0];
-    return raw ? parseObservation(raw) : undefined;
+    return {
+        observations: page.value.map(parseObservation).filter((observation) => observation !== undefined),
+        nextLink: page["@iot.nextLink"]
+    };
 }
 
 /** A page of observations as returned by the server (with `$select=phenomenonTime,result`). */

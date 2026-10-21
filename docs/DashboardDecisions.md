@@ -211,6 +211,25 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - `degC` aus der STA wird als `°C` angezeigt.
     - Höchstens 20.000 Werte, danach Hinweis „gekürzt“.
     - Ungültiger Zeitraum (von ≥ bis) wird markiert, der letzte gültige bleibt aktiv.
+- **Abfrage der Messwerte** (`dataLayers/sta.ts`): Zeitraum und neuester Wert bauen ihre URL mit demselben Helfer
+  (`observationsQueryUrl`) und laden Seiten mit `fetchObservationPage`. Sie unterscheiden sich nur in Richtung,
+  Seitengröße und Zeitraum.
+    - **Sortiert und gefiltert wird nach `phenomenonTime`**, dem Zeitpunkt der Messung. Eine Observation hat in der STA
+      zwei Zeiten: `phenomenonTime` (wann gemessen wurde) und `resultTime` (wann das Ergebnis entstand). Bei
+      Messsensoren ist das praktisch dasselbe, bei Vorhersagen nicht (Gültigkeitszeit vs. Modelllauf). Auf unserem
+      Server ist `resultTime` leer (`null`); nach ihr zu sortieren liefert eine zufällige Reihenfolge (geprüft
+      2026-10-21).
+    - **Mögliche Falle:** Setzt ein anderer Server oder Datenlieferant die eigentliche Zeit nur in `resultTime`, zeigen
+      Diagramm und Kacheln falsche oder keine Werte. Dann ist `observationsQueryUrl` (Filter und Sortierung) und
+      `parseObservation` (welche Zeit auf der x-Achse landet) anzupassen.
+    - **Bewusst kein `@iot.id` als zweites Sortierkriterium:** Damit blättert FROST nicht mehr über `$skip`, sondern
+      über `$skipFilter=(phenomenonTime gt <letzte Zeit der Seite>)`, auch wenn die ID im `$select` steht (geprüft
+      2026-10-21). Liegen zwei Messungen mit gleicher Zeit an einer Seitengrenze, ginge die zweite verloren. Ohne
+      ID blättert der Server über `$skip`; bei gleicher Zeit ist die Reihenfolge dann nicht festgelegt, verloren
+      geht aber nichts systematisch.
+    - **Nur die Richtung (`asc`/`desc`) ist einstellbar**, keine freie Sortierung: Für eine Zeitreihe ist nur die
+      Messzeit sinnvoll, Min/Max und Statistik rechnet die App selbst. Kommt eine weitere STA-Abfrage dazu, wird der
+      Schnitt neu geprüft.
 - **Grenze:** Die nativen Datumsfelder formatieren nach der Browsersprache, nicht nach der App-Sprache.
 - **Tabs (Branch `toc-native`):** Oben im Panel „Einzelsensor“ und „Sensorvergleich“.
     - Einzelsensor: Dropdown mit allen STA-Sensoren (auch ausgeblendeten), darunter das Diagramm.
@@ -427,7 +446,8 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   `open-pioneer/trails-starter` gebunden (`github.repository == …`) und läuft daher auch in `Co-Site/cosite-dashboard`
   nie. Build und Tests laufen dort bei jedem Push. Ob ein Deploy auf GitHub Pages gewünscht ist, ist offen.
 - **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären. Zeitstempel des STA-Servers ca. 2 h in
-  der Zukunft (siehe Abschnitt 8, Kacheln), beim Betreiber klären.
+  der Zukunft (siehe Abschnitt 8, Kacheln), beim Betreiber klären. Bei weiteren STA-Servern prüfen, ob die Messzeit
+  in `phenomenonTime` steht und nicht nur in `resultTime` (Abschnitt 8, Abfrage der Messwerte).
 - **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, im Panel
   stehen sie als Kacheln neben dem Diagramm. Eine Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht
   noch aus.
