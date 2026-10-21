@@ -1,3 +1,10 @@
+/*
+ * Designed and written by Claude (AI-generated, not reviewed in detail).
+ *
+ * WMS client helpers: loads and parses GetCapabilities (WMS 1.3.0) and makes the layers available to the TOC,
+ * the legend and the feature info. Besides that it normalizes WMS URLs entered by the user, checks single layers
+ * with a 1 × 1 pixel GetMap request, picks the GetFeatureInfo format and searches the layers by name and title.
+ */
 import WMSCapabilities from "ol/format/WMSCapabilities";
 
 /** What the dashboard uses from a WMS GetCapabilities document (version 1.3.0). */
