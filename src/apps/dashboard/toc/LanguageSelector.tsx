@@ -9,6 +9,17 @@ const LOG = createLogger("dashboard:LanguageSelector");
 /** Order of the languages in the switch. */
 const LANGUAGE_ORDER = ["en", "de"];
 
+function order(language: string): number {
+    const index = LANGUAGE_ORDER.indexOf(language);
+    return index === -1 ? LANGUAGE_ORDER.length : index;
+}
+
+/** Name of the language in the language itself, e.g. "Deutsch", "English". */
+function languageName(language: string): string {
+    const name = new Intl.DisplayNames([language], { type: "language" }).of(language) ?? language;
+    return name.charAt(0).toLocaleUpperCase(language) + name.slice(1);
+}
+
 /**
  * Switch (EN | DE) to change the application's language (live, without restart).
  */
@@ -45,15 +56,4 @@ export function LanguageSelector() {
             ))}
         </SegmentGroup.Root>
     );
-}
-
-function order(language: string): number {
-    const index = LANGUAGE_ORDER.indexOf(language);
-    return index === -1 ? LANGUAGE_ORDER.length : index;
-}
-
-/** Name of the language in the language itself, e.g. "Deutsch", "English". */
-function languageName(language: string): string {
-    const name = new Intl.DisplayNames([language], { type: "language" }).of(language) ?? language;
-    return name.charAt(0).toLocaleUpperCase(language) + name.slice(1);
 }

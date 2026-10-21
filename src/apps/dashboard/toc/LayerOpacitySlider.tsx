@@ -4,6 +4,16 @@ import { unByKey } from "ol/Observable";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useState } from "react";
 
+/** Transparency in percent, kept in sync with the layer (e.g. if changed elsewhere). */
+function useTransparency(olLayer: BaseLayer): number {
+    const [opacity, setOpacity] = useState(() => olLayer.getOpacity());
+    useEffect(() => {
+        const key = olLayer.on("change:opacity", () => setOpacity(olLayer.getOpacity()));
+        return () => unByKey(key);
+    }, [olLayer]);
+    return Math.round((1 - opacity) * 100);
+}
+
 /**
  * Slider for the transparency of a layer (0 % = opaque, 100 % = invisible).
  */
@@ -41,14 +51,4 @@ export function LayerOpacitySlider({ olLayer }: { olLayer: BaseLayer }) {
             </Slider.Control>
         </Slider.Root>
     );
-}
-
-/** Transparency in percent, kept in sync with the layer (e.g. if changed elsewhere). */
-function useTransparency(olLayer: BaseLayer): number {
-    const [opacity, setOpacity] = useState(() => olLayer.getOpacity());
-    useEffect(() => {
-        const key = olLayer.on("change:opacity", () => setOpacity(olLayer.getOpacity()));
-        return () => unByKey(key);
-    }, [olLayer]);
-    return Math.round((1 - opacity) * 100);
 }

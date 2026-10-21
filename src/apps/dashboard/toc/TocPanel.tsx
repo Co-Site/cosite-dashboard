@@ -9,6 +9,29 @@ import { LanguageSelector } from "./LanguageSelector";
 import { layerItemContent } from "./layerItemContent";
 import { TocItemExtensions } from "./TocItemExtensions";
 
+/** Lucide "info" icon (circle with an i), as used by `react-icons/lu`. */
+const INFO_ICON_SVG =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
+
+/**
+ * The TOC shows a ⋮ button for layers with a description; it only opens the description.
+ * The TOC has no option for the icon, so it is replaced by an info icon via CSS
+ * (drawn in the button's text color through a mask). Only affects the TOC, not the popover's close button.
+ * If the class name changes in a TOC update, the original ⋮ is shown again.
+ */
+const INFO_ICON_CSS = {
+    "& .toc-layer-item-details-button svg": { display: "none" },
+    "& .toc-layer-item-details-button::before": {
+        content: '""',
+        width: "1rem",
+        height: "1rem",
+        backgroundColor: "currentColor",
+        mask: `url("data:image/svg+xml,${encodeURIComponent(INFO_ICON_SVG)}") center / contain no-repeat`
+    }
+};
+
 /**
  * Panel with the TOC (basemaps and layers) and the language switch.
  * Can be collapsed to the left; a small button remains to open it again.
@@ -115,26 +138,3 @@ export function TocPanel() {
         </Box>
     );
 }
-
-/** Lucide "info" icon (circle with an i), as used by `react-icons/lu`. */
-const INFO_ICON_SVG =
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" ' +
-    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-    '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
-
-/**
- * The TOC shows a ⋮ button for layers with a description; it only opens the description.
- * The TOC has no option for the icon, so it is replaced by an info icon via CSS
- * (drawn in the button's text color through a mask). Only affects the TOC, not the popover's close button.
- * If the class name changes in a TOC update, the original ⋮ is shown again.
- */
-const INFO_ICON_CSS = {
-    "& .toc-layer-item-details-button svg": { display: "none" },
-    "& .toc-layer-item-details-button::before": {
-        content: '""',
-        width: "1rem",
-        height: "1rem",
-        backgroundColor: "currentColor",
-        mask: `url("data:image/svg+xml,${encodeURIComponent(INFO_ICON_SVG)}") center / contain no-repeat`
-    }
-};

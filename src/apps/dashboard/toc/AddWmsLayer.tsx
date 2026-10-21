@@ -15,62 +15,6 @@ const LOG = createLogger("dashboard:AddWmsLayer");
 /** How long the confirmation of an added layer is shown (ms). */
 const STATUS_DURATION = 8000;
 
-/**
- * Row below the TOC title to add a WMS layer for this session:
- * enter the service URL, then find the layer by name or title.
- */
-export function AddWmsLayer() {
-    const intl = useIntl();
-    const formId = useId();
-    const [open, setOpen] = useState(false);
-    const [status, setStatus] = useState<string>();
-    const urlRef = useRef<HTMLInputElement>(null);
-    useEffect(() => {
-        if (open) {
-            urlRef.current?.focus();
-        }
-    }, [open]);
-    // The confirmation disappears after a while, the layer is visible in the TOC.
-    useEffect(() => {
-        if (!status) {
-            return;
-        }
-        const timeout = setTimeout(() => setStatus(undefined), STATUS_DURATION);
-        return () => clearTimeout(timeout);
-    }, [status]);
-
-    const toggleForm = () => setOpen(!open);
-    const closeForm = () => setOpen(false);
-    const showAdded = (title: string) => {
-        setStatus(intl.formatMessage({ id: "addWms.added" }, { title }));
-        setOpen(false);
-    };
-
-    return (
-        <Box mb={2}>
-            <Flex alignItems="center" gap={1}>
-                <Button
-                    size="xs"
-                    variant="ghost"
-                    flex="1"
-                    justifyContent="flex-start"
-                    aria-expanded={open}
-                    aria-controls={formId}
-                    onClick={toggleForm}
-                >
-                    <LuPlus />
-                    {intl.formatMessage({ id: "addWms.toggle" })}
-                </Button>
-            </Flex>
-            {/* Announces added layers, also while the form is closed. */}
-            <Text role="status" fontSize="xs" color="fg.muted" px={2}>
-                {status}
-            </Text>
-            {open && <AddWmsForm id={formId} urlRef={urlRef} onAdded={showAdded} onClose={closeForm} />}
-        </Box>
-    );
-}
-
 function AddWmsForm(props: {
     id: string;
     urlRef: RefObject<HTMLInputElement | null>;
@@ -241,5 +185,61 @@ function AddWmsForm(props: {
                 )}
             </Flex>
         </Stack>
+    );
+}
+
+/**
+ * Row below the TOC title to add a WMS layer for this session:
+ * enter the service URL, then find the layer by name or title.
+ */
+export function AddWmsLayer() {
+    const intl = useIntl();
+    const formId = useId();
+    const [open, setOpen] = useState(false);
+    const [status, setStatus] = useState<string>();
+    const urlRef = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+        if (open) {
+            urlRef.current?.focus();
+        }
+    }, [open]);
+    // The confirmation disappears after a while, the layer is visible in the TOC.
+    useEffect(() => {
+        if (!status) {
+            return;
+        }
+        const timeout = setTimeout(() => setStatus(undefined), STATUS_DURATION);
+        return () => clearTimeout(timeout);
+    }, [status]);
+
+    const toggleForm = () => setOpen(!open);
+    const closeForm = () => setOpen(false);
+    const showAdded = (title: string) => {
+        setStatus(intl.formatMessage({ id: "addWms.added" }, { title }));
+        setOpen(false);
+    };
+
+    return (
+        <Box mb={2}>
+            <Flex alignItems="center" gap={1}>
+                <Button
+                    size="xs"
+                    variant="ghost"
+                    flex="1"
+                    justifyContent="flex-start"
+                    aria-expanded={open}
+                    aria-controls={formId}
+                    onClick={toggleForm}
+                >
+                    <LuPlus />
+                    {intl.formatMessage({ id: "addWms.toggle" })}
+                </Button>
+            </Flex>
+            {/* Announces added layers, also while the form is closed. */}
+            <Text role="status" fontSize="xs" color="fg.muted" px={2}>
+                {status}
+            </Text>
+            {open && <AddWmsForm id={formId} urlRef={urlRef} onAdded={showAdded} onClose={closeForm} />}
+        </Box>
     );
 }
