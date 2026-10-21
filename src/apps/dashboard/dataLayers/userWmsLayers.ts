@@ -2,6 +2,7 @@ import { AnyLayer, isLayer, Layer, MapModel } from "@open-pioneer/map";
 import { createDataLayer, DataLayerContext, getDataLayerConfig } from "./createDataLayer";
 import { LocalizedText } from "./localizedText";
 import { WmsDataLayerConfig } from "./types";
+import { chooseFeatureInfoFormat, WmsCapabilities, WmsCapabilitiesLayer } from "./wmsCapabilities";
 
 /** Id of the group that holds the WMS layers added by the user. */
 const USER_WMS_GROUP_ID = "user-wms";
@@ -10,6 +11,47 @@ const USER_WMS_GROUP_NAME: LocalizedText = { de: "Eigene WMS", en: "Own WMS" };
 
 /** What the user chose for a new layer; id and type are assigned here. */
 export type UserWmsLayerInput = Omit<WmsDataLayerConfig, "id" | "type" | "temporary">;
+
+/** Labels of the service information in the layer description (both languages, like the configuration). */
+const LABELS = {
+    provider: { de: "Anbieter", en: "Provider" },
+    constraints: { de: "Nutzungsbedingungen", en: "Terms of use" },
+    fees: { de: "Gebühren", en: "Fees" }
+};
+
+/** Abstract of the layer and information about the service (provider, terms of use, fees). */
+function describe(capabilities: WmsCapabilities, layer: WmsCapabilitiesLayer): LocalizedText | undefined {
+    const parts = (language: "de" | "en") =>
+        [
+            layer.abstract !== layer.title ? layer.abstract : undefined,
+            capabilities.contactOrganization && `${LABELS.provider[language]}: ${capabilities.contactOrganization}`,
+            capabilities.accessConstraints && `${LABELS.constraints[language]}: ${capabilities.accessConstraints}`,
+            capabilities.fees && `${LABELS.fees[language]}: ${capabilities.fees}`
+        ]
+            .filter(Boolean)
+            .join("\n\n");
+    const de = parts("de");
+    return de ? { de, en: parts("en") } : undefined;
+}
+
+/** Builds the configuration of a user layer from the capabilities of its service. */
+export function userWmsLayerInput(
+    endpoint: string,
+    capabilities: WmsCapabilities,
+    layer: WmsCapabilitiesLayer
+): UserWmsLayerInput {
+    const format = layer.queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
+    return {
+        name: layer.title,
+        description: describe(capabilities, layer),
+        endpoint,
+        attribution: layer.attribution,
+        wms: {
+            layers: [layer.name],
+            featureInfo: format ? { format } : { enabled: false }
+        }
+    };
+}
 
 /** Takes over visibility and opacity of the layer into its config. */
 export function withLayerState(

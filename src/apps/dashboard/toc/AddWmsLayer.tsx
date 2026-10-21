@@ -4,10 +4,8 @@ import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
-import { LocalizedText } from "../dataLayers/localizedText";
-import { UserWmsLayerInput } from "../dataLayers/userWmsLayers";
+import { userWmsLayerInput } from "../dataLayers/userWmsLayers";
 import {
-    chooseFeatureInfoFormat,
     fetchWmsCapabilities,
     normalizeWmsEndpoint,
     probeWmsLayer,
@@ -182,7 +180,7 @@ function AddWmsForm(props: {
             setError(intl.formatMessage({ id: "addWms.error.notRequestable" }, { message: probe.message ?? "" }));
             return;
         }
-        userLayers.add(toLayerInput(service.endpoint, service.capabilities, layer));
+        userLayers.add(userWmsLayerInput(service.endpoint, service.capabilities, layer));
         onAdded(layer.title);
     };
 
@@ -349,40 +347,3 @@ function AddWmsForm(props: {
 
 /** The last loaded URL, offered again for the next layer (session only). */
 let lastUrl = "";
-
-/** Labels of the service information in the layer description (both languages, like the configuration). */
-const LABELS = {
-    provider: { de: "Anbieter", en: "Provider" },
-    constraints: { de: "Nutzungsbedingungen", en: "Terms of use" },
-    fees: { de: "Gebühren", en: "Fees" }
-};
-
-/** Builds the layer configuration from the capabilities. */
-function toLayerInput(endpoint: string, capabilities: WmsCapabilities, layer: WmsCapabilitiesLayer): UserWmsLayerInput {
-    const format = layer.queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
-    return {
-        name: layer.title,
-        description: describe(capabilities, layer),
-        endpoint,
-        attribution: layer.attribution,
-        wms: {
-            layers: [layer.name],
-            featureInfo: format ? { format } : { enabled: false }
-        }
-    };
-}
-
-/** Abstract of the layer and information about the service (provider, terms of use, fees). */
-function describe(capabilities: WmsCapabilities, layer: WmsCapabilitiesLayer): LocalizedText | undefined {
-    const parts = (language: "de" | "en") =>
-        [
-            layer.abstract !== layer.title ? layer.abstract : undefined,
-            capabilities.contactOrganization && `${LABELS.provider[language]}: ${capabilities.contactOrganization}`,
-            capabilities.accessConstraints && `${LABELS.constraints[language]}: ${capabilities.accessConstraints}`,
-            capabilities.fees && `${LABELS.fees[language]}: ${capabilities.fees}`
-        ]
-            .filter(Boolean)
-            .join("\n\n");
-    const de = parts("de");
-    return de ? { de, en: parts("en") } : undefined;
-}
