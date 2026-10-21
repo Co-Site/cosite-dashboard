@@ -31,6 +31,47 @@ export interface SensorChartViewProps {
     label: string;
 }
 
+/** Chart type selection: icons, the name is shown as tooltip (and read by screen readers). */
+function ChartTypeSelector(props: { value: ChartType; onChange(value: ChartType): void }) {
+    const { value, onChange } = props;
+    const intl = useIntl();
+    // The tooltip must use the segment's id as trigger id, the segment group looks up its items by id.
+    const baseId = useId();
+    const itemId = (type: string) => `${baseId}-chart-type-${type}`;
+
+    const changeType = (details: SegmentGroup.ValueChangeDetails) => {
+        if (details.value) {
+            onChange(details.value as ChartType);
+        }
+    };
+
+    return (
+        <SegmentGroup.Root
+            ids={{ item: itemId }}
+            size="xs"
+            aria-label={intl.formatMessage({ id: "chartType.label" })}
+            value={value}
+            onValueChange={changeType}
+        >
+            <SegmentGroup.Indicator />
+            {CHART_TYPES.map((type) => {
+                const Icon = CHART_TYPE_ICONS[type];
+                const name = intl.formatMessage({ id: `chartType.${type}` });
+                return (
+                    <Tooltip key={type} ids={{ trigger: itemId(type) }} content={name}>
+                        <SegmentGroup.Item value={type}>
+                            <SegmentGroup.ItemText>
+                                <Icon aria-hidden />
+                            </SegmentGroup.ItemText>
+                            <SegmentGroup.ItemHiddenInput aria-label={name} />
+                        </SegmentGroup.Item>
+                    </Tooltip>
+                );
+            })}
+        </SegmentGroup.Root>
+    );
+}
+
 /**
  * Selection of a sensor and a chart type, and the chart of the sensor's observations.
  * Other sensors at the same site are shown as tiles next to the chart to switch between them.
@@ -87,46 +128,5 @@ export function SensorChartView(props: SensorChartViewProps) {
                 {colocated.length > 0 && <SensorTiles sensors={colocated} onSelect={onChange} />}
             </Flex>
         </Flex>
-    );
-}
-
-/** Chart type selection: icons, the name is shown as tooltip (and read by screen readers). */
-function ChartTypeSelector(props: { value: ChartType; onChange(value: ChartType): void }) {
-    const { value, onChange } = props;
-    const intl = useIntl();
-    // The tooltip must use the segment's id as trigger id, the segment group looks up its items by id.
-    const baseId = useId();
-    const itemId = (type: string) => `${baseId}-chart-type-${type}`;
-
-    const changeType = (details: SegmentGroup.ValueChangeDetails) => {
-        if (details.value) {
-            onChange(details.value as ChartType);
-        }
-    };
-
-    return (
-        <SegmentGroup.Root
-            ids={{ item: itemId }}
-            size="xs"
-            aria-label={intl.formatMessage({ id: "chartType.label" })}
-            value={value}
-            onValueChange={changeType}
-        >
-            <SegmentGroup.Indicator />
-            {CHART_TYPES.map((type) => {
-                const Icon = CHART_TYPE_ICONS[type];
-                const name = intl.formatMessage({ id: `chartType.${type}` });
-                return (
-                    <Tooltip key={type} ids={{ trigger: itemId(type) }} content={name}>
-                        <SegmentGroup.Item value={type}>
-                            <SegmentGroup.ItemText>
-                                <Icon aria-hidden />
-                            </SegmentGroup.ItemText>
-                            <SegmentGroup.ItemHiddenInput aria-label={name} />
-                        </SegmentGroup.Item>
-                    </Tooltip>
-                );
-            })}
-        </SegmentGroup.Root>
     );
 }

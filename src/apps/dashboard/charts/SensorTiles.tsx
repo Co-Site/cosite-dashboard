@@ -20,51 +20,62 @@ export interface SensorTilesProps {
     onSelect(sensorId: string): void;
 }
 
-/**
- * Stacked tiles for the other sensors at the same site, each with its newest value.
- * Clicking a tile shows that sensor in the chart instead.
- */
-export function SensorTiles(props: SensorTilesProps) {
-    const { sensors, onSelect } = props;
-    const intl = useIntl();
-    const listRef = useRef<HTMLDivElement>(null);
-    const moreBelow = useMoreBelow(listRef, sensors);
-    return (
-        // The column gets the chart's height (stretched by the row), the tiles scroll inside.
-        <Flex direction="column" position="relative" width={{ base: "7.5rem", lg: "9rem" }} flexShrink={0}>
-            <Stack
-                ref={listRef}
-                role="group"
-                aria-label={intl.formatMessage({ id: "panel.colocated.label" })}
-                gap={2}
-                flex="1"
-                minHeight={0}
-                overflowY="auto"
-                // Room for the focus ring, which `overflow` would cut off otherwise.
-                padding={1}
-                // The scrollbar does not change the tiles' width when it appears.
-                css={{ scrollbarGutter: "stable", scrollbarWidth: "thin" }}
-            >
-                {sensors.map((sensor) => (
-                    <SensorTile key={sensor.dataLayerId} sensor={sensor} onSelect={onSelect} />
-                ))}
-            </Stack>
-            {moreBelow && (
-                // Hint that more tiles follow below.
-                <Box
-                    aria-hidden
-                    position="absolute"
-                    insetX={0}
-                    bottom={0}
-                    height={8}
-                    pointerEvents="none"
-                    bgGradient="to-t"
-                    gradientFrom="bg"
-                    gradientTo="transparent"
-                />
-            )}
-        </Flex>
+/** Time of the newest value: only the time of day for today, otherwise with the date. */
+function formatTime(intl: PackageIntl, time: number): string {
+    const today = new Date().toDateString() === new Date(time).toDateString();
+    return intl.formatDate(
+        time,
+        today
+            ? { hour: "2-digit", minute: "2-digit" }
+            : { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }
     );
+}
+
+/**
+ * Whether the list is scrollable and not scrolled to its end.
+ * Updates on scrolling and when the list or a tile changes its size (e.g. when a value has loaded).
+ */
+function useMoreBelow(listRef: RefObject<HTMLDivElement | null>, sensors: StaDatastreamProperties[]): boolean {
+    const [moreBelow, setMoreBelow] = useState(false);
+    useEffect(() => {
+        const list = listRef.current;
+        if (!list) {
+            return;
+        }
+        // 1 px tolerance for fractional sizes.
+        const update = () => setMoreBelow(list.scrollTop + list.clientHeight < list.scrollHeight - 1);
+        update();
+        const observer = new ResizeObserver(update);
+        observer.observe(list);
+        for (const tile of list.children) {
+            observer.observe(tile);
+        }
+        list.addEventListener("scroll", update, { passive: true });
+        return () => {
+            observer.disconnect();
+            list.removeEventListener("scroll", update);
+        };
+    }, [listRef, sensors]);
+    return moreBelow;
+}
+
+/** Loads the newest observation; errors are logged and shown as missing value. */
+function useLatestObservation(observationsUrl: string): LatestState {
+    const [state, setState] = useState<LatestState>({ kind: "loading" });
+    useEffect(() => {
+        const controller = new AbortController();
+        setState({ kind: "loading" });
+        fetchLatestObservation(observationsUrl, controller.signal)
+            .then((observation) => setState({ kind: "loaded", observation }))
+            .catch((error: unknown) => {
+                if (!isAbortError(error)) {
+                    LOG.error(`Failed to load the latest observation of ${observationsUrl}`, error);
+                    setState({ kind: "loaded", observation: undefined });
+                }
+            });
+        return () => controller.abort();
+    }, [observationsUrl]);
+    return state;
 }
 
 function SensorTile(props: { sensor: StaDatastreamProperties; onSelect(sensorId: string): void }) {
@@ -123,60 +134,49 @@ function SensorTile(props: { sensor: StaDatastreamProperties; onSelect(sensorId:
     );
 }
 
-/** Time of the newest value: only the time of day for today, otherwise with the date. */
-function formatTime(intl: PackageIntl, time: number): string {
-    const today = new Date().toDateString() === new Date(time).toDateString();
-    return intl.formatDate(
-        time,
-        today
-            ? { hour: "2-digit", minute: "2-digit" }
-            : { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }
-    );
-}
-
 /**
- * Whether the list is scrollable and not scrolled to its end.
- * Updates on scrolling and when the list or a tile changes its size (e.g. when a value has loaded).
+ * Stacked tiles for the other sensors at the same site, each with its newest value.
+ * Clicking a tile shows that sensor in the chart instead.
  */
-function useMoreBelow(listRef: RefObject<HTMLDivElement | null>, sensors: StaDatastreamProperties[]): boolean {
-    const [moreBelow, setMoreBelow] = useState(false);
-    useEffect(() => {
-        const list = listRef.current;
-        if (!list) {
-            return;
-        }
-        // 1 px tolerance for fractional sizes.
-        const update = () => setMoreBelow(list.scrollTop + list.clientHeight < list.scrollHeight - 1);
-        update();
-        const observer = new ResizeObserver(update);
-        observer.observe(list);
-        for (const tile of list.children) {
-            observer.observe(tile);
-        }
-        list.addEventListener("scroll", update, { passive: true });
-        return () => {
-            observer.disconnect();
-            list.removeEventListener("scroll", update);
-        };
-    }, [listRef, sensors]);
-    return moreBelow;
-}
-
-/** Loads the newest observation; errors are logged and shown as missing value. */
-function useLatestObservation(observationsUrl: string): LatestState {
-    const [state, setState] = useState<LatestState>({ kind: "loading" });
-    useEffect(() => {
-        const controller = new AbortController();
-        setState({ kind: "loading" });
-        fetchLatestObservation(observationsUrl, controller.signal)
-            .then((observation) => setState({ kind: "loaded", observation }))
-            .catch((error: unknown) => {
-                if (!isAbortError(error)) {
-                    LOG.error(`Failed to load the latest observation of ${observationsUrl}`, error);
-                    setState({ kind: "loaded", observation: undefined });
-                }
-            });
-        return () => controller.abort();
-    }, [observationsUrl]);
-    return state;
+export function SensorTiles(props: SensorTilesProps) {
+    const { sensors, onSelect } = props;
+    const intl = useIntl();
+    const listRef = useRef<HTMLDivElement>(null);
+    const moreBelow = useMoreBelow(listRef, sensors);
+    return (
+        // The column gets the chart's height (stretched by the row), the tiles scroll inside.
+        <Flex direction="column" position="relative" width={{ base: "7.5rem", lg: "9rem" }} flexShrink={0}>
+            <Stack
+                ref={listRef}
+                role="group"
+                aria-label={intl.formatMessage({ id: "panel.colocated.label" })}
+                gap={2}
+                flex="1"
+                minHeight={0}
+                overflowY="auto"
+                // Room for the focus ring, which `overflow` would cut off otherwise.
+                padding={1}
+                // The scrollbar does not change the tiles' width when it appears.
+                css={{ scrollbarGutter: "stable", scrollbarWidth: "thin" }}
+            >
+                {sensors.map((sensor) => (
+                    <SensorTile key={sensor.dataLayerId} sensor={sensor} onSelect={onSelect} />
+                ))}
+            </Stack>
+            {moreBelow && (
+                // Hint that more tiles follow below.
+                <Box
+                    aria-hidden
+                    position="absolute"
+                    insetX={0}
+                    bottom={0}
+                    height={8}
+                    pointerEvents="none"
+                    bgGradient="to-t"
+                    gradientFrom="bg"
+                    gradientTo="transparent"
+                />
+            )}
+        </Flex>
+    );
 }

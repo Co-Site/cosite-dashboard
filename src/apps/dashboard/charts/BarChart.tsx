@@ -24,6 +24,19 @@ export interface BarChartProps {
 
 type BarPoint = { x: number; y: number; bucket: Bucket };
 
+function formatBucket(intl: PackageIntl, bucket: Bucket, size: BucketSize): string {
+    if (size === "hour") {
+        return intl.formatDate(bucket.start, { dateStyle: "medium", timeStyle: "short" });
+    }
+    const start = intl.formatDate(bucket.start, { dateStyle: "medium" });
+    if (size === "day") {
+        return start;
+    }
+    // Last day of the week (end is exclusive).
+    const end = intl.formatDate(bucket.end - 1, { dateStyle: "medium" });
+    return `${start} – ${end}`;
+}
+
 /**
  * Bar chart of the mean value per section of time (hour, day or week, depending on the range).
  */
@@ -106,17 +119,4 @@ export function BarChart({ observations, label, unit, range }: BarChartProps) {
             <canvas ref={canvasRef} role="img" aria-label={label} />
         </Box>
     );
-}
-
-function formatBucket(intl: PackageIntl, bucket: Bucket, size: BucketSize): string {
-    if (size === "hour") {
-        return intl.formatDate(bucket.start, { dateStyle: "medium", timeStyle: "short" });
-    }
-    const start = intl.formatDate(bucket.start, { dateStyle: "medium" });
-    if (size === "day") {
-        return start;
-    }
-    // Last day of the week (end is exclusive).
-    const end = intl.formatDate(bucket.end - 1, { dateStyle: "medium" });
-    return `${start} – ${end}`;
 }

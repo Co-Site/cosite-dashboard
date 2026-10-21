@@ -20,6 +20,26 @@ Chart.register(LineController, LineElement, PointElement, LinearScale, Tooltip);
 
 const CROSSHAIR_COLOR = "rgba(0, 0, 0, 0.35)";
 
+/** Draws a vertical line at the hovered x position. */
+const CROSSHAIR_PLUGIN: Plugin<"line"> = {
+    id: "crosshair",
+    afterDatasetsDraw(chart) {
+        const active = chart.tooltip?.getActiveElements()[0];
+        if (!active) {
+            return;
+        }
+        const { ctx, chartArea } = chart;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(active.element.x, chartArea.top);
+        ctx.lineTo(active.element.x, chartArea.bottom);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = CROSSHAIR_COLOR;
+        ctx.stroke();
+        ctx.restore();
+    }
+};
+
 export interface ObservationChartProps {
     observations: Observation[];
 
@@ -32,6 +52,30 @@ export interface ObservationChartProps {
 }
 
 type Point = { x: number; y: number | null };
+
+/**
+ * Inserts `null` points where the time between two observations is much larger than usual,
+ * so that missing data is shown as a gap instead of a straight line.
+ */
+export function withGaps(observations: Observation[]): Point[] {
+    const intervals = observations
+        .slice(1)
+        .map((o, i) => o.time - (observations[i]?.time ?? o.time))
+        .sort((a, b) => a - b);
+    const median = intervals[Math.floor(intervals.length / 2)] ?? 0;
+    const maxGap = Math.max(median * 5, 60 * 60 * 1000);
+
+    const points: Point[] = [];
+    let previous: Observation | undefined;
+    for (const o of observations) {
+        if (previous && o.time - previous.time > maxGap) {
+            points.push({ x: (previous.time + o.time) / 2, y: null });
+        }
+        points.push({ x: o.time, y: o.value });
+        previous = o;
+    }
+    return points;
+}
 
 /**
  * Line chart of a single time series (x: time, y: value).
@@ -111,47 +155,3 @@ export function ObservationChart({ observations, label, unit, range }: Observati
         </Box>
     );
 }
-
-/**
- * Inserts `null` points where the time between two observations is much larger than usual,
- * so that missing data is shown as a gap instead of a straight line.
- */
-export function withGaps(observations: Observation[]): Point[] {
-    const intervals = observations
-        .slice(1)
-        .map((o, i) => o.time - (observations[i]?.time ?? o.time))
-        .sort((a, b) => a - b);
-    const median = intervals[Math.floor(intervals.length / 2)] ?? 0;
-    const maxGap = Math.max(median * 5, 60 * 60 * 1000);
-
-    const points: Point[] = [];
-    let previous: Observation | undefined;
-    for (const o of observations) {
-        if (previous && o.time - previous.time > maxGap) {
-            points.push({ x: (previous.time + o.time) / 2, y: null });
-        }
-        points.push({ x: o.time, y: o.value });
-        previous = o;
-    }
-    return points;
-}
-
-/** Draws a vertical line at the hovered x position. */
-const CROSSHAIR_PLUGIN: Plugin<"line"> = {
-    id: "crosshair",
-    afterDatasetsDraw(chart) {
-        const active = chart.tooltip?.getActiveElements()[0];
-        if (!active) {
-            return;
-        }
-        const { ctx, chartArea } = chart;
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(active.element.x, chartArea.top);
-        ctx.lineTo(active.element.x, chartArea.bottom);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = CROSSHAIR_COLOR;
-        ctx.stroke();
-        ctx.restore();
-    }
-};
