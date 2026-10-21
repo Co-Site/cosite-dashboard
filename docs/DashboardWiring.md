@@ -24,19 +24,18 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
 
 ## App-Aufbau (`src/apps/dashboard`)
 
-| Datei              | Zweck                                                                                                                     |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `package.json`     | Paketname + Abhängigkeiten (alle über `catalog:`)                                                                         |
-| `build.config.mjs` | `defineBuildConfig({ i18n, styles, services, ui })` – Sprachen, CSS, Service-Registrierung, UI-Referenzen                 |
-| `app.ts`           | `createCustomElement({ component, appMetadata })` + `customElements.define("dashboard-app", ...)`                         |
-| `services.ts`      | Service-Klassen, z. B. `MainMapProvider` (Kartenkonfiguration)                                                            |
-| `DashboardApp.tsx` | Root-Komponente: Karte, TOC, Kartenwerkzeuge, Bottom-Panel                                                                |
-| `BottomPanel.tsx`  | Einklappbares Analyse-Panel unten, Tabs „Einzelsensor“ / „Sensorvergleich“, gemeinsamer Zeitfilter                        |
-| `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                                             |
-| `dataLayers/`      | Datenlayer: JSON-Schema (`types.ts`), Loader + Parser (`loadDataLayers.ts`), Layer-Fabrik, SensorThings-Helfer (`sta.ts`) |
-| `mapClick/`        | Kartenklick: Popup mit allen Sensoren an der Stelle oder WMS-GetFeatureInfo                                               |
-| `charts/`          | Zeitfilter, Sensor- und Typauswahl, Messwerte laden, Diagramme: Linie, Balken, Boxplot, Windrose                          |
-| `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen                             |
+| Datei              | Zweck                                                                                                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `package.json`     | Paketname + Abhängigkeiten (alle über `catalog:`)                                                                                                                                    |
+| `build.config.mjs` | `defineBuildConfig({ i18n, styles, services, ui })` – Sprachen, CSS, Service-Registrierung, UI-Referenzen                                                                            |
+| `app.ts`           | `createCustomElement({ component, appMetadata })` + `customElements.define("dashboard-app", ...)`                                                                                    |
+| `services.ts`      | Service-Klassen, z. B. `MainMapProvider` (Kartenkonfiguration)                                                                                                                       |
+| `DashboardApp.tsx` | Root-Komponente: Karte, TOC, Kartenwerkzeuge, Analyse-Panel                                                                                                                          |
+| `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                                                                                                        |
+| `dataLayers/`      | Datenlayer: JSON-Schema (`types.ts`), Loader + Parser (`loadDataLayers.ts`), Layer-Fabrik, SensorThings-Helfer (`sta.ts`)                                                            |
+| `mapClick/`        | Kartenklick: Popup mit allen Sensoren an der Stelle oder WMS-GetFeatureInfo                                                                                                          |
+| `charts/`          | Analyse-Panel unten (`AnalysisPanel.tsx`, Tabs „Einzelsensor“ / „Sensorvergleich“), Zeitfilter, Sensor- und Typauswahl, Messwerte laden, Diagramme: Linie, Balken, Boxplot, Windrose |
+| `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen                                                                                        |
 
 ## Datenlayer (`src/public/config/dataLayers.json`)
 
@@ -170,7 +169,7 @@ Darüber findet der Kartenklick z. B. die `featureInfo`-Einstellungen eines WMS-
 `mapClick/useMapClick.tsx` hört auf Klicks in die Karte:
 
 1. **Sensorpunkt getroffen** (5 px Toleranz, Mauszeiger wird zur Hand): Der Datastream wird ausgewählt und das
-   Bottom-Panel geöffnet. Der Zustand (`datastream`, `timeFilter`, `panelOpen`) liegt in `DashboardApp.tsx`.
+   Analyse-Panel (`charts/AnalysisPanel.tsx`) geöffnet. Der Zustand (`datastream`, `timeFilter`, `panelOpen`) liegt in `DashboardApp.tsx`.
 2. **Sonst**: Alle sichtbaren WMS-Layer mit aktiver FeatureInfo werden per `GetFeatureInfo` (GeoJSON) abgefragt
    (`mapClick/featureInfo.ts`). Das Ergebnis erscheint als Popup (`map.overlays`) an der Klickposition.
    Zahlen werden lokalisiert, ISO-Zeitstempel in Ortszeit angezeigt. Darunter steht die **Legende** des Layers
@@ -186,7 +185,7 @@ darauf mit einem Fehler, und die Karte bekommt dann keine Legenden-URL. Mit `wms
 serverseitig kompakt zeichnen (GeoServer: `LEGEND_OPTIONS`, `WIDTH`, `HEIGHT`). Das ist schärfer als ein im Browser
 verkleinertes Bild.
 
-Im Bottom-Panel:
+Im Analyse-Panel (`charts/AnalysisPanel.tsx`):
 
 - **Zeitfilter** (`charts/TimeRangeFilter.tsx`): Presets 24 Stunden, 7 Tage (Default), 30 Tage oder eigener Zeitraum von/bis.
   Ungültige Eingaben (von ≥ bis) werden markiert, der letzte gültige Zeitraum bleibt aktiv.

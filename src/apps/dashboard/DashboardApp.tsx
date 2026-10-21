@@ -4,7 +4,7 @@ import { InitialExtent, ZoomIn, ZoomOut } from "@open-pioneer/map-navigation";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useId, useRef, useState } from "react";
 import { LuChartLine } from "react-icons/lu";
-import { BottomPanel } from "./BottomPanel";
+import { AnalysisPanel } from "./charts/AnalysisPanel";
 import { AnalysisSelection, INITIAL_SELECTION } from "./charts/analysisSelection";
 import { presetFilter, TimeFilter } from "./charts/timeRange";
 import { useMapClick } from "./mapClick/useMapClick";
@@ -88,7 +88,7 @@ export function DashboardApp() {
                             </IconButton>
                         )}
                     </Flex>
-                    <BottomPanel
+                    <AnalysisPanel
                         id={panelId}
                         open={panelOpen}
                         onOpenChange={togglePanel}

@@ -3,14 +3,14 @@ import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { Ref } from "react";
 import { LuPanelBottomClose } from "react-icons/lu";
-import { AnalysisSelection, AnalysisTab, withDefaultSensors } from "./charts/analysisSelection";
-import { ChartType } from "./charts/chartTypes";
-import { SensorChartView } from "./charts/SensorChartView";
-import { TimeFilter } from "./charts/timeRange";
-import { TimeRangeFilter } from "./charts/TimeRangeFilter";
-import { useStaSensors } from "./dataLayers/useStaSensors";
+import { useStaSensors } from "../dataLayers/useStaSensors";
+import { AnalysisSelection, AnalysisTab, withDefaultSensors } from "./analysisSelection";
+import { ChartType } from "./chartTypes";
+import { SensorChartView } from "./SensorChartView";
+import { TimeFilter } from "./timeRange";
+import { TimeRangeFilter } from "./TimeRangeFilter";
 
-export interface BottomPanelProps {
+export interface AnalysisPanelProps {
     /** Id of the panel element (e.g. for `aria-controls`). */
     id: string;
 
@@ -33,7 +33,7 @@ export interface BottomPanelProps {
  * Collapsible analysis panel at the bottom of the dashboard (collapsed, only an icon remains, see `DashboardApp`).
  * Shows the observations of a single sensor or compares two sensors, within the same time range.
  */
-export function BottomPanel(props: BottomPanelProps) {
+export function AnalysisPanel(props: AnalysisPanelProps) {
     const { id, open, onOpenChange, closeButtonRef } = props;
     const { timeFilter, onTimeFilterChange, onSelectionChange } = props;
     const intl = useIntl();
