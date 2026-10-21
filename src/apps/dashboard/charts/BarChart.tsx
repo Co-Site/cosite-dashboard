@@ -1,10 +1,11 @@
 import { Box } from "@chakra-ui/react";
+import { PackageIntl } from "@open-pioneer/runtime";
 import { BarController, BarElement, Chart, ChartConfiguration, LinearScale, Tooltip } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback, useMemo } from "react";
 import { Observation } from "../dataLayers/sta";
 import { createValueFormatter, SERIES_COLOR, SERIES_FILL, timeScale, valueScale } from "./chartStyle";
-import { Bucket, bucketSize, meanPerBucket } from "./statistics";
+import { Bucket, BucketSize, bucketSize, meanPerBucket } from "./statistics";
 import { TimeRange } from "./timeRange";
 import { useChart } from "./useChart";
 
@@ -107,7 +108,7 @@ export function BarChart({ observations, label, unit, range }: BarChartProps) {
     );
 }
 
-function formatBucket(intl: ReturnType<typeof useIntl>, bucket: Bucket, size: ReturnType<typeof bucketSize>): string {
+function formatBucket(intl: PackageIntl, bucket: Bucket, size: BucketSize): string {
     if (size === "hour") {
         return intl.formatDate(bucket.start, { dateStyle: "medium", timeStyle: "short" });
     }

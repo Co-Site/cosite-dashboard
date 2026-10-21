@@ -1,6 +1,7 @@
 import { Box, Button, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
 import { createLogger, isAbortError } from "@open-pioneer/core";
 import { useMapModelValue } from "@open-pioneer/map";
+import { PackageIntl } from "@open-pioneer/runtime";
 import { useIntl } from "open-pioneer:react-hooks";
 import { RefObject, useEffect, useRef, useState } from "react";
 import { fetchLatestObservation, Observation, StaDatastreamProperties } from "../dataLayers/sta";
@@ -120,7 +121,7 @@ function SensorTile(props: { sensor: StaDatastreamProperties; onSelect(sensorId:
 }
 
 /** Time of the newest value: only the time of day for today, otherwise with the date. */
-function formatTime(intl: ReturnType<typeof useIntl>, time: number): string {
+function formatTime(intl: PackageIntl, time: number): string {
     const today = new Date().toDateString() === new Date(time).toDateString();
     return intl.formatDate(
         time,
