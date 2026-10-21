@@ -4,7 +4,14 @@ import { useIntl } from "open-pioneer:react-hooks";
 import { Ref } from "react";
 import { LuPanelBottomClose } from "react-icons/lu";
 import { useStaSensors } from "../dataLayers/useStaSensors";
-import { AnalysisSelection, AnalysisTab, withDefaultSensors } from "./analysisSelection";
+import {
+    AnalysisSelection,
+    AnalysisTab,
+    AnalysisView,
+    withChartType,
+    withCompareSensor,
+    withDefaultSensors
+} from "./analysisSelection";
 import { ChartType } from "./chartTypes";
 import { SensorChartView } from "./SensorChartView";
 import { TimeFilter } from "./timeRange";
@@ -45,22 +52,10 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
     );
     const collapseLabel = intl.formatMessage({ id: "panel.collapse" });
 
-    const setCompare = (index: 0 | 1, sensorId: string) => {
-        const compare: AnalysisSelection["compare"] = [...selection.compare];
-        compare[index] = sensorId;
-        onSelectionChange({ ...selection, compare });
-    };
-    const setChartType = (view: "single" | 0 | 1, chartType: ChartType) => {
-        const { single, compare } = selection.charts;
-        const charts: AnalysisSelection["charts"] =
-            view === "single"
-                ? { single: chartType, compare }
-                : {
-                      single,
-                      compare: view === 0 ? [chartType, compare[1]] : [compare[0], chartType]
-                  };
-        onSelectionChange({ ...selection, charts });
-    };
+    const setCompare = (index: 0 | 1, sensorId: string) =>
+        onSelectionChange(withCompareSensor(selection, index, sensorId));
+    const setChartType = (view: AnalysisView, chartType: ChartType) =>
+        onSelectionChange(withChartType(selection, view, chartType));
 
     return (
         <Collapsible.Root open={open}>
