@@ -174,7 +174,7 @@ Darüber findet der Kartenklick z. B. die `featureInfo`-Einstellungen eines WMS-
 2. **Sonst**: Alle sichtbaren WMS-Layer mit aktiver FeatureInfo werden per `GetFeatureInfo` (GeoJSON) abgefragt
    (`mapClick/featureInfo.ts`). Das Ergebnis erscheint als Popup (`map.overlays`) an der Klickposition.
    Zahlen werden lokalisiert, ISO-Zeitstempel in Ortszeit angezeigt. Darunter steht die **Legende** des Layers
-   (`mapClick/WmsLegend.tsx`). Wird das Popup zu hoch, scrollt nur der Inhalt; Titel und ✕ bleiben sichtbar.
+   (`mapClick/WmsLegend.tsx`, URLs in `mapClick/legendUrls.ts`). Wird das Popup zu hoch, scrollt nur der Inhalt; Titel und ✕ bleiben sichtbar.
    An der Klickposition erscheint ein **Marker** (`mapClick/clickMarker.ts`, über `map.highlights`). Das Popup steht
    **neben** dem Marker, mit der Oberkante unterhalb des Klicks (am rechten Rand links davon). Passt es unten nicht hin,
    wird es so weit hochgeschoben, dass es zwischen Analyse-Panel und Kartenoberkante ganz sichtbar ist

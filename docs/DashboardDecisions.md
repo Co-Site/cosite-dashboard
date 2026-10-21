@@ -404,7 +404,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   ignoriert das stillschweigend: Der Layer gilt als geladen, aber es gibt keine Legenden-URL.
 - **Lösung:** Fehlt die URL aus den Capabilities, baut die App eine Standard-Anfrage
   `{endpoint}?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER={name}`
-  (`mapClick/WmsLegend.tsx`). Bei Servern mit funktionierenden Capabilities wird deren URL genommen.
+  (`getLegendGraphicUrl` in `mapClick/legendUrls.ts`). Bei Servern mit funktionierenden Capabilities wird deren URL genommen.
 - **Stolperstein 2, Bildformat:** Die Standardlegende ist 88×505 px hochkant, die querliegende Variante 1544 px breit.
   Beides passt schlecht in ein Popup.
 - **Versuche:**

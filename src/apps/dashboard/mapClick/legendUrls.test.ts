@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getLegendGraphicUrl, withParams } from "./WmsLegend";
+import { getLegendGraphicUrl, withParams } from "./legendUrls";
 
 describe("getLegendGraphicUrl", () => {
     it("builds a GetLegendGraphic request for a layer", () => {
