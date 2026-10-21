@@ -2,7 +2,7 @@ import { Box, Button, chakra, Flex, Input, Spinner, Stack, Text } from "@chakra-
 import { createLogger } from "@open-pioneer/core";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
-import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
+import { KeyboardEvent, RefObject, useEffect, useId, useRef, useState } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
 import { userWmsLayerInput } from "../dataLayers/userWmsLayers";
 import { probeWmsLayer, WmsCapabilitiesLayer } from "../dataLayers/wmsCapabilities";
@@ -76,7 +76,7 @@ export function AddWmsLayer() {
 
 function AddWmsForm(props: {
     id: string;
-    urlRef: React.RefObject<HTMLInputElement | null>;
+    urlRef: RefObject<HTMLInputElement | null>;
     onAdded(title: string): void;
     onClose(): void;
 }) {
