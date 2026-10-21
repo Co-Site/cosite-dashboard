@@ -1,10 +1,11 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { ArcElement, Chart, PolarAreaController, RadialLinearScale, Tooltip } from "chart.js";
+import { ArcElement, Chart, ChartConfiguration, PolarAreaController, RadialLinearScale, Tooltip } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import { Observation } from "../dataLayers/sta";
 import { GRID_COLOR, SERIES_COLOR, SERIES_FILL, TEXT_SECONDARY } from "./chartStyle";
 import { DIRECTION_SECTORS, directionFrequencies, isDirectionData } from "./statistics";
+import { useChart } from "./useChart";
 
 Chart.register(PolarAreaController, ArcElement, RadialLinearScale, Tooltip);
 
@@ -22,22 +23,15 @@ export interface WindRoseChartProps {
  */
 export function WindRoseChart({ observations, label, unit }: WindRoseChartProps) {
     const intl = useIntl();
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const chartRef = useRef<Chart<"polarArea">>(undefined);
     const valid = isDirectionData(unit, observations);
     const frequencies = useMemo(
         () => (valid ? directionFrequencies(observations) : new Array(DIRECTION_SECTORS).fill(0)),
         [valid, observations]
     );
 
-    // Create the chart once; data is updated by the effect below.
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) {
-            return;
-        }
+    const createConfig = useCallback((): ChartConfiguration<"polarArea"> => {
         const formatPercent = (value: number) => `${intl.formatNumber(value, { maximumFractionDigits: 1 })} %`;
-        const chart = new Chart<"polarArea">(canvas, {
+        return {
             type: "polarArea",
             data: {
                 labels: intl.formatMessage({ id: "chart.windrose.directions" }).split(","),
@@ -87,24 +81,20 @@ export function WindRoseChart({ observations, label, unit }: WindRoseChartProps)
                     }
                 }
             }
-        });
-        chartRef.current = chart;
-        return () => {
-            chart.destroy();
-            chartRef.current = undefined;
         };
     }, [intl]);
 
-    useEffect(() => {
-        const chart = chartRef.current;
-        const dataset = chart?.data.datasets[0];
-        if (!chart || !dataset) {
-            return;
-        }
-        dataset.data = frequencies;
-        chart.update();
-        // `intl`: the chart is recreated empty when the language changes.
-    }, [frequencies, intl]);
+    const applyData = useCallback(
+        (chart: Chart<"polarArea">) => {
+            const dataset = chart.data.datasets[0];
+            if (!dataset) {
+                return;
+            }
+            dataset.data = frequencies;
+        },
+        [frequencies]
+    );
+    const canvasRef = useChart(createConfig, applyData);
 
     return (
         <Flex direction="column" height="100%" width="100%">

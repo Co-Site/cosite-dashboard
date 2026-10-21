@@ -1,7 +1,7 @@
 import { Box } from "@chakra-ui/react";
-import { BarController, BarElement, Chart, LinearScale, Tooltip } from "chart.js";
+import { BarController, BarElement, Chart, ChartConfiguration, LinearScale, Tooltip } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import { Observation } from "../dataLayers/sta";
 import {
     createValueFormatter,
@@ -13,6 +13,7 @@ import {
 } from "./chartStyle";
 import { Bucket, bucketSize, meanPerBucket } from "./statistics";
 import { TimeRange } from "./timeRange";
+import { useChart } from "./useChart";
 
 Chart.register(BarController, BarElement, LinearScale, Tooltip);
 
@@ -34,20 +35,13 @@ type BarPoint = { x: number; y: number; bucket: Bucket };
  */
 export function BarChart({ observations, label, unit, range }: BarChartProps) {
     const intl = useIntl();
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const chartRef = useRef<Chart<"bar", BarPoint[]>>(undefined);
     const size = bucketSize(range);
     const buckets = useMemo(() => meanPerBucket(observations, size), [observations, size]);
 
-    // Create the chart once per size; data is updated by the effect below.
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) {
-            return;
-        }
+    const createConfig = useCallback((): ChartConfiguration<"bar", BarPoint[]> => {
         const formatValue = createValueFormatter(intl, unit);
         const meanLabel = intl.formatMessage({ id: `chart.bar.${size}` });
-        const chart = new Chart<"bar", BarPoint[]>(canvas, {
+        return {
             type: "bar",
             data: { datasets: [{ data: [] }] },
             options: {
@@ -106,33 +100,30 @@ export function BarChart({ observations, label, unit, range }: BarChartProps) {
                     }
                 }
             }
-        });
-        chartRef.current = chart;
-        return () => {
-            chart.destroy();
-            chartRef.current = undefined;
         };
     }, [intl, unit, size]);
 
-    useEffect(() => {
-        const chart = chartRef.current;
-        const dataset = chart?.data.datasets[0];
-        if (!chart || !dataset) {
-            return;
-        }
-        // Each bar is centered in its section.
-        dataset.data = buckets.map((bucket) => ({
-            x: (bucket.start + bucket.end) / 2,
-            y: bucket.mean,
-            bucket
-        }));
-        const xScale = chart.options.scales?.x;
-        if (xScale) {
-            xScale.min = range.from.getTime();
-            xScale.max = range.to.getTime();
-        }
-        chart.update();
-    }, [buckets, range, intl, unit, size]);
+    const applyData = useCallback(
+        (chart: Chart<"bar", BarPoint[]>) => {
+            const dataset = chart.data.datasets[0];
+            if (!dataset) {
+                return;
+            }
+            // Each bar is centered in its section.
+            dataset.data = buckets.map((bucket) => ({
+                x: (bucket.start + bucket.end) / 2,
+                y: bucket.mean,
+                bucket
+            }));
+            const xScale = chart.options.scales?.x;
+            if (xScale) {
+                xScale.min = range.from.getTime();
+                xScale.max = range.to.getTime();
+            }
+        },
+        [buckets, range]
+    );
+    const canvasRef = useChart(createConfig, applyData);
 
     return (
         <Box position="relative" height="100%" width="100%">

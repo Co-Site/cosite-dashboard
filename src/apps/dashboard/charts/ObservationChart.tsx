@@ -1,10 +1,20 @@
 import { Box } from "@chakra-ui/react";
-import { Chart, LinearScale, LineController, LineElement, Plugin, PointElement, Tooltip } from "chart.js";
+import {
+    Chart,
+    ChartConfiguration,
+    LinearScale,
+    LineController,
+    LineElement,
+    Plugin,
+    PointElement,
+    Tooltip
+} from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
-import { useEffect, useRef } from "react";
+import { useCallback } from "react";
 import { Observation } from "../dataLayers/sta";
 import { createValueFormatter, formatTimeTick, GRID_COLOR, SERIES_COLOR, TEXT_SECONDARY } from "./chartStyle";
 import { TimeRange } from "./timeRange";
+import { useChart } from "./useChart";
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Tooltip);
 
@@ -28,18 +38,11 @@ type Point = { x: number; y: number | null };
  */
 export function ObservationChart({ observations, label, unit, range }: ObservationChartProps) {
     const intl = useIntl();
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const chartRef = useRef<Chart<"line", Point[]>>(undefined);
 
-    // Create the chart once; data is updated by the effect below.
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) {
-            return;
-        }
+    const createConfig = useCallback((): ChartConfiguration<"line", Point[]> => {
         const formatValue = createValueFormatter(intl, unit);
 
-        const chart = new Chart<"line", Point[]>(canvas, {
+        return {
             type: "line",
             data: { datasets: [{ data: [] }] },
             plugins: [CROSSHAIR_PLUGIN],
@@ -100,28 +103,25 @@ export function ObservationChart({ observations, label, unit, range }: Observati
                     }
                 }
             }
-        });
-        chartRef.current = chart;
-        return () => {
-            chart.destroy();
-            chartRef.current = undefined;
         };
     }, [intl, unit]);
 
-    useEffect(() => {
-        const chart = chartRef.current;
-        const dataset = chart?.data.datasets[0];
-        if (!chart || !dataset) {
-            return;
-        }
-        dataset.data = withGaps(observations);
-        const xScale = chart.options.scales?.x;
-        if (xScale) {
-            xScale.min = range.from.getTime();
-            xScale.max = range.to.getTime();
-        }
-        chart.update();
-    }, [observations, range, intl, unit]);
+    const applyData = useCallback(
+        (chart: Chart<"line", Point[]>) => {
+            const dataset = chart.data.datasets[0];
+            if (!dataset) {
+                return;
+            }
+            dataset.data = withGaps(observations);
+            const xScale = chart.options.scales?.x;
+            if (xScale) {
+                xScale.min = range.from.getTime();
+                xScale.max = range.to.getTime();
+            }
+        },
+        [observations, range]
+    );
+    const canvasRef = useChart(createConfig, applyData);
 
     return (
         <Box position="relative" height="100%" width="100%">

@@ -1,10 +1,11 @@
 import { Box } from "@chakra-ui/react";
 import { BoxAndWiskers, BoxPlotController, IBoxPlot } from "@sgratzl/chartjs-chart-boxplot";
-import { CategoryScale, Chart, LinearScale, Tooltip } from "chart.js";
+import { CategoryScale, Chart, ChartConfiguration, LinearScale, Tooltip } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
-import { useEffect, useRef } from "react";
+import { useCallback } from "react";
 import { Observation } from "../dataLayers/sta";
 import { createValueFormatter, GRID_COLOR, SERIES_COLOR, SERIES_FILL, TEXT_SECONDARY } from "./chartStyle";
+import { useChart } from "./useChart";
 
 Chart.register(BoxPlotController, BoxAndWiskers, CategoryScale, LinearScale, Tooltip);
 
@@ -22,17 +23,10 @@ export interface BoxPlotChartProps {
  */
 export function BoxPlotChart({ observations, label, unit }: BoxPlotChartProps) {
     const intl = useIntl();
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const chartRef = useRef<Chart<"boxplot">>(undefined);
 
-    // Create the chart once; data is updated by the effect below.
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) {
-            return;
-        }
+    const createConfig = useCallback((): ChartConfiguration<"boxplot"> => {
         const formatValue = createValueFormatter(intl, unit);
-        const chart = new Chart<"boxplot">(canvas, {
+        return {
             type: "boxplot",
             data: { labels: [], datasets: [{ data: [] }] },
             options: {
@@ -88,25 +82,21 @@ export function BoxPlotChart({ observations, label, unit }: BoxPlotChartProps) {
                     }
                 }
             }
-        });
-        chartRef.current = chart;
-        return () => {
-            chart.destroy();
-            chartRef.current = undefined;
         };
     }, [intl, unit]);
 
-    useEffect(() => {
-        const chart = chartRef.current;
-        const dataset = chart?.data.datasets[0];
-        if (!chart || !dataset) {
-            return;
-        }
-        chart.data.labels = [label];
-        dataset.data = [observations.map((o) => o.value)];
-        chart.update();
-        // `intl`, `unit`: the chart is recreated empty when they change.
-    }, [observations, label, intl, unit]);
+    const applyData = useCallback(
+        (chart: Chart<"boxplot">) => {
+            const dataset = chart.data.datasets[0];
+            if (!dataset) {
+                return;
+            }
+            chart.data.labels = [label];
+            dataset.data = [observations.map((o) => o.value)];
+        },
+        [observations, label]
+    );
+    const canvasRef = useChart(createConfig, applyData);
 
     return (
         <Box position="relative" height="100%" width="100%">
