@@ -17,6 +17,12 @@ import { SensorChartView } from "./SensorChartView";
 import { TimeFilter } from "./timeRange";
 import { TimeRangeFilter } from "./TimeRangeFilter";
 
+/** The two halves of the compare view and the label of their sensor selection. */
+const COMPARE_HALVES = [
+    { index: 0, label: "panel.sensor.labelA" },
+    { index: 1, label: "panel.sensor.labelB" }
+] as const;
+
 export interface AnalysisPanelProps {
     /** Id of the panel element (e.g. for `aria-controls`). */
     id: string;
@@ -129,32 +135,19 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
                                 </Tabs.Content>
                                 <Tabs.Content value="compare" flex="1" minHeight={0} pt={0}>
                                     <Flex direction={{ base: "column", md: "row" }} gap={6} height="100%">
-                                        <Box flex="1" minWidth={0} minHeight={0}>
-                                            <SensorChartView
-                                                sensors={sensors}
-                                                value={selection.compare[0]}
-                                                onChange={(id) => setCompare(0, id)}
-                                                chartType={selection.charts.compare[0]}
-                                                onChartTypeChange={(type) => setChartType(0, type)}
-                                                timeFilter={timeFilter}
-                                                label={intl.formatMessage({
-                                                    id: "panel.sensor.labelA"
-                                                })}
-                                            />
-                                        </Box>
-                                        <Box flex="1" minWidth={0} minHeight={0}>
-                                            <SensorChartView
-                                                sensors={sensors}
-                                                value={selection.compare[1]}
-                                                onChange={(id) => setCompare(1, id)}
-                                                chartType={selection.charts.compare[1]}
-                                                onChartTypeChange={(type) => setChartType(1, type)}
-                                                timeFilter={timeFilter}
-                                                label={intl.formatMessage({
-                                                    id: "panel.sensor.labelB"
-                                                })}
-                                            />
-                                        </Box>
+                                        {COMPARE_HALVES.map(({ index, label }) => (
+                                            <Box key={index} flex="1" minWidth={0} minHeight={0}>
+                                                <SensorChartView
+                                                    sensors={sensors}
+                                                    value={selection.compare[index]}
+                                                    onChange={(id) => setCompare(index, id)}
+                                                    chartType={selection.charts.compare[index]}
+                                                    onChartTypeChange={(type) => setChartType(index, type)}
+                                                    timeFilter={timeFilter}
+                                                    label={intl.formatMessage({ id: label })}
+                                                />
+                                            </Box>
+                                        ))}
                                     </Flex>
                                 </Tabs.Content>
                             </>
