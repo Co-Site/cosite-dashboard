@@ -4,7 +4,7 @@ import { LocalizedText } from "./localizedText";
 import { WmsDataLayerConfig } from "./types";
 
 /** Id of the group that holds the WMS layers added by the user. */
-export const USER_WMS_GROUP_ID = "user-wms";
+const USER_WMS_GROUP_ID = "user-wms";
 
 const USER_WMS_GROUP_NAME: LocalizedText = { de: "Eigene WMS", en: "Own WMS" };
 
@@ -18,7 +18,7 @@ export type UserWmsLayerInput = Omit<WmsDataLayerConfig, "id" | "type" | "tempor
  * Groups of `@open-pioneer/map` cannot get new children, so the group is rebuilt on every change;
  * visibility and opacity of the layers are kept.
  */
-export class UserWmsLayers {
+class UserWmsLayers {
     #map: MapModel;
     #configs: WmsDataLayerConfig[] = [];
     #nextId = 1;

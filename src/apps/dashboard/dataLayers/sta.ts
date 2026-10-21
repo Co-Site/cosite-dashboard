@@ -121,7 +121,7 @@ const UNIT_SYMBOLS: Record<string, string> = {
     "[degF]": "°F"
 };
 
-export function displayUnit(symbol: string | undefined): string | undefined {
+function displayUnit(symbol: string | undefined): string | undefined {
     return symbol ? (UNIT_SYMBOLS[symbol] ?? symbol) : undefined;
 }
 
@@ -140,7 +140,7 @@ export interface Observation {
 }
 
 /** Upper limit for the number of observations loaded for a chart. */
-export const MAX_OBSERVATIONS = 20_000;
+const MAX_OBSERVATIONS = 20_000;
 
 /**
  * Loads the numeric observations of a datastream within the given time range (oldest first).

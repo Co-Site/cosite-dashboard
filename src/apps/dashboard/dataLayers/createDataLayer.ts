@@ -164,10 +164,14 @@ function createStaDatastreamLayer(
     });
 }
 
+function localizedTitle(config: DataLayerNode, language: string): string {
+    return localize(config.name, language) ?? defaultTitle(config);
+}
+
 function commonOptions(config: DataLayerNode, { language }: Pick<DataLayerContext, "language">) {
     return {
         id: config.id,
-        title: localize(config.name, language) ?? defaultTitle(config),
+        title: localizedTitle(config, language),
         description: localize(config.description, language),
         visible: config.visible ?? true,
         attributes: { [DATA_LAYER_ATTRIBUTE]: config }
@@ -193,7 +197,7 @@ export function localizeDataLayers(map: MapModel, language: string): void {
         }
         // Titles and descriptions from the capabilities are kept, they are not translated.
         if (config.name != null) {
-            layer.setTitle(localize(config.name, language) ?? defaultTitle(config));
+            layer.setTitle(localizedTitle(config, language));
         }
         if (config.description != null) {
             layer.setDescription(localize(config.description, language) ?? "");
