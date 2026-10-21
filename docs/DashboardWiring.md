@@ -215,7 +215,7 @@ Der TOC ist das unveränderte `@open-pioneer/toc`. Eigene Inhalte pro Layer komm
 
 - `Toc` meldet in `onReady` eine `TocApi`. `TocItemExtensions` liest daraus reaktiv alle Einträge (`api.getItems()`)
   und deren DOM-Element (`TocItem.htmlElement`).
-- Für jeden Layer ruft es `layerItemContent(layer)` auf (`toc/LayerOpacitySlider.tsx`). Kommt Inhalt zurück, wird ein
+- Für jeden Layer ruft es `layerItemContent(layer)` auf (`toc/layerItemContent.tsx`). Kommt Inhalt zurück, wird ein
   `<div class="toc-layer-item-extra">` ans Ende des Eintrags gehängt und der Inhalt per `createPortal` hineingerendert.
 - Das Dashboard liefert so für jeden WMS-Layer einen **Transparenz-Slider** unter dem Titel
   (0 % = deckend, Startwert aus `opacity` im JSON).

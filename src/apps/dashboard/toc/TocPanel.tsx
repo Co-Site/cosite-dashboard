@@ -6,7 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { LuLayers, LuPanelLeftClose } from "react-icons/lu";
 import { AddWmsLayer } from "./AddWmsLayer";
 import { LanguageSelector } from "./LanguageSelector";
-import { layerItemContent } from "./LayerOpacitySlider";
+import { layerItemContent } from "./layerItemContent";
 import { TocItemExtensions } from "./TocItemExtensions";
 
 /**
