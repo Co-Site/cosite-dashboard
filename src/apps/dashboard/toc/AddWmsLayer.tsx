@@ -1,33 +1,192 @@
-import { Badge, Box, Button, chakra, Flex, Input, Spinner, Stack, Text } from "@chakra-ui/react";
+import { Box, Button, chakra, Flex, Input, Spinner, Stack, Text } from "@chakra-ui/react";
 import { createLogger } from "@open-pioneer/core";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
-import { KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { ChangeEvent, KeyboardEvent, RefObject, useEffect, useId, useRef, useState } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
-import { LocalizedText } from "../dataLayers/localizedText";
-import { UserWmsLayerInput } from "../dataLayers/userWmsLayers";
-import {
-    chooseFeatureInfoFormat,
-    fetchWmsCapabilities,
-    normalizeWmsEndpoint,
-    probeWmsLayer,
-    searchLayers,
-    WmsCapabilities,
-    WmsCapabilitiesError,
-    WmsCapabilitiesLayer
-} from "../dataLayers/wmsCapabilities";
+import { userWmsLayerInput } from "../dataLayers/userWmsLayers";
+import { probeWmsLayer, WmsCapabilitiesLayer } from "../dataLayers/wmsCapabilities";
 import { useUserWmsLayers } from "./useUserWmsLayers";
+import { useWmsService } from "./useWmsService";
+import { useWmsLayerSearch, WmsLayerList } from "./WmsLayerSearch";
 
 const LOG = createLogger("dashboard:AddWmsLayer");
 
 /** How long the confirmation of an added layer is shown (ms). */
 const STATUS_DURATION = 8000;
 
-type ServiceState =
-    | { kind: "idle" }
-    | { kind: "loading" }
-    | { kind: "error"; message: string }
-    | { kind: "loaded"; endpoint: string; capabilities: WmsCapabilities };
+function AddWmsForm(props: {
+    id: string;
+    urlRef: RefObject<HTMLInputElement | null>;
+    onAdded(title: string): void;
+    onClose(): void;
+}) {
+    const { id, urlRef, onAdded, onClose } = props;
+    const intl = useIntl();
+    const userLayers = useUserWmsLayers();
+    const map = useMapModelValue();
+    const [checking, setChecking] = useState(false);
+    const urlInputId = useId();
+    const layerInputId = useId();
+    const { url, setUrl, service, load } = useWmsService();
+    const search = useWmsLayerSearch(service.kind === "loaded" ? service.capabilities.layers : undefined);
+    const [error, setError] = useState<string>();
+    const layerRef = useRef<HTMLInputElement>(null);
+
+    const loadService = () => {
+        setError(undefined);
+        search.setActive(0);
+        load();
+    };
+
+    // Continue with the layer search once the service has been loaded.
+    const loaded = service.kind === "loaded";
+    useEffect(() => {
+        if (loaded) {
+            layerRef.current?.focus();
+        }
+    }, [loaded]);
+
+    const add = async (layer: WmsCapabilitiesLayer | undefined) => {
+        if (service.kind !== "loaded" || !layer || checking) {
+            return;
+        }
+        if (!layer.supportsMapProjection) {
+            setError(intl.formatMessage({ id: "addWms.error.projection" }));
+            return;
+        }
+        if (userLayers.has(service.endpoint, layer.name)) {
+            setError(intl.formatMessage({ id: "addWms.error.duplicate" }));
+            return;
+        }
+        // Some services list layers that cannot be requested (e.g. folders with a name), check before adding.
+        setChecking(true);
+        setError(undefined);
+        const center = (map.olMap.getView().getCenter() ?? [0, 0]) as [number, number];
+        const probe = await probeWmsLayer(service.endpoint, layer.name, center);
+        setChecking(false);
+        if (!probe.ok) {
+            LOG.warn(`Layer '${layer.name}' of ${service.endpoint} cannot be requested: ${probe.message}`);
+            setError(intl.formatMessage({ id: "addWms.error.notRequestable" }, { message: probe.message ?? "" }));
+            return;
+        }
+        userLayers.add(userWmsLayerInput(service.endpoint, service.capabilities, layer));
+        onAdded(layer.title);
+    };
+
+    const onLayerKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            search.move(event.key === "ArrowDown" ? 1 : -1);
+        } else if (event.key === "Enter") {
+            event.preventDefault();
+            add(search.activeLayer);
+        }
+    };
+
+    const addActiveLayer = () => add(search.activeLayer);
+    const changeUrl = (event: ChangeEvent<HTMLInputElement>) => setUrl(event.currentTarget.value);
+    const onUrlKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            loadService();
+        }
+    };
+    const changeLayerQuery = (event: ChangeEvent<HTMLInputElement>) => {
+        search.changeQuery(event.currentTarget.value);
+        setError(undefined);
+    };
+
+    return (
+        <Stack id={id} gap={2} borderWidth="1px" borderRadius="md" padding={2} mt={1}>
+            <Stack gap={1}>
+                <chakra.label htmlFor={urlInputId} fontSize="xs" fontWeight="semibold">
+                    {intl.formatMessage({ id: "addWms.url" })}
+                </chakra.label>
+                <Flex gap={1}>
+                    <Input
+                        ref={urlRef}
+                        id={urlInputId}
+                        size="xs"
+                        type="url"
+                        placeholder="https://…/wms"
+                        value={url}
+                        onChange={changeUrl}
+                        onKeyDown={onUrlKeyDown}
+                    />
+                    <Button size="xs" variant="outline" onClick={loadService} disabled={!url.trim()}>
+                        {intl.formatMessage({ id: "addWms.load" })}
+                    </Button>
+                </Flex>
+                {service.kind === "loading" && (
+                    <Flex gap={2} alignItems="center" fontSize="xs">
+                        <Spinner size="xs" />
+                        {intl.formatMessage({ id: "addWms.loading" })}
+                    </Flex>
+                )}
+                {service.kind === "error" && (
+                    <Text fontSize="xs" color="fg.error" role="alert">
+                        {service.message}
+                    </Text>
+                )}
+            </Stack>
+
+            {service.kind === "loaded" && (
+                <Stack gap={1}>
+                    <chakra.label htmlFor={layerInputId} fontSize="xs" fontWeight="semibold">
+                        {intl.formatMessage({ id: "addWms.layer" })}
+                    </chakra.label>
+                    <Input
+                        ref={layerRef}
+                        id={layerInputId}
+                        size="xs"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-expanded={search.results.length > 0}
+                        aria-controls={search.listId}
+                        aria-activedescendant={search.activeLayer ? search.optionId(search.activeIndex) : undefined}
+                        placeholder={intl.formatMessage({ id: "addWms.layerPlaceholder" })}
+                        value={search.query}
+                        onChange={changeLayerQuery}
+                        onKeyDown={onLayerKeyDown}
+                    />
+                    {/* Directly below the input: the list can be long. */}
+                    {checking && (
+                        <Flex gap={2} alignItems="center" fontSize="xs">
+                            <Spinner size="xs" />
+                            {intl.formatMessage({ id: "addWms.checking" })}
+                        </Flex>
+                    )}
+                    {error && (
+                        <Text fontSize="xs" color="fg.error" role="alert">
+                            {error}
+                        </Text>
+                    )}
+                    <Text fontSize="xs" color="fg.muted">
+                        {search.query.trim() === ""
+                            ? intl.formatMessage({ id: "addWms.hint" }, { count: search.results.length })
+                            : search.results.length === 0
+                              ? intl.formatMessage({ id: "addWms.noResults" })
+                              : intl.formatMessage({ id: "addWms.matches" }, { count: search.results.length })}
+                    </Text>
+                    <WmsLayerList search={search} onPick={add} />
+                </Stack>
+            )}
+
+            <Flex gap={1} justifyContent="flex-end">
+                <Button size="xs" variant="ghost" onClick={onClose}>
+                    <LuX />
+                    {intl.formatMessage({ id: "addWms.close" })}
+                </Button>
+                {service.kind === "loaded" && (
+                    <Button size="xs" onClick={addActiveLayer} disabled={!search.activeLayer || checking}>
+                        {intl.formatMessage({ id: "addWms.add" })}
+                    </Button>
+                )}
+            </Flex>
+        </Stack>
+    );
+}
 
 /**
  * Row below the TOC title to add a WMS layer for this session:
@@ -53,6 +212,13 @@ export function AddWmsLayer() {
         return () => clearTimeout(timeout);
     }, [status]);
 
+    const toggleForm = () => setOpen(!open);
+    const closeForm = () => setOpen(false);
+    const showAdded = (title: string) => {
+        setStatus(intl.formatMessage({ id: "addWms.added" }, { title }));
+        setOpen(false);
+    };
+
     return (
         <Box mb={2}>
             <Flex alignItems="center" gap={1}>
@@ -63,7 +229,7 @@ export function AddWmsLayer() {
                     justifyContent="flex-start"
                     aria-expanded={open}
                     aria-controls={formId}
-                    onClick={() => setOpen(!open)}
+                    onClick={toggleForm}
                 >
                     <LuPlus />
                     {intl.formatMessage({ id: "addWms.toggle" })}
@@ -73,316 +239,7 @@ export function AddWmsLayer() {
             <Text role="status" fontSize="xs" color="fg.muted" px={2}>
                 {status}
             </Text>
-            {open && (
-                <AddWmsForm
-                    id={formId}
-                    urlRef={urlRef}
-                    onAdded={(title) => {
-                        setStatus(intl.formatMessage({ id: "addWms.added" }, { title }));
-                        setOpen(false);
-                    }}
-                    onClose={() => setOpen(false)}
-                />
-            )}
+            {open && <AddWmsForm id={formId} urlRef={urlRef} onAdded={showAdded} onClose={closeForm} />}
         </Box>
     );
-}
-
-function AddWmsForm(props: {
-    id: string;
-    urlRef: React.RefObject<HTMLInputElement | null>;
-    onAdded(title: string): void;
-    onClose(): void;
-}) {
-    const { id, urlRef, onAdded, onClose } = props;
-    const intl = useIntl();
-    const userLayers = useUserWmsLayers();
-    const map = useMapModelValue();
-    const [checking, setChecking] = useState(false);
-    const urlInputId = useId();
-    const layerInputId = useId();
-    const listId = useId();
-    const [url, setUrl] = useState(lastUrl);
-    const [service, setService] = useState<ServiceState>({ kind: "idle" });
-    const [query, setQuery] = useState("");
-    const [active, setActive] = useState(0);
-    const [error, setError] = useState<string>();
-    const layerRef = useRef<HTMLInputElement>(null);
-    const request = useRef(0);
-
-    const load = () => {
-        let endpoint: string;
-        try {
-            endpoint = normalizeWmsEndpoint(url);
-        } catch {
-            setService({ kind: "error", message: intl.formatMessage({ id: "addWms.error.invalidUrl" }) });
-            return;
-        }
-        const current = ++request.current;
-        lastUrl = url;
-        setService({ kind: "loading" });
-        setError(undefined);
-        fetchWmsCapabilities(endpoint)
-            .then((capabilities) => {
-                if (current !== request.current) {
-                    return;
-                }
-                if (capabilities.layers.length === 0) {
-                    setService({ kind: "error", message: intl.formatMessage({ id: "addWms.error.noLayers" }) });
-                    return;
-                }
-                setService({ kind: "loaded", endpoint, capabilities });
-                setActive(0);
-            })
-            .catch((e: unknown) => {
-                if (current !== request.current) {
-                    return;
-                }
-                LOG.warn(`Failed to load the capabilities of ${endpoint}.`, e);
-                const kind = e instanceof WmsCapabilitiesError ? e.kind : "invalid";
-                setService({ kind: "error", message: intl.formatMessage({ id: `addWms.error.${kind}` }) });
-            });
-    };
-
-    // Continue with the layer search once the service has been loaded.
-    const loaded = service.kind === "loaded";
-    useEffect(() => {
-        if (loaded) {
-            layerRef.current?.focus();
-        }
-    }, [loaded]);
-
-    const search = useMemo(
-        () => (service.kind === "loaded" ? searchLayers(service.capabilities.layers, query) : undefined),
-        [service, query]
-    );
-    const results = search ?? [];
-    const activeLayer = results[Math.min(active, results.length - 1)];
-
-    const add = async (layer: WmsCapabilitiesLayer | undefined) => {
-        if (service.kind !== "loaded" || !layer || checking) {
-            return;
-        }
-        if (!layer.supportsMapProjection) {
-            setError(intl.formatMessage({ id: "addWms.error.projection" }));
-            return;
-        }
-        if (userLayers.has(service.endpoint, layer.name)) {
-            setError(intl.formatMessage({ id: "addWms.error.duplicate" }));
-            return;
-        }
-        // Some services list layers that cannot be requested (e.g. folders with a name), check before adding.
-        setChecking(true);
-        setError(undefined);
-        const center = (map.olMap.getView().getCenter() ?? [0, 0]) as [number, number];
-        const probe = await probeWmsLayer(service.endpoint, layer.name, center);
-        setChecking(false);
-        if (!probe.ok) {
-            LOG.warn(`Layer '${layer.name}' of ${service.endpoint} cannot be requested: ${probe.message}`);
-            setError(intl.formatMessage({ id: "addWms.error.notRequestable" }, { message: probe.message ?? "" }));
-            return;
-        }
-        userLayers.add(toLayerInput(service.endpoint, service.capabilities, layer));
-        onAdded(layer.title);
-    };
-
-    const onLayerKeyDown = (event: KeyboardEvent) => {
-        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-            event.preventDefault();
-            const step = event.key === "ArrowDown" ? 1 : -1;
-            setActive((index) => Math.max(0, Math.min(results.length - 1, index + step)));
-        } else if (event.key === "Enter") {
-            event.preventDefault();
-            add(activeLayer);
-        }
-    };
-
-    const optionId = (index: number) => `${listId}-${index}`;
-    // Keep the active result visible while moving through the list with the arrow keys.
-    const listRef = useRef<HTMLUListElement>(null);
-    const activeIndex = activeLayer ? results.indexOf(activeLayer) : -1;
-    useEffect(() => {
-        listRef.current?.children[activeIndex]?.scrollIntoView({ block: "nearest" });
-    }, [activeIndex]);
-    return (
-        <Stack id={id} gap={2} borderWidth="1px" borderRadius="md" padding={2} mt={1}>
-            <Stack gap={1}>
-                <chakra.label htmlFor={urlInputId} fontSize="xs" fontWeight="semibold">
-                    {intl.formatMessage({ id: "addWms.url" })}
-                </chakra.label>
-                <Flex gap={1}>
-                    <Input
-                        ref={urlRef}
-                        id={urlInputId}
-                        size="xs"
-                        type="url"
-                        placeholder="https://…/wms"
-                        value={url}
-                        onChange={(e) => setUrl(e.currentTarget.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault();
-                                load();
-                            }
-                        }}
-                    />
-                    <Button size="xs" variant="outline" onClick={load} disabled={!url.trim()}>
-                        {intl.formatMessage({ id: "addWms.load" })}
-                    </Button>
-                </Flex>
-                {service.kind === "loading" && (
-                    <Flex gap={2} alignItems="center" fontSize="xs">
-                        <Spinner size="xs" />
-                        {intl.formatMessage({ id: "addWms.loading" })}
-                    </Flex>
-                )}
-                {service.kind === "error" && (
-                    <Text fontSize="xs" color="fg.error" role="alert">
-                        {service.message}
-                    </Text>
-                )}
-            </Stack>
-
-            {service.kind === "loaded" && search && (
-                <Stack gap={1}>
-                    <chakra.label htmlFor={layerInputId} fontSize="xs" fontWeight="semibold">
-                        {intl.formatMessage({ id: "addWms.layer" })}
-                    </chakra.label>
-                    <Input
-                        ref={layerRef}
-                        id={layerInputId}
-                        size="xs"
-                        role="combobox"
-                        aria-autocomplete="list"
-                        aria-expanded={results.length > 0}
-                        aria-controls={listId}
-                        aria-activedescendant={activeLayer ? optionId(activeIndex) : undefined}
-                        placeholder={intl.formatMessage({ id: "addWms.layerPlaceholder" })}
-                        value={query}
-                        onChange={(e) => {
-                            setQuery(e.currentTarget.value);
-                            setActive(0);
-                            setError(undefined);
-                        }}
-                        onKeyDown={onLayerKeyDown}
-                    />
-                    {/* Directly below the input: the list can be long. */}
-                    {checking && (
-                        <Flex gap={2} alignItems="center" fontSize="xs">
-                            <Spinner size="xs" />
-                            {intl.formatMessage({ id: "addWms.checking" })}
-                        </Flex>
-                    )}
-                    {error && (
-                        <Text fontSize="xs" color="fg.error" role="alert">
-                            {error}
-                        </Text>
-                    )}
-                    <Text fontSize="xs" color="fg.muted">
-                        {query.trim() === ""
-                            ? intl.formatMessage({ id: "addWms.hint" }, { count: results.length })
-                            : results.length === 0
-                              ? intl.formatMessage({ id: "addWms.noResults" })
-                              : intl.formatMessage({ id: "addWms.matches" }, { count: results.length })}
-                    </Text>
-                    {results.length > 0 && (
-                        <Box
-                            as="ul"
-                            ref={listRef}
-                            id={listId}
-                            role="listbox"
-                            aria-label={intl.formatMessage({ id: "addWms.layer" })}
-                            // All layers can be browsed; the TOC panel itself is at most 60vh high.
-                            maxHeight="min(22rem, 40vh)"
-                            overflowY="auto"
-                            borderWidth="1px"
-                            borderRadius="sm"
-                            listStyleType="none"
-                        >
-                            {results.map((layer, index) => (
-                                <Box
-                                    as="li"
-                                    key={layer.name}
-                                    id={optionId(index)}
-                                    role="option"
-                                    aria-selected={layer === activeLayer}
-                                    paddingX={2}
-                                    paddingY={1}
-                                    cursor="pointer"
-                                    backgroundColor={layer === activeLayer ? "bg.emphasized" : undefined}
-                                    _hover={{ backgroundColor: "bg.muted" }}
-                                    onMouseEnter={() => setActive(index)}
-                                    onClick={() => add(layer)}
-                                >
-                                    <Text fontSize="xs" fontWeight="semibold" lineClamp={2}>
-                                        {layer.title}
-                                        {layer.isGroup && (
-                                            <Badge size="xs" variant="outline" ms={1} verticalAlign="middle">
-                                                {intl.formatMessage({ id: "addWms.group" })}
-                                            </Badge>
-                                        )}
-                                    </Text>
-                                    <Text fontSize="2xs" color="fg.muted" truncate>
-                                        {[layer.name, ...layer.path].join(" · ")}
-                                    </Text>
-                                </Box>
-                            ))}
-                        </Box>
-                    )}
-                </Stack>
-            )}
-
-            <Flex gap={1} justifyContent="flex-end">
-                <Button size="xs" variant="ghost" onClick={onClose}>
-                    <LuX />
-                    {intl.formatMessage({ id: "addWms.close" })}
-                </Button>
-                {service.kind === "loaded" && (
-                    <Button size="xs" onClick={() => add(activeLayer)} disabled={!activeLayer || checking}>
-                        {intl.formatMessage({ id: "addWms.add" })}
-                    </Button>
-                )}
-            </Flex>
-        </Stack>
-    );
-}
-
-/** The last loaded URL, offered again for the next layer (session only). */
-let lastUrl = "";
-
-/** Labels of the service information in the layer description (both languages, like the configuration). */
-const LABELS = {
-    provider: { de: "Anbieter", en: "Provider" },
-    constraints: { de: "Nutzungsbedingungen", en: "Terms of use" },
-    fees: { de: "Gebühren", en: "Fees" }
-};
-
-/** Builds the layer configuration from the capabilities. */
-function toLayerInput(endpoint: string, capabilities: WmsCapabilities, layer: WmsCapabilitiesLayer): UserWmsLayerInput {
-    const format = layer.queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
-    return {
-        name: layer.title,
-        description: describe(capabilities, layer),
-        endpoint,
-        attribution: layer.attribution,
-        wms: {
-            layers: [layer.name],
-            featureInfo: format ? { format } : { enabled: false }
-        }
-    };
-}
-
-/** Abstract of the layer and information about the service (provider, terms of use, fees). */
-function describe(capabilities: WmsCapabilities, layer: WmsCapabilitiesLayer): LocalizedText | undefined {
-    const parts = (language: "de" | "en") =>
-        [
-            layer.abstract !== layer.title ? layer.abstract : undefined,
-            capabilities.contactOrganization && `${LABELS.provider[language]}: ${capabilities.contactOrganization}`,
-            capabilities.accessConstraints && `${LABELS.constraints[language]}: ${capabilities.accessConstraints}`,
-            capabilities.fees && `${LABELS.fees[language]}: ${capabilities.fees}`
-        ]
-            .filter(Boolean)
-            .join("\n\n");
-    const de = parts("de");
-    return de ? { de, en: parts("en") } : undefined;
 }

@@ -2,6 +2,11 @@ import Feature, { FeatureLike } from "ol/Feature";
 import GeoJSON from "ol/format/GeoJSON";
 import { Geometry } from "ol/geom";
 
+export interface GeoJSONGeometry {
+    type: string;
+    coordinates: unknown;
+}
+
 /** Subset of an OGC SensorThings API v1.1 datastream (with expanded Thing/Locations and ObservedProperty). */
 export interface StaDatastream {
     "@iot.id": number | string;
@@ -19,11 +24,6 @@ export interface StaDatastream {
     };
 }
 
-export interface GeoJSONGeometry {
-    type: string;
-    coordinates: unknown;
-}
-
 /** Feature properties of a datastream feature (used e.g. for charts on map click). */
 export interface StaDatastreamProperties {
     dataLayerId: string;
@@ -37,8 +37,11 @@ export interface StaDatastreamProperties {
     /** Id of the datastream's thing (groups sensors of the same station). */
     thingId: string | undefined;
 
-    /** Rounded position of a point location (groups sensors at the same site), see {@link locationKey}. */
-    locationKey: string | undefined;
+    /**
+     * Longitude/latitude (EPSG:4326) of a point location (groups sensors at the same site), see {@link pointPosition}.
+     * Taken from the GeoJSON, not from the feature geometry, which is in the map projection.
+     */
+    position: [number, number] | undefined;
 }
 
 /**
@@ -53,6 +56,39 @@ export async function fetchDatastream(endpoint: string, signal?: AbortSignal): P
     }
     return (await response.json()) as StaDatastream;
 }
+
+/**
+ * Returns the longitude/latitude (EPSG:4326, as in GeoJSON) of a point location.
+ * Other geometries have no position.
+ */
+export function pointPosition(geometry: GeoJSONGeometry | undefined): [number, number] | undefined {
+    if (geometry?.type !== "Point" || !Array.isArray(geometry.coordinates)) {
+        return undefined;
+    }
+    const [x, y] = geometry.coordinates;
+    if (typeof x !== "number" || typeof y !== "number") {
+        return undefined;
+    }
+    return [x, y];
+}
+
+/** Unit symbols (e.g. UCUM codes) that have a more common display form. */
+const UNIT_SYMBOLS: Record<string, string> = {
+    degC: "°C",
+    Cel: "°C",
+    degF: "°F",
+    "[degF]": "°F"
+};
+
+function displayUnit(symbol: string | undefined): string | undefined {
+    return symbol ? (UNIT_SYMBOLS[symbol] ?? symbol) : undefined;
+}
+
+/**
+ * Key of the feature property that holds the {@link StaDatastreamProperties} (as one object, so that new fields
+ * only have to be added where the properties are created).
+ */
+const DATASTREAM_PROPERTY = "staDatastream";
 
 /**
  * Creates a map feature for the datastream, located at its thing's location
@@ -82,138 +118,25 @@ export function createDatastreamFeature(
         observedProperty: datastream.ObservedProperty?.name,
         thing: datastream.Thing?.name,
         thingId: datastream.Thing?.["@iot.id"] === undefined ? undefined : String(datastream.Thing["@iot.id"]),
-        locationKey: locationKey(geometry)
+        position: pointPosition(geometry)
     };
-    const feature = new Feature<Geometry>({ geometry: olGeometry, ...properties });
+    const feature = new Feature<Geometry>({ geometry: olGeometry, [DATASTREAM_PROPERTY]: properties });
     feature.setId(String(datastream["@iot.id"]));
     return feature;
 }
 
-/** Decimal places of the coordinates in a {@link locationKey} (about 0.1 m). */
-const LOCATION_KEY_DECIMALS = 6;
-
 /**
- * Returns a key for a point location (longitude/latitude in EPSG:4326, rounded),
- * equal for sensors at the same site. Other geometries have no key.
- */
-export function locationKey(geometry: GeoJSONGeometry | undefined): string | undefined {
-    if (geometry?.type !== "Point" || !Array.isArray(geometry.coordinates)) {
-        return undefined;
-    }
-    const [x, y] = geometry.coordinates;
-    if (typeof x !== "number" || typeof y !== "number") {
-        return undefined;
-    }
-    return `${x.toFixed(LOCATION_KEY_DECIMALS)},${y.toFixed(LOCATION_KEY_DECIMALS)}`;
-}
-
-/** Unit symbols (e.g. UCUM codes) that have a more common display form. */
-const UNIT_SYMBOLS: Record<string, string> = {
-    degC: "°C",
-    Cel: "°C",
-    degF: "°F",
-    "[degF]": "°F"
-};
-
-export function displayUnit(symbol: string | undefined): string | undefined {
-    return symbol ? (UNIT_SYMBOLS[symbol] ?? symbol) : undefined;
-}
-
-/**
- * Returns the datastream properties of a feature created by {@link createDatastreamFeature}.
+ * Returns the datastream properties of a feature created by {@link createDatastreamFeature},
+ * or `undefined` for other features (e.g. of other layers at a map click).
  */
 export function getDatastreamProperties(feature: FeatureLike): StaDatastreamProperties | undefined {
-    const properties = feature.getProperties();
-    if (typeof properties.observationsUrl !== "string") {
-        return undefined;
-    }
-    return {
-        dataLayerId: properties.dataLayerId,
-        datastreamUrl: properties.datastreamUrl,
-        observationsUrl: properties.observationsUrl,
-        name: properties.name,
-        unit: properties.unit,
-        observedProperty: properties.observedProperty,
-        thing: properties.thing,
-        thingId: properties.thingId,
-        locationKey: properties.locationKey
-    };
+    return feature.get(DATASTREAM_PROPERTY) as StaDatastreamProperties | undefined;
 }
 
 /** A single observation, `time` in milliseconds since epoch. */
 export interface Observation {
     time: number;
     value: number;
-}
-
-/** Upper limit for the number of observations loaded for a chart. */
-export const MAX_OBSERVATIONS = 20_000;
-
-/**
- * Loads the numeric observations of a datastream within the given time range (oldest first).
- * Follows the server's paging (`@iot.nextLink`) up to {@link MAX_OBSERVATIONS}.
- */
-export async function fetchObservations(
-    observationsUrl: string,
-    range: { from: Date; to: Date },
-    signal?: AbortSignal
-): Promise<{ observations: Observation[]; truncated: boolean }> {
-    const url = new URL(observationsUrl);
-    url.searchParams.set(
-        "$filter",
-        `phenomenonTime ge ${range.from.toISOString()} and phenomenonTime le ${range.to.toISOString()}`
-    );
-    url.searchParams.set("$orderby", "phenomenonTime asc");
-    url.searchParams.set("$select", "phenomenonTime,result");
-    url.searchParams.set("$top", "1000");
-
-    const observations: Observation[] = [];
-    let next: string | undefined = url.href;
-    // Pages must be fetched one after another (each response links to the next page).
-    /* oxlint-disable no-await-in-loop */
-    while (next && observations.length < MAX_OBSERVATIONS) {
-        const response = await fetch(next, { signal });
-        if (!response.ok) {
-            throw new Error(`Failed to load observations: HTTP ${response.status}`);
-        }
-        const page = (await response.json()) as ObservationPage;
-        for (const raw of page.value) {
-            const observation = parseObservation(raw);
-            if (observation) {
-                observations.push(observation);
-            }
-        }
-        next = page["@iot.nextLink"];
-    }
-    /* oxlint-enable no-await-in-loop */
-    return { observations: observations.slice(0, MAX_OBSERVATIONS), truncated: !!next };
-}
-
-/**
- * Loads the newest numeric observation of a datastream (independent of any time range),
- * or `undefined` if the newest observation is not numeric or there is none.
- */
-export async function fetchLatestObservation(
-    observationsUrl: string,
-    signal?: AbortSignal
-): Promise<Observation | undefined> {
-    const url = new URL(observationsUrl);
-    url.searchParams.set("$orderby", "phenomenonTime desc");
-    url.searchParams.set("$select", "phenomenonTime,result");
-    url.searchParams.set("$top", "1");
-    const response = await fetch(url, { signal });
-    if (!response.ok) {
-        throw new Error(`Failed to load the latest observation: HTTP ${response.status}`);
-    }
-    const page = (await response.json()) as ObservationPage;
-    const raw = page.value[0];
-    return raw ? parseObservation(raw) : undefined;
-}
-
-/** A page of observations as returned by the server (with `$select=phenomenonTime,result`). */
-interface ObservationPage {
-    "value": RawObservation[];
-    "@iot.nextLink"?: string;
 }
 
 export interface RawObservation {
@@ -228,4 +151,90 @@ export interface RawObservation {
 export function parseObservation({ phenomenonTime, result }: RawObservation): Observation | undefined {
     const time = Date.parse(phenomenonTime.split("/")[0] ?? "");
     return typeof result === "number" && !Number.isNaN(time) ? { time, value: result } : undefined;
+}
+
+/** A page of observations as returned by the server (with `$select=phenomenonTime,result`). */
+interface ObservationPage {
+    "value": RawObservation[];
+    "@iot.nextLink"?: string;
+}
+
+/**
+ * Query for the observations of a datastream.
+ * Observations are always sorted and filtered by their phenomenon time (when the value was measured).
+ */
+interface ObservationQuery {
+    order: "asc" | "desc";
+    top: number;
+    range?: { from: Date; to: Date };
+}
+
+function observationsQueryUrl(observationsUrl: string, { order, top, range }: ObservationQuery): string {
+    const url = new URL(observationsUrl);
+    if (range) {
+        url.searchParams.set(
+            "$filter",
+            `phenomenonTime ge ${range.from.toISOString()} and phenomenonTime le ${range.to.toISOString()}`
+        );
+    }
+    // No `@iot.id` as second order: FROST then pages with `$skipFilter=(phenomenonTime gt …)`,
+    // which would drop observations with the same time at a page boundary.
+    url.searchParams.set("$orderby", `phenomenonTime ${order}`);
+    url.searchParams.set("$select", "phenomenonTime,result");
+    url.searchParams.set("$top", String(top));
+    return url.href;
+}
+
+/** Loads one page of observations, keeping only the numeric ones. */
+async function fetchObservationPage(
+    url: string,
+    signal?: AbortSignal
+): Promise<{ observations: Observation[]; nextLink: string | undefined }> {
+    const response = await fetch(url, { signal });
+    if (!response.ok) {
+        throw new Error(`Failed to load observations: HTTP ${response.status}`);
+    }
+    const page = (await response.json()) as ObservationPage;
+    return {
+        observations: page.value.map(parseObservation).filter((observation) => observation !== undefined),
+        nextLink: page["@iot.nextLink"]
+    };
+}
+
+/** Upper limit for the number of observations loaded for a chart. */
+const MAX_OBSERVATIONS = 20_000;
+
+/**
+ * Loads the numeric observations of a datastream within the given time range (oldest first).
+ * Follows the server's paging (`@iot.nextLink`) up to {@link MAX_OBSERVATIONS}.
+ */
+export async function fetchObservations(
+    observationsUrl: string,
+    range: { from: Date; to: Date },
+    signal?: AbortSignal
+): Promise<{ observations: Observation[]; truncated: boolean }> {
+    const observations: Observation[] = [];
+    let next: string | undefined = observationsQueryUrl(observationsUrl, { order: "asc", top: 1000, range });
+    // Pages must be fetched one after another (each response links to the next page).
+    /* oxlint-disable no-await-in-loop */
+    while (next && observations.length < MAX_OBSERVATIONS) {
+        const page = await fetchObservationPage(next, signal);
+        observations.push(...page.observations);
+        next = page.nextLink;
+    }
+    /* oxlint-enable no-await-in-loop */
+    return { observations: observations.slice(0, MAX_OBSERVATIONS), truncated: !!next };
+}
+
+/**
+ * Loads the newest numeric observation of a datastream (independent of any time range),
+ * or `undefined` if the newest observation is not numeric or there is none.
+ */
+export async function fetchLatestObservation(
+    observationsUrl: string,
+    signal?: AbortSignal
+): Promise<Observation | undefined> {
+    const url = observationsQueryUrl(observationsUrl, { order: "desc", top: 1 });
+    const { observations } = await fetchObservationPage(url, signal);
+    return observations[0];
 }

@@ -24,6 +24,30 @@ export interface Bucket {
     count: number;
 }
 
+/** Start of the section containing `time` (weeks start on Monday). */
+export function bucketStart(time: number, size: BucketSize): number {
+    const date = new Date(time);
+    if (size === "hour") {
+        date.setMinutes(0, 0, 0);
+        return date.getTime();
+    }
+    date.setHours(0, 0, 0, 0);
+    if (size === "week") {
+        date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+    }
+    return date.getTime();
+}
+
+function nextBucketStart(start: number, size: BucketSize): number {
+    const date = new Date(start);
+    if (size === "hour") {
+        date.setHours(date.getHours() + 1);
+    } else {
+        date.setDate(date.getDate() + (size === "week" ? 7 : 1));
+    }
+    return date.getTime();
+}
+
 /**
  * Aggregates the observations (oldest first) into sections of the given size.
  * Sections without observations are omitted.
@@ -52,30 +76,6 @@ export function meanPerBucket(observations: Observation[], size: BucketSize): Bu
     }
     finish();
     return buckets;
-}
-
-/** Start of the section containing `time` (weeks start on Monday). */
-export function bucketStart(time: number, size: BucketSize): number {
-    const date = new Date(time);
-    if (size === "hour") {
-        date.setMinutes(0, 0, 0);
-        return date.getTime();
-    }
-    date.setHours(0, 0, 0, 0);
-    if (size === "week") {
-        date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
-    }
-    return date.getTime();
-}
-
-function nextBucketStart(start: number, size: BucketSize): number {
-    const date = new Date(start);
-    if (size === "hour") {
-        date.setHours(date.getHours() + 1);
-    } else {
-        date.setDate(date.getDate() + (size === "week" ? 7 : 1));
-    }
-    return date.getTime();
 }
 
 /** Number of direction sectors of a wind rose (N, NNE, NE, …). */

@@ -1,16 +1,29 @@
-import { Box, Collapsible, Flex, IconButton, Spacer, Tabs, Text } from "@chakra-ui/react";
+import { Box, Collapsible, Flex, IconButton, Spacer, Tabs, TabsValueChangeDetails, Text } from "@chakra-ui/react";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { Ref } from "react";
 import { LuPanelBottomClose } from "react-icons/lu";
-import { AnalysisSelection, AnalysisTab, withDefaultSensors } from "./charts/analysisSelection";
-import { ChartType } from "./charts/chartTypes";
-import { SensorChartView } from "./charts/SensorChartView";
-import { TimeFilter } from "./charts/timeRange";
-import { TimeRangeFilter } from "./charts/TimeRangeFilter";
-import { useStaSensors } from "./dataLayers/useStaSensors";
+import { useStaSensors } from "../dataLayers/useStaSensors";
+import {
+    AnalysisSelection,
+    AnalysisTab,
+    AnalysisView,
+    withChartType,
+    withCompareSensor,
+    withDefaultSensors
+} from "./analysisSelection";
+import { ChartType } from "./chartTypes";
+import { SensorChartView } from "./SensorChartView";
+import { TimeFilter } from "./timeRange";
+import { TimeRangeFilter } from "./TimeRangeFilter";
 
-export interface BottomPanelProps {
+/** The two halves of the compare view and the label of their sensor selection. */
+const COMPARE_HALVES = [
+    { index: 0, label: "panel.sensor.labelA" },
+    { index: 1, label: "panel.sensor.labelB" }
+] as const;
+
+export interface AnalysisPanelProps {
     /** Id of the panel element (e.g. for `aria-controls`). */
     id: string;
 
@@ -33,7 +46,7 @@ export interface BottomPanelProps {
  * Collapsible analysis panel at the bottom of the dashboard (collapsed, only an icon remains, see `DashboardApp`).
  * Shows the observations of a single sensor or compares two sensors, within the same time range.
  */
-export function BottomPanel(props: BottomPanelProps) {
+export function AnalysisPanel(props: AnalysisPanelProps) {
     const { id, open, onOpenChange, closeButtonRef } = props;
     const { timeFilter, onTimeFilterChange, onSelectionChange } = props;
     const intl = useIntl();
@@ -45,22 +58,15 @@ export function BottomPanel(props: BottomPanelProps) {
     );
     const collapseLabel = intl.formatMessage({ id: "panel.collapse" });
 
-    const setCompare = (index: 0 | 1, sensorId: string) => {
-        const compare: AnalysisSelection["compare"] = [...selection.compare];
-        compare[index] = sensorId;
-        onSelectionChange({ ...selection, compare });
-    };
-    const setChartType = (view: "single" | 0 | 1, chartType: ChartType) => {
-        const { single, compare } = selection.charts;
-        const charts: AnalysisSelection["charts"] =
-            view === "single"
-                ? { single: chartType, compare }
-                : {
-                      single,
-                      compare: view === 0 ? [chartType, compare[1]] : [compare[0], chartType]
-                  };
-        onSelectionChange({ ...selection, charts });
-    };
+    const setCompare = (index: 0 | 1, sensorId: string) =>
+        onSelectionChange(withCompareSensor(selection, index, sensorId));
+    const setChartType = (view: AnalysisView, chartType: ChartType) =>
+        onSelectionChange(withChartType(selection, view, chartType));
+    const changeTab = (details: TabsValueChangeDetails) =>
+        onSelectionChange({ ...selection, tab: details.value as AnalysisTab });
+    const closePanel = () => onOpenChange(false);
+    const selectSingle = (single: string) => onSelectionChange({ ...selection, single });
+    const changeSingleChartType = (type: ChartType) => setChartType("single", type);
 
     return (
         <Collapsible.Root open={open}>
@@ -75,7 +81,7 @@ export function BottomPanel(props: BottomPanelProps) {
                 >
                     <Tabs.Root
                         value={selection.tab}
-                        onValueChange={(e) => onSelectionChange({ ...selection, tab: e.value as AnalysisTab })}
+                        onValueChange={changeTab}
                         variant="line"
                         size="lg"
                         // Only the active tab loads and renders its charts.
@@ -110,7 +116,7 @@ export function BottomPanel(props: BottomPanelProps) {
                                     aria-expanded={true}
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => onOpenChange(false)}
+                                    onClick={closePanel}
                                 >
                                     <LuPanelBottomClose />
                                 </IconButton>
@@ -125,41 +131,28 @@ export function BottomPanel(props: BottomPanelProps) {
                                     <SensorChartView
                                         sensors={sensors}
                                         value={selection.single}
-                                        onChange={(single) => onSelectionChange({ ...selection, single })}
+                                        onChange={selectSingle}
                                         chartType={selection.charts.single}
-                                        onChartTypeChange={(type) => setChartType("single", type)}
+                                        onChartTypeChange={changeSingleChartType}
                                         timeFilter={timeFilter}
                                         label={intl.formatMessage({ id: "panel.sensor.label" })}
                                     />
                                 </Tabs.Content>
                                 <Tabs.Content value="compare" flex="1" minHeight={0} pt={0}>
                                     <Flex direction={{ base: "column", md: "row" }} gap={6} height="100%">
-                                        <Box flex="1" minWidth={0} minHeight={0}>
-                                            <SensorChartView
-                                                sensors={sensors}
-                                                value={selection.compare[0]}
-                                                onChange={(id) => setCompare(0, id)}
-                                                chartType={selection.charts.compare[0]}
-                                                onChartTypeChange={(type) => setChartType(0, type)}
-                                                timeFilter={timeFilter}
-                                                label={intl.formatMessage({
-                                                    id: "panel.sensor.labelA"
-                                                })}
-                                            />
-                                        </Box>
-                                        <Box flex="1" minWidth={0} minHeight={0}>
-                                            <SensorChartView
-                                                sensors={sensors}
-                                                value={selection.compare[1]}
-                                                onChange={(id) => setCompare(1, id)}
-                                                chartType={selection.charts.compare[1]}
-                                                onChartTypeChange={(type) => setChartType(1, type)}
-                                                timeFilter={timeFilter}
-                                                label={intl.formatMessage({
-                                                    id: "panel.sensor.labelB"
-                                                })}
-                                            />
-                                        </Box>
+                                        {COMPARE_HALVES.map(({ index, label }) => (
+                                            <Box key={index} flex="1" minWidth={0} minHeight={0}>
+                                                <SensorChartView
+                                                    sensors={sensors}
+                                                    value={selection.compare[index]}
+                                                    onChange={(id) => setCompare(index, id)}
+                                                    chartType={selection.charts.compare[index]}
+                                                    onChartTypeChange={(type) => setChartType(index, type)}
+                                                    timeFilter={timeFilter}
+                                                    label={intl.formatMessage({ id: label })}
+                                                />
+                                            </Box>
+                                        ))}
                                     </Flex>
                                 </Tabs.Content>
                             </>

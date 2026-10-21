@@ -5,10 +5,9 @@ import VectorLayer from "ol/layer/Vector";
 import { unByKey } from "ol/Observable";
 import VectorSource from "ol/source/Vector";
 import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
-import { colocatedSensors, SENSOR_GROUPING } from "./colocation";
-import { DATA_LAYER_ATTRIBUTE } from "./createDataLayer";
+import { colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
+import { getDataLayerConfig } from "./createDataLayer";
 import { getDatastreamProperties, StaDatastreamProperties } from "./sta";
-import { DataLayerNode } from "./types";
 
 /** A SensorThings datastream layer of the map. */
 export interface StaSensor {
@@ -17,6 +16,10 @@ export interface StaSensor {
 
     /** Current (localized) title of the layer. */
     title: string;
+}
+
+function isStaLayer(layer: AnyLayer): boolean {
+    return getDataLayerConfig(layer)?.type === "sta-datastream";
 }
 
 /**
@@ -34,30 +37,66 @@ export function useStaSensors(map: MapModel): StaSensor[] {
     );
 }
 
-function isStaLayer(layer: AnyLayer): boolean {
-    const config = layer.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
-    return config?.type === "sta-datastream";
+/** Calls `onChange` when features of the sources change (a feature is added once its datastream has been loaded). */
+function subscribeSources(sources: VectorSource<FeatureLike>[], onChange: () => void): () => void {
+    const keys = sources.flatMap((source) => [
+        source.on("addfeature", onChange),
+        source.on("removefeature", onChange),
+        source.on("clear", onChange)
+    ]);
+    return () => unByKey(keys);
+}
+
+function getSensorSource(map: MapModel, dataLayerId: string | undefined): VectorSource<FeatureLike> | undefined {
+    const layer = dataLayerId ? map.layers.getLayerById(dataLayerId) : undefined;
+    if (!layer || !isLayer(layer) || !(layer.olLayer instanceof VectorLayer)) {
+        return undefined;
+    }
+    return layer.olLayer.getSource() ?? undefined;
+}
+
+/**
+ * The feature of a SensorThings layer. A layer holds exactly one datastream, further features would be ignored
+ * (see `docs/DashboardDecisions.md`, section 8, "Annahmen der STA-Hooks").
+ */
+function datastreamFeature(source: VectorSource<FeatureLike> | undefined): FeatureLike | undefined {
+    return source?.getFeatures()[0];
 }
 
 /**
  * Returns the datastream properties of a SensorThings layer,
- * or `undefined` while the datastream is still loading (or for unknown layers).
+ * or `undefined` while the datastream is still loading, if it failed (see {@link useSensorLoadFailed})
+ * or for unknown layers.
  */
 export function useDatastreamProperties(
     map: MapModel,
     dataLayerId: string | undefined
 ): StaDatastreamProperties | undefined {
+    // Looked up once per id, not reactively: the layer must already be in the map
+    // (see `docs/DashboardDecisions.md`, section 8, "Annahmen der STA-Hooks").
     const source = useMemo(() => getSensorSource(map, dataLayerId), [map, dataLayerId]);
     const subscribe = useCallback(
         (onChange: () => void) => subscribeSources(source ? [source] : [], onChange),
         [source]
     );
-    const feature = useSyncExternalStore(subscribe, () => source?.getFeatures()[0]);
+    const feature = useSyncExternalStore(subscribe, () => datastreamFeature(source));
     return useMemo(() => (feature ? getDatastreamProperties(feature) : undefined), [feature]);
 }
 
 /**
- * Returns the other SensorThings sensors at the site of the given sensor (see {@link SENSOR_GROUPING}),
+ * Whether a SensorThings layer is not available: its datastream could not be loaded (error or timeout),
+ * has no location, or the endpoint fails the layer's health check.
+ */
+export function useSensorLoadFailed(map: MapModel, dataLayerId: string | undefined): boolean {
+    return useReactiveSnapshot(
+        () => (dataLayerId ? map.layers.getLayerById(dataLayerId)?.loadState === "error" : false),
+        [map, dataLayerId]
+    );
+}
+
+/**
+ * Returns the other SensorThings sensors at the site of the given sensor
+ * (see {@link SENSOR_GROUPING} and {@link SENSOR_GROUPING_RADIUS}),
  * in configuration order. Sensors appear once their datastream has been loaded.
  */
 export function useColocatedSensors(map: MapModel, dataLayerId: string | undefined): StaDatastreamProperties[] {
@@ -77,7 +116,7 @@ export function useColocatedSensors(map: MapModel, dataLayerId: string | undefin
     // The snapshot must stay the same object as long as no feature changed.
     const snapshot = useRef<FeatureLike[]>([]);
     const features = useSyncExternalStore(subscribe, () => {
-        const current = sources.map((source) => source.getFeatures()[0]).filter((feature) => feature !== undefined);
+        const current = sources.map(datastreamFeature).filter((feature) => feature !== undefined);
         const previous = snapshot.current;
         if (current.length !== previous.length || current.some((feature, index) => feature !== previous[index])) {
             snapshot.current = current;
@@ -88,24 +127,6 @@ export function useColocatedSensors(map: MapModel, dataLayerId: string | undefin
     return useMemo(() => {
         const all = features.map(getDatastreamProperties).filter((datastream) => datastream !== undefined);
         const selected = all.find((datastream) => datastream.dataLayerId === dataLayerId);
-        return selected ? colocatedSensors(selected, all, SENSOR_GROUPING) : [];
+        return selected ? colocatedSensors(selected, all, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS) : [];
     }, [features, dataLayerId]);
-}
-
-/** Calls `onChange` when features of the sources change (a feature is added once its datastream has been loaded). */
-function subscribeSources(sources: VectorSource<FeatureLike>[], onChange: () => void): () => void {
-    const keys = sources.flatMap((source) => [
-        source.on("addfeature", onChange),
-        source.on("removefeature", onChange),
-        source.on("clear", onChange)
-    ]);
-    return () => unByKey(keys);
-}
-
-function getSensorSource(map: MapModel, dataLayerId: string | undefined): VectorSource<FeatureLike> | undefined {
-    const layer = dataLayerId ? map.layers.getLayerById(dataLayerId) : undefined;
-    if (!layer || !isLayer(layer) || !(layer.olLayer instanceof VectorLayer)) {
-        return undefined;
-    }
-    return layer.olLayer.getSource() ?? undefined;
 }

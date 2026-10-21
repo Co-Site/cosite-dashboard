@@ -1,20 +1,15 @@
+import Feature from "ol/Feature";
 import { describe, expect, it } from "vitest";
-import { locationKey, parseObservation } from "./sta";
+import { createDatastreamFeature, getDatastreamProperties, parseObservation, pointPosition } from "./sta";
 
-describe("locationKey", () => {
-    it("rounds the coordinates of a point", () => {
-        expect(locationKey({ type: "Point", coordinates: [6.99812345, 50.938012] })).toBe("6.998123,50.938012");
+describe("pointPosition", () => {
+    it("returns the coordinates of a point unchanged", () => {
+        expect(pointPosition({ type: "Point", coordinates: [6.99812345, 50.938012] })).toEqual([6.99812345, 50.938012]);
     });
 
-    it("is equal for points that differ less than the rounding", () => {
-        expect(locationKey({ type: "Point", coordinates: [7.0000001, 51] })).toBe(
-            locationKey({ type: "Point", coordinates: [7, 51.0000002] })
-        );
-    });
-
-    it("has no key for other or missing geometries", () => {
+    it("has no position for other or missing geometries", () => {
         expect(
-            locationKey({
+            pointPosition({
                 type: "Polygon",
                 coordinates: [
                     [
@@ -26,8 +21,8 @@ describe("locationKey", () => {
                 ]
             })
         ).toBeUndefined();
-        expect(locationKey({ type: "Point", coordinates: ["7", "51"] })).toBeUndefined();
-        expect(locationKey(undefined)).toBeUndefined();
+        expect(pointPosition({ type: "Point", coordinates: ["7", "51"] })).toBeUndefined();
+        expect(pointPosition(undefined)).toBeUndefined();
     });
 });
 
@@ -48,5 +43,40 @@ describe("parseObservation", () => {
     it("skips non-numeric results and invalid times", () => {
         expect(parseObservation({ phenomenonTime: "2026-10-20T08:00:00Z", result: "12.5" })).toBeUndefined();
         expect(parseObservation({ phenomenonTime: "yesterday", result: 1 })).toBeUndefined();
+    });
+});
+
+describe("getDatastreamProperties", () => {
+    it("returns the properties of a datastream feature", () => {
+        const feature = createDatastreamFeature(
+            "sta-ds-14",
+            "https://example.org/Datastreams(14)",
+            {
+                "@iot.id": 14,
+                "name": "Soil temperature",
+                "unitOfMeasurement": { symbol: "degC" },
+                "Thing": {
+                    "@iot.id": 2,
+                    "name": "Node",
+                    "Locations": [{ location: { type: "Point", coordinates: [7, 51] } }]
+                }
+            },
+            "EPSG:4326"
+        );
+        expect(feature && getDatastreamProperties(feature)).toEqual({
+            dataLayerId: "sta-ds-14",
+            datastreamUrl: "https://example.org/Datastreams(14)",
+            observationsUrl: "https://example.org/Datastreams(14)/Observations",
+            name: "Soil temperature",
+            unit: "°C",
+            observedProperty: undefined,
+            thing: "Node",
+            thingId: "2",
+            position: [7, 51]
+        });
+    });
+
+    it("returns nothing for other features", () => {
+        expect(getDatastreamProperties(new Feature({ name: "other" }))).toBeUndefined();
     });
 });

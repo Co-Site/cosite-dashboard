@@ -211,6 +211,25 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - `degC` aus der STA wird als `°C` angezeigt.
     - Höchstens 20.000 Werte, danach Hinweis „gekürzt“.
     - Ungültiger Zeitraum (von ≥ bis) wird markiert, der letzte gültige bleibt aktiv.
+- **Abfrage der Messwerte** (`dataLayers/sta.ts`): Zeitraum und neuester Wert bauen ihre URL mit demselben Helfer
+  (`observationsQueryUrl`) und laden Seiten mit `fetchObservationPage`. Sie unterscheiden sich nur in Richtung,
+  Seitengröße und Zeitraum.
+    - **Sortiert und gefiltert wird nach `phenomenonTime`**, dem Zeitpunkt der Messung. Eine Observation hat in der STA
+      zwei Zeiten: `phenomenonTime` (wann gemessen wurde) und `resultTime` (wann das Ergebnis entstand). Bei
+      Messsensoren ist das praktisch dasselbe, bei Vorhersagen nicht (Gültigkeitszeit vs. Modelllauf). Auf unserem
+      Server ist `resultTime` leer (`null`); nach ihr zu sortieren liefert eine zufällige Reihenfolge (geprüft
+      2026-10-21).
+    - **Mögliche Falle:** Setzt ein anderer Server oder Datenlieferant die eigentliche Zeit nur in `resultTime`, zeigen
+      Diagramm und Kacheln falsche oder keine Werte. Dann ist `observationsQueryUrl` (Filter und Sortierung) und
+      `parseObservation` (welche Zeit auf der x-Achse landet) anzupassen.
+    - **Bewusst kein `@iot.id` als zweites Sortierkriterium:** Damit blättert FROST nicht mehr über `$skip`, sondern
+      über `$skipFilter=(phenomenonTime gt <letzte Zeit der Seite>)`, auch wenn die ID im `$select` steht (geprüft
+      2026-10-21). Liegen zwei Messungen mit gleicher Zeit an einer Seitengrenze, ginge die zweite verloren. Ohne
+      ID blättert der Server über `$skip`; bei gleicher Zeit ist die Reihenfolge dann nicht festgelegt, verloren
+      geht aber nichts systematisch.
+    - **Nur die Richtung (`asc`/`desc`) ist einstellbar**, keine freie Sortierung: Für eine Zeitreihe ist nur die
+      Messzeit sinnvoll, Min/Max und Statistik rechnet die App selbst. Kommt eine weitere STA-Abfrage dazu, wird der
+      Schnitt neu geprüft.
 - **Grenze:** Die nativen Datumsfelder formatieren nach der Browsersprache, nicht nach der App-Sprache.
 - **Tabs (Branch `toc-native`):** Oben im Panel „Einzelsensor“ und „Sensorvergleich“.
     - Einzelsensor: Dropdown mit allen STA-Sensoren (auch ausgeblendeten), darunter das Diagramm.
@@ -220,6 +239,29 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
       Datastreams kommen aus dem Feature des Layers (`dataLayers/useStaSensors.ts`).
     - Dropdown als natives `<select>` (`NativeSelect`), damit kein Popup im Shadow DOM positioniert werden muss.
     - Nur der aktive Tab lädt Messwerte (`lazyMount`, `unmountOnExit`).
+- **Sensor nicht verfügbar** (`createStaDatastreamLayer` in `dataLayers/createDataLayer.ts`, `useSensorLoadFailed` in
+  `dataLayers/useStaSensors.ts`): Statt eines endlosen Spinners steht im Panel in Rot „Sensor nicht verfügbar …“.
+  Das TOC markiert den Layer wie jeden anderen nicht verfügbaren Layer.
+    - **Auslöser:** Das Laden des Datastreams scheitert, dauert länger als 30 s (`DATASTREAM_TIMEOUT_MS`), der
+      Datastream hat keinen Standort, oder der `healthCheck` des Endpoints schlägt fehl.
+    - **Mechanik:** Die Quelle des Layers durchläuft die Zustände `loading` → `ready` bzw. `error`.
+      `@open-pioneer/map` leitet daraus (zusammen mit dem Health-Check) `layer.loadState` ab. Das TOC zeigt bei
+      `error` von sich aus einen roten Hinweis und deaktiviert den Layer.
+    - **Fehler statt reinem Zeitlimit:** Ein Fehler ist sofort bekannt. Das Zeitlimit fängt nur Anfragen ab, die nie
+      antworten. Ein Zeitlimit allein würde langsame Server fälschlich als Fehler zeigen.
+    - **Ohne Standort kein Sensor** (Entscheidung des Nutzers, 2026-10-21): Das Dashboard wird über die Karte
+      erkundet, es geht darum, _wo_ ein Sensor steht. Ein Datastream ohne Standort wird deshalb nicht ohne
+      Kartenpunkt angezeigt, sondern gilt als nicht verfügbar. So fällt der Konfigurationsfehler auf.
+- **Annahmen der STA-Hooks** (`dataLayers/useStaSensors.ts`):
+    - **Ein Layer, ein Datastream:** Die Hooks lesen nur das erste Feature der Quelle (`datastreamFeature`). Wird
+      künftig z. B. ein ganzes Thing mit mehreren Datastreams als _ein_ Layer importiert, zeigen Dropdown, Diagramm
+      und Kacheln stillschweigend nur den ersten. Dann entweder pro Datastream einen eigenen Layer erzeugen
+      (`createStaDatastreamLayer`) oder `datastreamFeature`, `useDatastreamProperties` und `useColocatedSensors`
+      anpassen.
+    - **`useDatastreamProperties` sucht die Quelle nur einmal pro Layer-ID**, nicht reaktiv. Heute unkritisch,
+      weil die ID immer aus der Liste vorhandener Layer kommt (`useStaSensors`). Wird der Hook mit einer festen ID
+      aufgerufen, solange die Konfiguration noch lädt, bleibt das Ergebnis `undefined`. `useColocatedSensors` ist
+      über `useStaSensors` reaktiv und nicht betroffen.
 - **Sensor-Popup:** Ein Klick auf einen Sensorpunkt wählt nicht mehr direkt aus, sondern zeigt ein Popup mit **allen**
   Sensoren an der Stelle. Datastream 14 und 15 liegen am selben Ort, vorher war nur der zuletzt gezeichnete
   erreichbar. Der Button „In Auswertung anzeigen“ wählt den Sensor in der Einzelansicht und öffnet das Panel.
@@ -252,8 +294,14 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - **Gruppierung:** Nicht aus der Klick-Liste des Popups, sondern aus allen STA-Layern. So funktioniert sie auch bei
       Auswahl über das Dropdown, und der Auswahl-Zustand bleibt eine einzelne Layer-ID.
     - **Standard ist der Ort**, nicht das Thing: Es ist nicht sicher, dass jeder Server Stationen sauber als Things
-      modelliert. Der Ortsschlüssel ist die Punktkoordinate in EPSG:4326, auf 6 Nachkommastellen (ca. 0,1 m)
-      gerundet (`locationKey` in `dataLayers/sta.ts`). Andere Geometrien werden nie gruppiert.
+      modelliert. Gleicher Ort heißt: Die Punktkoordinaten (EPSG:4326 aus dem GeoJSON, `position` in
+      `dataLayers/sta.ts`) liegen höchstens `VITE_SENSOR_GROUPING_RADIUS` Meter auseinander (Standard 1 m,
+      Großkreisabstand mit `getDistance` aus `ol/sphere`). Andere Geometrien werden nie gruppiert.
+    - **Abstand statt gerundeter Koordinaten:** Früher wurde der auf 6 Nachkommastellen gerundete Koordinaten-String
+      verglichen. Dabei wurden leicht versetzt eingetragene Sensoren nie gruppiert, und fast gleiche Punkte fielen an
+      Rundungskanten auseinander (`7.6284004` → `…400`, `7.6284006` → `…401`). Ein Abstand ist dasselbe wie ein
+      Buffer um den Punkt, eine Projektion ist nicht nötig. Die Gruppierung gilt relativ zum gewählten Sensor und ist
+      nicht transitiv: Liegen A–B und B–C je 0,8 m auseinander, zeigt A nur B, B zeigt A und C.
     - **Umschaltbar** über `VITE_SENSOR_GROUPING` (`location`, `thing`, `location-or-thing`,
       `dataLayers/colocation.ts`). Bei Datastream 14 und 15 liefern alle drei dasselbe (gleicher Ort, Thing 2).
     - **Neuester Wert:** eigene Abfrage `$orderby=phenomenonTime desc&$top=1`, unabhängig vom Zeitfilter. Der
@@ -356,7 +404,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   ignoriert das stillschweigend: Der Layer gilt als geladen, aber es gibt keine Legenden-URL.
 - **Lösung:** Fehlt die URL aus den Capabilities, baut die App eine Standard-Anfrage
   `{endpoint}?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER={name}`
-  (`mapClick/WmsLegend.tsx`). Bei Servern mit funktionierenden Capabilities wird deren URL genommen.
+  (`getLegendGraphicUrl` in `mapClick/legendUrls.ts`). Bei Servern mit funktionierenden Capabilities wird deren URL genommen.
 - **Stolperstein 2, Bildformat:** Die Standardlegende ist 88×505 px hochkant, die querliegende Variante 1544 px breit.
   Beides passt schlecht in ein Popup.
 - **Versuche:**
@@ -421,10 +469,13 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   `open-pioneer/trails-starter` gebunden (`github.repository == …`) und läuft daher auch in `Co-Site/cosite-dashboard`
   nie. Build und Tests laufen dort bei jedem Push. Ob ein Deploy auf GitHub Pages gewünscht ist, ist offen.
 - **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären. Zeitstempel des STA-Servers ca. 2 h in
-  der Zukunft (siehe Abschnitt 8, Kacheln), beim Betreiber klären.
+  der Zukunft (siehe Abschnitt 8, Kacheln), beim Betreiber klären. Bei weiteren STA-Servern prüfen, ob die Messzeit
+  in `phenomenonTime` steht und nicht nur in `resultTime` (Abschnitt 8, Abfrage der Messwerte).
 - **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, im Panel
   stehen sie als Kacheln neben dem Diagramm. Eine Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht
   noch aus.
+- **Ganzes Thing als Layer:** Gut möglich, dass einmal ein Thing mit allen Datastreams importiert wird. Dann die
+  Annahme „ein Layer, ein Datastream“ beachten (Abschnitt 8, Annahmen der STA-Hooks).
 - **Windrose fachlich klären:** Welche Datastreams (Richtung, Geschwindigkeit), Geschwindigkeitsklassen gestapelt pro
   Sektor, Anzahl der Sektoren. Für gestapelte Klassen reicht `polarArea` nicht, dann eigene Zeichnung oder Plugin.
 - **Balken für Niederschlag:** Summe statt Mittelwert je Abschnitt, ggf. pro Datastream in der Konfiguration.

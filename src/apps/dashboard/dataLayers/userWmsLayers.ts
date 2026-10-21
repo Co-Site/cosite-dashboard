@@ -1,15 +1,85 @@
 import { AnyLayer, isLayer, Layer, MapModel } from "@open-pioneer/map";
-import { createDataLayer, DATA_LAYER_ATTRIBUTE, DataLayerContext } from "./createDataLayer";
+import { createDataLayer, DataLayerContext, getDataLayerConfig } from "./createDataLayer";
 import { LocalizedText } from "./localizedText";
-import { DataLayerNode, WmsDataLayerConfig } from "./types";
+import { WmsDataLayerConfig } from "./types";
+import { chooseFeatureInfoFormat, WmsCapabilities, WmsCapabilitiesLayer } from "./wmsCapabilities";
 
 /** Id of the group that holds the WMS layers added by the user. */
-export const USER_WMS_GROUP_ID = "user-wms";
+const USER_WMS_GROUP_ID = "user-wms";
 
 const USER_WMS_GROUP_NAME: LocalizedText = { de: "Eigene WMS", en: "Own WMS" };
 
 /** What the user chose for a new layer; id and type are assigned here. */
 export type UserWmsLayerInput = Omit<WmsDataLayerConfig, "id" | "type" | "temporary">;
+
+/** Labels of the service information in the layer description (both languages, like the configuration). */
+const LABELS = {
+    provider: { de: "Anbieter", en: "Provider" },
+    constraints: { de: "Nutzungsbedingungen", en: "Terms of use" },
+    fees: { de: "Gebühren", en: "Fees" }
+};
+
+/** Abstract of the layer and information about the service (provider, terms of use, fees). */
+function describe(capabilities: WmsCapabilities, layer: WmsCapabilitiesLayer): LocalizedText | undefined {
+    const parts = (language: "de" | "en") =>
+        [
+            layer.abstract !== layer.title ? layer.abstract : undefined,
+            capabilities.contactOrganization && `${LABELS.provider[language]}: ${capabilities.contactOrganization}`,
+            capabilities.accessConstraints && `${LABELS.constraints[language]}: ${capabilities.accessConstraints}`,
+            capabilities.fees && `${LABELS.fees[language]}: ${capabilities.fees}`
+        ]
+            .filter(Boolean)
+            .join("\n\n");
+    const de = parts("de");
+    return de ? { de, en: parts("en") } : undefined;
+}
+
+/** Builds the configuration of a user layer from the capabilities of its service. */
+export function userWmsLayerInput(
+    endpoint: string,
+    capabilities: WmsCapabilities,
+    layer: WmsCapabilitiesLayer
+): UserWmsLayerInput {
+    const format = layer.queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
+    return {
+        name: layer.title,
+        description: describe(capabilities, layer),
+        endpoint,
+        attribution: layer.attribution,
+        wms: {
+            layers: [layer.name],
+            featureInfo: format ? { format } : { enabled: false }
+        }
+    };
+}
+
+/** Takes over visibility and opacity of the layer into its config. */
+export function withLayerState(
+    config: WmsDataLayerConfig,
+    layer: (Pick<AnyLayer, "visible"> & { olLayer?: { getOpacity(): number } }) | undefined
+): WmsDataLayerConfig {
+    if (!layer) {
+        return config;
+    }
+    return { ...config, visible: layer.visible, opacity: layer.olLayer?.getOpacity() ?? config.opacity };
+}
+
+/**
+ * The bottommost top-level layer that is or contains a configured WMS layer (e.g. the group "WMS").
+ * The user's layers are inserted directly below it.
+ */
+function findConfiguredWmsLayer(map: MapModel): Layer | undefined {
+    // Sorted by display order: bottommost first.
+    return map.layers
+        .getOperationalLayers({ sortByDisplayOrder: true })
+        .filter((layer): layer is Layer => isLayer(layer) && layer.id !== USER_WMS_GROUP_ID)
+        .find((layer) =>
+            [layer, ...(layer.layers?.getRecursiveLayers() ?? [])].some((candidate) => {
+                const config = getDataLayerConfig(candidate);
+                return config?.type === "wms" && !config.temporary;
+            })
+        );
+}
 
 /**
  * The WMS layers the user added in this session (nothing is stored, a reload removes them).
@@ -18,7 +88,7 @@ export type UserWmsLayerInput = Omit<WmsDataLayerConfig, "id" | "type" | "tempor
  * Groups of `@open-pioneer/map` cannot get new children, so the group is rebuilt on every change;
  * visibility and opacity of the layers are kept.
  */
-export class UserWmsLayers {
+class UserWmsLayers {
     #map: MapModel;
     #configs: WmsDataLayerConfig[] = [];
     #nextId = 1;
@@ -90,32 +160,4 @@ export function getUserWmsLayers(map: MapModel): UserWmsLayers {
         instances.set(map, instance);
     }
     return instance;
-}
-
-/** Takes over visibility and opacity of the layer into its config. */
-export function withLayerState(
-    config: WmsDataLayerConfig,
-    layer: (Pick<AnyLayer, "visible"> & { olLayer?: { getOpacity(): number } }) | undefined
-): WmsDataLayerConfig {
-    if (!layer) {
-        return config;
-    }
-    return { ...config, visible: layer.visible, opacity: layer.olLayer?.getOpacity() ?? config.opacity };
-}
-
-/**
- * The bottommost top-level layer that is or contains a configured WMS layer (e.g. the group "WMS").
- * The user's layers are inserted directly below it.
- */
-function findConfiguredWmsLayer(map: MapModel): Layer | undefined {
-    // Sorted by display order: bottommost first.
-    return map.layers
-        .getOperationalLayers({ sortByDisplayOrder: true })
-        .filter((layer): layer is Layer => isLayer(layer) && layer.id !== USER_WMS_GROUP_ID)
-        .find((layer) =>
-            [layer, ...(layer.layers?.getRecursiveLayers() ?? [])].some((candidate) => {
-                const config = candidate.attributes[DATA_LAYER_ATTRIBUTE] as DataLayerNode | undefined;
-                return config?.type === "wms" && !config.temporary;
-            })
-        );
 }

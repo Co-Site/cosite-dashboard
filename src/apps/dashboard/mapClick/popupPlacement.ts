@@ -5,7 +5,7 @@ const GAP_X = 18;
 const GAP_Y = 8;
 
 /** Minimal distance between the popup and the border of the map. */
-export const POPUP_MARGIN = 8;
+const POPUP_MARGIN = 8;
 
 /** Upper limit for the popup's height. */
 const MAX_POPUP_HEIGHT = 400;
