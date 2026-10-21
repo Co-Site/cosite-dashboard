@@ -5,6 +5,14 @@ import { useIntl } from "open-pioneer:react-hooks";
 import { useState } from "react";
 import { legendUrls } from "./legendUrls";
 
+/** Legend URLs of the layer (see {@link legendUrls}); updates when the capabilities have been loaded. */
+function useLegendUrls(map: MapModel, layerId: string): string[] {
+    return useReactiveSnapshot(() => {
+        const layer = map.layers.getLayerById(layerId);
+        return layer instanceof WMSLayer ? legendUrls(layer) : [];
+    }, [map, layerId]);
+}
+
 /**
  * Legend image(s) of a WMS layer, as configured in the data layer configuration (`wms.legend`).
  */
@@ -32,12 +40,4 @@ export function WmsLegend({ map, layerId }: { map: MapModel; layerId: string }) 
             </Stack>
         </Box>
     );
-}
-
-/** Legend URLs of the layer (see {@link legendUrls}); updates when the capabilities have been loaded. */
-function useLegendUrls(map: MapModel, layerId: string): string[] {
-    return useReactiveSnapshot(() => {
-        const layer = map.layers.getLayerById(layerId);
-        return layer instanceof WMSLayer ? legendUrls(layer) : [];
-    }, [map, layerId]);
 }

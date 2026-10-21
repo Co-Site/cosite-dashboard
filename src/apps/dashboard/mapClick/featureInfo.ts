@@ -5,6 +5,19 @@ import { LocalizedText } from "../dataLayers/localizedText";
 import { FeatureInfoField, WmsDataLayerConfig } from "../dataLayers/types";
 import { chooseFeatureInfoFormat, fetchWmsCapabilities } from "../dataLayers/wmsCapabilities";
 
+export interface FeatureInfoValue {
+    /** Name of the property in the response. */
+    property: string;
+    label: LocalizedText;
+    value: unknown;
+    unit?: string;
+}
+
+export interface FeatureInfoFeature {
+    id: string;
+    values: FeatureInfoValue[];
+}
+
 /** Feature info of a single WMS layer at the clicked position. */
 export interface FeatureInfoResult {
     layerId: string;
@@ -16,17 +29,14 @@ export interface FeatureInfoResult {
     error?: unknown;
 }
 
-export interface FeatureInfoFeature {
-    id: string;
-    values: FeatureInfoValue[];
-}
-
-export interface FeatureInfoValue {
-    /** Name of the property in the response. */
-    property: string;
-    label: LocalizedText;
-    value: unknown;
-    unit?: string;
+/** A layer is only visible on the map if all of its parents are visible as well. */
+function isEffectivelyVisible(layer: AnyLayer): boolean {
+    for (let current: AnyLayer | undefined = layer; current; current = current.parent) {
+        if (!current.visible) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
@@ -42,6 +52,44 @@ export function getQueryableWmsLayers(map: MapModel): WMSLayer[] {
             return config?.type === "wms" && config.wms.featureInfo?.enabled !== false;
         })
         .reverse(); // topmost layer first
+}
+
+function toValues(properties: Record<string, unknown>, fields: FeatureInfoField[] | undefined): FeatureInfoValue[] {
+    if (!fields) {
+        return Object.entries(properties).map(([property, value]) => ({
+            property,
+            label: property,
+            value
+        }));
+    }
+    return fields
+        .filter((field) => field.property in properties)
+        .map((field) => ({
+            property: field.property,
+            label: field.label ?? field.property,
+            value: properties[field.property],
+            unit: field.unit
+        }));
+}
+
+/**
+ * The configured GetFeatureInfo format, or a GeoJSON format from the capabilities.
+ * Falls back to `application/json` if the capabilities cannot be loaded.
+ */
+async function getFeatureInfoFormat(config: WmsDataLayerConfig): Promise<string | undefined> {
+    const format = config.wms.featureInfo?.format;
+    if (format) {
+        return format;
+    }
+    try {
+        const capabilities = await fetchWmsCapabilities(config.endpoint);
+        const queryable = config.wms.layers.some(
+            (name) => capabilities.layers.find((layer) => layer.name === name)?.queryable
+        );
+        return queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
+    } catch {
+        return "application/json";
+    }
 }
 
 /**
@@ -107,52 +155,4 @@ export async function queryWmsFeatureInfo(
         })
     );
     return results.filter((result) => result !== undefined);
-}
-
-/**
- * The configured GetFeatureInfo format, or a GeoJSON format from the capabilities.
- * Falls back to `application/json` if the capabilities cannot be loaded.
- */
-async function getFeatureInfoFormat(config: WmsDataLayerConfig): Promise<string | undefined> {
-    const format = config.wms.featureInfo?.format;
-    if (format) {
-        return format;
-    }
-    try {
-        const capabilities = await fetchWmsCapabilities(config.endpoint);
-        const queryable = config.wms.layers.some(
-            (name) => capabilities.layers.find((layer) => layer.name === name)?.queryable
-        );
-        return queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
-    } catch {
-        return "application/json";
-    }
-}
-
-function toValues(properties: Record<string, unknown>, fields: FeatureInfoField[] | undefined): FeatureInfoValue[] {
-    if (!fields) {
-        return Object.entries(properties).map(([property, value]) => ({
-            property,
-            label: property,
-            value
-        }));
-    }
-    return fields
-        .filter((field) => field.property in properties)
-        .map((field) => ({
-            property: field.property,
-            label: field.label ?? field.property,
-            value: properties[field.property],
-            unit: field.unit
-        }));
-}
-
-/** A layer is only visible on the map if all of its parents are visible as well. */
-function isEffectivelyVisible(layer: AnyLayer): boolean {
-    for (let current: AnyLayer | undefined = layer; current; current = current.parent) {
-        if (!current.visible) {
-            return false;
-        }
-    }
-    return true;
 }

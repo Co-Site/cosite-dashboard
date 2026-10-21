@@ -17,25 +17,18 @@ export interface FeatureInfoPopupProps {
     onClose(): void;
 }
 
-export function FeatureInfoPopup({ map, results, maxHeight, onClose }: FeatureInfoPopupProps) {
-    const intl = useIntl();
-    const hasFeatures = results?.some((result) => result.features.length > 0);
-    return (
-        <PopupFrame title={intl.formatMessage({ id: "featureInfo.title" })} maxHeight={maxHeight} onClose={onClose}>
-            {!results && (
-                <Flex gap={2} alignItems="center">
-                    <Spinner size="sm" />
-                    <Text>{intl.formatMessage({ id: "featureInfo.loading" })}</Text>
-                </Flex>
-            )}
-            {results && !hasFeatures && <Text color="fg.muted">{intl.formatMessage({ id: "featureInfo.empty" })}</Text>}
-            <Stack gap={3}>
-                {results?.map((result) => (
-                    <LayerResult key={result.layerId} map={map} result={result} />
-                ))}
-            </Stack>
-        </PopupFrame>
-    );
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+
+function formatValue(intl: PackageIntl, { value, unit }: FeatureInfoValue): string {
+    let text: string;
+    if (typeof value === "number") {
+        text = intl.formatNumber(value, { maximumFractionDigits: 1 });
+    } else if (typeof value === "string" && ISO_DATE.test(value)) {
+        text = intl.formatDate(value, { dateStyle: "short", timeStyle: "short" });
+    } else {
+        text = value == null ? "–" : String(value);
+    }
+    return unit ? `${text} ${unit}` : text;
 }
 
 function LayerResult({ map, result }: { map: MapModel; result: FeatureInfoResult }) {
@@ -75,16 +68,23 @@ function LayerResult({ map, result }: { map: MapModel; result: FeatureInfoResult
     );
 }
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
-
-function formatValue(intl: PackageIntl, { value, unit }: FeatureInfoValue): string {
-    let text: string;
-    if (typeof value === "number") {
-        text = intl.formatNumber(value, { maximumFractionDigits: 1 });
-    } else if (typeof value === "string" && ISO_DATE.test(value)) {
-        text = intl.formatDate(value, { dateStyle: "short", timeStyle: "short" });
-    } else {
-        text = value == null ? "–" : String(value);
-    }
-    return unit ? `${text} ${unit}` : text;
+export function FeatureInfoPopup({ map, results, maxHeight, onClose }: FeatureInfoPopupProps) {
+    const intl = useIntl();
+    const hasFeatures = results?.some((result) => result.features.length > 0);
+    return (
+        <PopupFrame title={intl.formatMessage({ id: "featureInfo.title" })} maxHeight={maxHeight} onClose={onClose}>
+            {!results && (
+                <Flex gap={2} alignItems="center">
+                    <Spinner size="sm" />
+                    <Text>{intl.formatMessage({ id: "featureInfo.loading" })}</Text>
+                </Flex>
+            )}
+            {results && !hasFeatures && <Text color="fg.muted">{intl.formatMessage({ id: "featureInfo.empty" })}</Text>}
+            <Stack gap={3}>
+                {results?.map((result) => (
+                    <LayerResult key={result.layerId} map={map} result={result} />
+                ))}
+            </Stack>
+        </PopupFrame>
+    );
 }

@@ -16,22 +16,6 @@ export interface SensorPopupProps {
     onShow(dataLayerId: string): void;
 }
 
-/**
- * Lists the sensors at the clicked position (several sensors may share a location).
- */
-export function SensorPopup({ map, datastreams, maxHeight, onClose, onShow }: SensorPopupProps) {
-    const intl = useIntl();
-    return (
-        <PopupFrame title={intl.formatMessage({ id: "sensorPopup.title" })} maxHeight={maxHeight} onClose={onClose}>
-            <Stack gap={3}>
-                {datastreams.map((datastream) => (
-                    <SensorEntry key={datastream.dataLayerId} map={map} datastream={datastream} onShow={onShow} />
-                ))}
-            </Stack>
-        </PopupFrame>
-    );
-}
-
 function SensorEntry(props: { map: MapModel; datastream: StaDatastreamProperties; onShow(dataLayerId: string): void }) {
     const { map, datastream, onShow } = props;
     const intl = useIntl();
@@ -56,5 +40,21 @@ function SensorEntry(props: { map: MapModel; datastream: StaDatastreamProperties
                 {intl.formatMessage({ id: "sensorPopup.show" })}
             </Button>
         </Box>
+    );
+}
+
+/**
+ * Lists the sensors at the clicked position (several sensors may share a location).
+ */
+export function SensorPopup({ map, datastreams, maxHeight, onClose, onShow }: SensorPopupProps) {
+    const intl = useIntl();
+    return (
+        <PopupFrame title={intl.formatMessage({ id: "sensorPopup.title" })} maxHeight={maxHeight} onClose={onClose}>
+            <Stack gap={3}>
+                {datastreams.map((datastream) => (
+                    <SensorEntry key={datastream.dataLayerId} map={map} datastream={datastream} onShow={onShow} />
+                ))}
+            </Stack>
+        </PopupFrame>
     );
 }
