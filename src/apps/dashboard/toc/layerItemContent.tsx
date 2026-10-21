@@ -15,14 +15,11 @@ function RemoveUserLayerButton({ layerId }: { layerId: string }) {
     const userLayers = useUserWmsLayers();
     const title = useLayerTitle(map, layerId) ?? layerId;
     const label = intl.formatMessage({ id: "addWms.remove" }, { title });
+
+    const remove = () => userLayers.remove(layerId);
+
     return (
-        <IconButton
-            size="xs"
-            variant="ghost"
-            aria-label={label}
-            title={label}
-            onClick={() => userLayers.remove(layerId)}
-        >
+        <IconButton size="xs" variant="ghost" aria-label={label} title={label} onClick={remove}>
             <LuTrash2 />
         </IconButton>
     );

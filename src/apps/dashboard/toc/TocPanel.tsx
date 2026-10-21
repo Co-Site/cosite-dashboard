@@ -1,6 +1,6 @@
 import { Box, Flex, IconButton } from "@chakra-ui/react";
 import { SectionHeading, TitledSection } from "@open-pioneer/react-utils";
-import { Toc, TocApi } from "@open-pioneer/toc";
+import { Toc, TocApi, TocReadyEvent } from "@open-pioneer/toc";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useId, useRef, useState } from "react";
 import { LuLayers, LuPanelLeftClose } from "react-icons/lu";
@@ -33,6 +33,10 @@ export function TocPanel() {
         toggled.current = true;
         setOpen(value);
     };
+    const collapse = () => toggle(false);
+    const expand = () => toggle(true);
+    const connectToc = (event: TocReadyEvent) => setTocApi(event.api);
+    const disconnectToc = () => setTocApi(undefined);
 
     const expandLabel = intl.formatMessage({ id: "toc.expand" });
     const collapseLabel = intl.formatMessage({ id: "toc.collapse" });
@@ -73,7 +77,7 @@ export function TocPanel() {
                                 title={collapseLabel}
                                 aria-controls={panelId}
                                 aria-expanded={true}
-                                onClick={() => toggle(false)}
+                                onClick={collapse}
                             >
                                 <LuPanelLeftClose />
                             </IconButton>
@@ -82,11 +86,7 @@ export function TocPanel() {
                 >
                     <AddWmsLayer />
                     <Box css={INFO_ICON_CSS}>
-                        <Toc
-                            collapsibleGroups
-                            onReady={(event) => setTocApi(event.api)}
-                            onDisposed={() => setTocApi(undefined)}
-                        />
+                        <Toc collapsibleGroups onReady={connectToc} onDisposed={disconnectToc} />
                     </Box>
                     <TocItemExtensions api={tocApi} render={layerItemContent} />
                 </TitledSection>
@@ -107,7 +107,7 @@ export function TocPanel() {
                     title={expandLabel}
                     aria-controls={panelId}
                     aria-expanded={false}
-                    onClick={() => toggle(true)}
+                    onClick={expand}
                 >
                     <LuLayers />
                 </IconButton>

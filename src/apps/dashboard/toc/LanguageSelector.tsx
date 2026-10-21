@@ -20,19 +20,21 @@ export function LanguageSelector() {
         .map((locale) => locale.language)
         .sort((a, b) => order(a) - order(b));
 
+    const changeLanguage = (details: SegmentGroup.ValueChangeDetails) => {
+        if (!details.value || details.value === current) {
+            return;
+        }
+        localeService
+            .changeLocale(new Intl.Locale(details.value))
+            .catch((error) => LOG.error("Failed to change the language.", error));
+    };
+
     return (
         <SegmentGroup.Root
             size="xs"
             aria-label={intl.formatMessage({ id: "language.label" })}
             value={current}
-            onValueChange={(details) => {
-                if (!details.value || details.value === current) {
-                    return;
-                }
-                localeService
-                    .changeLocale(new Intl.Locale(details.value))
-                    .catch((error) => LOG.error("Failed to change the language.", error));
-            }}
+            onValueChange={changeLanguage}
         >
             <SegmentGroup.Indicator />
             {languages.map((language) => (

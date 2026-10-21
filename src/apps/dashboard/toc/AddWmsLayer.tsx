@@ -2,7 +2,7 @@ import { Box, Button, chakra, Flex, Input, Spinner, Stack, Text } from "@chakra-
 import { createLogger } from "@open-pioneer/core";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
-import { KeyboardEvent, RefObject, useEffect, useId, useRef, useState } from "react";
+import { ChangeEvent, KeyboardEvent, RefObject, useEffect, useId, useRef, useState } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
 import { userWmsLayerInput } from "../dataLayers/userWmsLayers";
 import { probeWmsLayer, WmsCapabilitiesLayer } from "../dataLayers/wmsCapabilities";
@@ -39,6 +39,13 @@ export function AddWmsLayer() {
         return () => clearTimeout(timeout);
     }, [status]);
 
+    const toggleForm = () => setOpen(!open);
+    const closeForm = () => setOpen(false);
+    const showAdded = (title: string) => {
+        setStatus(intl.formatMessage({ id: "addWms.added" }, { title }));
+        setOpen(false);
+    };
+
     return (
         <Box mb={2}>
             <Flex alignItems="center" gap={1}>
@@ -49,7 +56,7 @@ export function AddWmsLayer() {
                     justifyContent="flex-start"
                     aria-expanded={open}
                     aria-controls={formId}
-                    onClick={() => setOpen(!open)}
+                    onClick={toggleForm}
                 >
                     <LuPlus />
                     {intl.formatMessage({ id: "addWms.toggle" })}
@@ -59,17 +66,7 @@ export function AddWmsLayer() {
             <Text role="status" fontSize="xs" color="fg.muted" px={2}>
                 {status}
             </Text>
-            {open && (
-                <AddWmsForm
-                    id={formId}
-                    urlRef={urlRef}
-                    onAdded={(title) => {
-                        setStatus(intl.formatMessage({ id: "addWms.added" }, { title }));
-                        setOpen(false);
-                    }}
-                    onClose={() => setOpen(false)}
-                />
-            )}
+            {open && <AddWmsForm id={formId} urlRef={urlRef} onAdded={showAdded} onClose={closeForm} />}
         </Box>
     );
 }
@@ -143,6 +140,19 @@ function AddWmsForm(props: {
         }
     };
 
+    const addActiveLayer = () => add(search.activeLayer);
+    const changeUrl = (event: ChangeEvent<HTMLInputElement>) => setUrl(event.currentTarget.value);
+    const onUrlKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            loadService();
+        }
+    };
+    const changeLayerQuery = (event: ChangeEvent<HTMLInputElement>) => {
+        search.changeQuery(event.currentTarget.value);
+        setError(undefined);
+    };
+
     return (
         <Stack id={id} gap={2} borderWidth="1px" borderRadius="md" padding={2} mt={1}>
             <Stack gap={1}>
@@ -157,13 +167,8 @@ function AddWmsForm(props: {
                         type="url"
                         placeholder="https://…/wms"
                         value={url}
-                        onChange={(e) => setUrl(e.currentTarget.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault();
-                                loadService();
-                            }
-                        }}
+                        onChange={changeUrl}
+                        onKeyDown={onUrlKeyDown}
                     />
                     <Button size="xs" variant="outline" onClick={loadService} disabled={!url.trim()}>
                         {intl.formatMessage({ id: "addWms.load" })}
@@ -198,10 +203,7 @@ function AddWmsForm(props: {
                         aria-activedescendant={search.activeLayer ? search.optionId(search.activeIndex) : undefined}
                         placeholder={intl.formatMessage({ id: "addWms.layerPlaceholder" })}
                         value={search.query}
-                        onChange={(e) => {
-                            search.changeQuery(e.currentTarget.value);
-                            setError(undefined);
-                        }}
+                        onChange={changeLayerQuery}
                         onKeyDown={onLayerKeyDown}
                     />
                     {/* Directly below the input: the list can be long. */}
@@ -233,11 +235,7 @@ function AddWmsForm(props: {
                     {intl.formatMessage({ id: "addWms.close" })}
                 </Button>
                 {service.kind === "loaded" && (
-                    <Button
-                        size="xs"
-                        onClick={() => add(search.activeLayer)}
-                        disabled={!search.activeLayer || checking}
-                    >
+                    <Button size="xs" onClick={addActiveLayer} disabled={!search.activeLayer || checking}>
                         {intl.formatMessage({ id: "addWms.add" })}
                     </Button>
                 )}

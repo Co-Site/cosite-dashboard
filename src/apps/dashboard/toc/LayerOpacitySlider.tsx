@@ -11,6 +11,11 @@ export function LayerOpacitySlider({ olLayer }: { olLayer: BaseLayer }) {
     const intl = useIntl();
     const transparency = useTransparency(olLayer);
 
+    const changeTransparency = (details: Slider.ValueChangeDetails) => {
+        const value = details.value[0] ?? 0;
+        olLayer.setOpacity(1 - value / 100);
+    };
+
     return (
         <Slider.Root
             size="sm"
@@ -19,10 +24,7 @@ export function LayerOpacitySlider({ olLayer }: { olLayer: BaseLayer }) {
             max={100}
             step={5}
             value={[transparency]}
-            onValueChange={(details) => {
-                const value = details.value[0] ?? 0;
-                olLayer.setOpacity(1 - value / 100);
-            }}
+            onValueChange={changeTransparency}
             getAriaValueText={(details) => `${details.value} %`}
         >
             <Flex justifyContent="space-between" fontSize="xs" color="fg.muted">
