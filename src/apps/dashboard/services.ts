@@ -21,6 +21,16 @@ interface References {
     localeService: LocaleService;
 }
 
+/** The map should still start (with base layers only) if the data layer configuration is broken. */
+async function loadDataLayersSafe(): Promise<DataLayerNode[]> {
+    try {
+        return await loadDataLayers();
+    } catch (error) {
+        LOG.error(`Failed to load data layers from ${DATA_LAYERS_URL}.`, error);
+        return [];
+    }
+}
+
 export class MainMapProvider implements MapConfigProvider {
     mapId = MAP_ID;
 
@@ -57,15 +67,5 @@ export class MainMapProvider implements MapConfigProvider {
             ],
             layers: dataLayers.map((config) => createDataLayer(config, context))
         };
-    }
-}
-
-/** The map should still start (with base layers only) if the data layer configuration is broken. */
-async function loadDataLayersSafe(): Promise<DataLayerNode[]> {
-    try {
-        return await loadDataLayers();
-    } catch (error) {
-        LOG.error(`Failed to load data layers from ${DATA_LAYERS_URL}.`, error);
-        return [];
     }
 }
