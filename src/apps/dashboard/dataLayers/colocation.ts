@@ -15,12 +15,6 @@ const SENSOR_GROUPINGS: SensorGrouping[] = ["location", "thing", "location-or-th
 
 const DEFAULT_GROUPING_RADIUS = 1;
 
-/** Grouping of sensors at the same site, see `VITE_SENSOR_GROUPING`. */
-export const SENSOR_GROUPING: SensorGrouping = parseSensorGrouping(import.meta.env.VITE_SENSOR_GROUPING);
-
-/** Distance in meters up to which point locations count as the same site, see `VITE_SENSOR_GROUPING_RADIUS`. */
-export const SENSOR_GROUPING_RADIUS: number = parseGroupingRadius(import.meta.env.VITE_SENSOR_GROUPING_RADIUS);
-
 export function parseSensorGrouping(value: string | undefined): SensorGrouping {
     return SENSOR_GROUPINGS.find((grouping) => grouping === value) ?? "location";
 }
@@ -29,6 +23,12 @@ export function parseGroupingRadius(value: string | undefined): number {
     const radius = value?.trim() ? Number(value) : NaN;
     return Number.isFinite(radius) && radius >= 0 ? radius : DEFAULT_GROUPING_RADIUS;
 }
+
+/** Grouping of sensors at the same site, see `VITE_SENSOR_GROUPING`. */
+export const SENSOR_GROUPING: SensorGrouping = parseSensorGrouping(import.meta.env.VITE_SENSOR_GROUPING);
+
+/** Distance in meters up to which point locations count as the same site, see `VITE_SENSOR_GROUPING_RADIUS`. */
+export const SENSOR_GROUPING_RADIUS: number = parseGroupingRadius(import.meta.env.VITE_SENSOR_GROUPING_RADIUS);
 
 /**
  * Returns the other sensors at the site of the selected sensor, in the order of `all`.

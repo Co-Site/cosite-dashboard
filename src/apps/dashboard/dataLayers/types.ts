@@ -30,6 +30,45 @@ export interface DataLayerConfigBase extends DataLayerNodeBase {
     attribution?: string;
 }
 
+export interface FeatureInfoField {
+    /** Name of the property in the GetFeatureInfo response. */
+    property: string;
+
+    /** Label shown in the popup (default: the property name). */
+    label?: LocalizedText;
+
+    /** Unit appended to numeric values, e.g. `°C`. */
+    unit?: string;
+}
+
+export interface WmsFeatureInfoConfig {
+    /** Whether GetFeatureInfo is requested on map click (default: `true`). */
+    enabled?: boolean;
+
+    /**
+     * Response format (GeoJSON), e.g. `application/json` or `application/geo+json`.
+     * Default: chosen from the formats in the service's capabilities (no feature info if none fits).
+     */
+    format?: string;
+
+    /** Properties to show in the popup (default: all properties of the response). */
+    fields?: FeatureInfoField[];
+}
+
+export interface WmsLegendConfig {
+    /** Whether the legend is shown (default: `true`). */
+    enabled?: boolean;
+
+    /** Legend image URL. Default: the legend URLs from the service's capabilities. */
+    url?: string;
+
+    /**
+     * Additional URL parameters for the legend request,
+     * e.g. `{ "LEGEND_OPTIONS": "columns:3" }` for a compact GeoServer legend.
+     */
+    params?: Record<string, string>;
+}
+
 /** An OGC Web Map Service. */
 export interface WmsDataLayerConfig extends DataLayerConfigBase {
     type: "wms";
@@ -49,45 +88,6 @@ export interface WmsDataLayerConfig extends DataLayerConfigBase {
         /** Legend shown in the feature info popup (enabled by default). */
         legend?: WmsLegendConfig;
     };
-}
-
-export interface WmsLegendConfig {
-    /** Whether the legend is shown (default: `true`). */
-    enabled?: boolean;
-
-    /** Legend image URL. Default: the legend URLs from the service's capabilities. */
-    url?: string;
-
-    /**
-     * Additional URL parameters for the legend request,
-     * e.g. `{ "LEGEND_OPTIONS": "columns:3" }` for a compact GeoServer legend.
-     */
-    params?: Record<string, string>;
-}
-
-export interface WmsFeatureInfoConfig {
-    /** Whether GetFeatureInfo is requested on map click (default: `true`). */
-    enabled?: boolean;
-
-    /**
-     * Response format (GeoJSON), e.g. `application/json` or `application/geo+json`.
-     * Default: chosen from the formats in the service's capabilities (no feature info if none fits).
-     */
-    format?: string;
-
-    /** Properties to show in the popup (default: all properties of the response). */
-    fields?: FeatureInfoField[];
-}
-
-export interface FeatureInfoField {
-    /** Name of the property in the GetFeatureInfo response. */
-    property: string;
-
-    /** Label shown in the popup (default: the property name). */
-    label?: LocalizedText;
-
-    /** Unit appended to numeric values, e.g. `°C`. */
-    unit?: string;
 }
 
 /** A single OGC SensorThings API datastream, e.g. `.../v1.1/Datastreams(14)`. */

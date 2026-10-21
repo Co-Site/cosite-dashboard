@@ -18,6 +18,10 @@ export interface StaSensor {
     title: string;
 }
 
+function isStaLayer(layer: AnyLayer): boolean {
+    return getDataLayerConfig(layer)?.type === "sta-datastream";
+}
+
 /**
  * Returns all SensorThings datastream layers of the map (also hidden ones), in configuration order.
  * Titles update when the language changes.
@@ -33,8 +37,22 @@ export function useStaSensors(map: MapModel): StaSensor[] {
     );
 }
 
-function isStaLayer(layer: AnyLayer): boolean {
-    return getDataLayerConfig(layer)?.type === "sta-datastream";
+/** Calls `onChange` when features of the sources change (a feature is added once its datastream has been loaded). */
+function subscribeSources(sources: VectorSource<FeatureLike>[], onChange: () => void): () => void {
+    const keys = sources.flatMap((source) => [
+        source.on("addfeature", onChange),
+        source.on("removefeature", onChange),
+        source.on("clear", onChange)
+    ]);
+    return () => unByKey(keys);
+}
+
+function getSensorSource(map: MapModel, dataLayerId: string | undefined): VectorSource<FeatureLike> | undefined {
+    const layer = dataLayerId ? map.layers.getLayerById(dataLayerId) : undefined;
+    if (!layer || !isLayer(layer) || !(layer.olLayer instanceof VectorLayer)) {
+        return undefined;
+    }
+    return layer.olLayer.getSource() ?? undefined;
 }
 
 /**
@@ -111,22 +129,4 @@ export function useColocatedSensors(map: MapModel, dataLayerId: string | undefin
         const selected = all.find((datastream) => datastream.dataLayerId === dataLayerId);
         return selected ? colocatedSensors(selected, all, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS) : [];
     }, [features, dataLayerId]);
-}
-
-/** Calls `onChange` when features of the sources change (a feature is added once its datastream has been loaded). */
-function subscribeSources(sources: VectorSource<FeatureLike>[], onChange: () => void): () => void {
-    const keys = sources.flatMap((source) => [
-        source.on("addfeature", onChange),
-        source.on("removefeature", onChange),
-        source.on("clear", onChange)
-    ]);
-    return () => unByKey(keys);
-}
-
-function getSensorSource(map: MapModel, dataLayerId: string | undefined): VectorSource<FeatureLike> | undefined {
-    const layer = dataLayerId ? map.layers.getLayerById(dataLayerId) : undefined;
-    if (!layer || !isLayer(layer) || !(layer.olLayer instanceof VectorLayer)) {
-        return undefined;
-    }
-    return layer.olLayer.getSource() ?? undefined;
 }

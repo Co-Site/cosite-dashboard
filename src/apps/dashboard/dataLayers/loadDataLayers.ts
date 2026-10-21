@@ -7,42 +7,57 @@ const LOG = createLogger("dashboard:dataLayers");
 /** URL of the data layer configuration, see `VITE_DATA_LAYERS_URL`. */
 export const DATA_LAYERS_URL = import.meta.env.VITE_DATA_LAYERS_URL || "./config/dataLayers.json";
 
-/**
- * Validates the content of a data layer configuration file.
- *
- * Invalid entries are skipped with a warning so that a single broken entry
- * does not prevent the remaining layers from being shown.
- */
-export function parseDataLayers(json: unknown): DataLayerNode[] {
-    if (!isObject(json) || !Array.isArray(json.layers)) {
-        throw new Error("Invalid data layer configuration: expected an object with a 'layers' array.");
-    }
-    return parseNodes(json.layers, "layers", new Set());
+function isObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseNodes(entries: unknown[], path: string, ids: Set<string>): DataLayerNode[] {
-    const result: DataLayerNode[] = [];
-    entries.forEach((entry, index) => {
-        const entryPath = `${path}[${index}]`;
-        const problem = validateEntry(entry);
-        if (problem) {
-            LOG.warn(`Skipping data layer at ${entryPath}: ${problem}`);
-            return;
-        }
-        const node = entry as DataLayerNode;
-        if (ids.has(node.id)) {
-            LOG.warn(`Skipping data layer at ${entryPath}: duplicate id '${node.id}'.`);
-            return;
-        }
-        ids.add(node.id);
-        if (node.type === "group") {
-            const layers = parseNodes(node.layers, `${entryPath}.layers`, ids);
-            result.push({ ...node, layers });
-        } else {
-            result.push(node);
-        }
-    });
-    return result;
+function validateFeatureInfo(featureInfo: unknown): string | undefined {
+    if (featureInfo == null) {
+        return undefined;
+    }
+    if (!isObject(featureInfo)) {
+        return "'wms.featureInfo' must be an object.";
+    }
+    if (featureInfo.enabled != null && typeof featureInfo.enabled !== "boolean") {
+        return "'wms.featureInfo.enabled' must be a boolean.";
+    }
+    if (featureInfo.format != null && (typeof featureInfo.format !== "string" || featureInfo.format === "")) {
+        return "'wms.featureInfo.format' must be a format name, e.g. 'application/json'.";
+    }
+    const fields = featureInfo.fields;
+    if (fields == null) {
+        return undefined;
+    }
+    const validFields =
+        Array.isArray(fields) &&
+        fields.every(
+            (field) =>
+                isObject(field) &&
+                typeof field.property === "string" &&
+                (field.label == null || isLocalizedText(field.label)) &&
+                (field.unit == null || typeof field.unit === "string")
+        );
+    return validFields ? undefined : "'wms.featureInfo.fields' must be a list of { property, label?, unit? }.";
+}
+
+function validateLegend(legend: unknown): string | undefined {
+    if (legend == null) {
+        return undefined;
+    }
+    if (!isObject(legend)) {
+        return "'wms.legend' must be an object.";
+    }
+    if (legend.enabled != null && typeof legend.enabled !== "boolean") {
+        return "'wms.legend.enabled' must be a boolean.";
+    }
+    if (legend.url != null && typeof legend.url !== "string") {
+        return "'wms.legend.url' must be a string.";
+    }
+    const params = legend.params;
+    if (params != null && (!isObject(params) || !Object.values(params).every((v) => typeof v === "string"))) {
+        return "'wms.legend.params' must be an object with string values.";
+    }
+    return undefined;
 }
 
 function validateEntry(entry: unknown): string | undefined {
@@ -99,57 +114,42 @@ function validateEntry(entry: unknown): string | undefined {
     }
 }
 
-function validateFeatureInfo(featureInfo: unknown): string | undefined {
-    if (featureInfo == null) {
-        return undefined;
-    }
-    if (!isObject(featureInfo)) {
-        return "'wms.featureInfo' must be an object.";
-    }
-    if (featureInfo.enabled != null && typeof featureInfo.enabled !== "boolean") {
-        return "'wms.featureInfo.enabled' must be a boolean.";
-    }
-    if (featureInfo.format != null && (typeof featureInfo.format !== "string" || featureInfo.format === "")) {
-        return "'wms.featureInfo.format' must be a format name, e.g. 'application/json'.";
-    }
-    const fields = featureInfo.fields;
-    if (fields == null) {
-        return undefined;
-    }
-    const validFields =
-        Array.isArray(fields) &&
-        fields.every(
-            (field) =>
-                isObject(field) &&
-                typeof field.property === "string" &&
-                (field.label == null || isLocalizedText(field.label)) &&
-                (field.unit == null || typeof field.unit === "string")
-        );
-    return validFields ? undefined : "'wms.featureInfo.fields' must be a list of { property, label?, unit? }.";
+function parseNodes(entries: unknown[], path: string, ids: Set<string>): DataLayerNode[] {
+    const result: DataLayerNode[] = [];
+    entries.forEach((entry, index) => {
+        const entryPath = `${path}[${index}]`;
+        const problem = validateEntry(entry);
+        if (problem) {
+            LOG.warn(`Skipping data layer at ${entryPath}: ${problem}`);
+            return;
+        }
+        const node = entry as DataLayerNode;
+        if (ids.has(node.id)) {
+            LOG.warn(`Skipping data layer at ${entryPath}: duplicate id '${node.id}'.`);
+            return;
+        }
+        ids.add(node.id);
+        if (node.type === "group") {
+            const layers = parseNodes(node.layers, `${entryPath}.layers`, ids);
+            result.push({ ...node, layers });
+        } else {
+            result.push(node);
+        }
+    });
+    return result;
 }
 
-function validateLegend(legend: unknown): string | undefined {
-    if (legend == null) {
-        return undefined;
+/**
+ * Validates the content of a data layer configuration file.
+ *
+ * Invalid entries are skipped with a warning so that a single broken entry
+ * does not prevent the remaining layers from being shown.
+ */
+export function parseDataLayers(json: unknown): DataLayerNode[] {
+    if (!isObject(json) || !Array.isArray(json.layers)) {
+        throw new Error("Invalid data layer configuration: expected an object with a 'layers' array.");
     }
-    if (!isObject(legend)) {
-        return "'wms.legend' must be an object.";
-    }
-    if (legend.enabled != null && typeof legend.enabled !== "boolean") {
-        return "'wms.legend.enabled' must be a boolean.";
-    }
-    if (legend.url != null && typeof legend.url !== "string") {
-        return "'wms.legend.url' must be a string.";
-    }
-    const params = legend.params;
-    if (params != null && (!isObject(params) || !Object.values(params).every((v) => typeof v === "string"))) {
-        return "'wms.legend.params' must be an object with string values.";
-    }
-    return undefined;
-}
-
-function isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
+    return parseNodes(json.layers, "layers", new Set());
 }
 
 /**
