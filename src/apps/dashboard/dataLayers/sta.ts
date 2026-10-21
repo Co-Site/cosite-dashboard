@@ -58,6 +58,12 @@ export async function fetchDatastream(endpoint: string, signal?: AbortSignal): P
 }
 
 /**
+ * Key of the feature property that holds the {@link StaDatastreamProperties} (as one object, so that new fields
+ * only have to be added where the properties are created).
+ */
+const DATASTREAM_PROPERTY = "staDatastream";
+
+/**
  * Creates a map feature for the datastream, located at its thing's location
  * (or at the datastream's observed area if the thing has no location).
  */
@@ -87,7 +93,7 @@ export function createDatastreamFeature(
         thingId: datastream.Thing?.["@iot.id"] === undefined ? undefined : String(datastream.Thing["@iot.id"]),
         position: pointPosition(geometry)
     };
-    const feature = new Feature<Geometry>({ geometry: olGeometry, ...properties });
+    const feature = new Feature<Geometry>({ geometry: olGeometry, [DATASTREAM_PROPERTY]: properties });
     feature.setId(String(datastream["@iot.id"]));
     return feature;
 }
@@ -120,24 +126,11 @@ export function displayUnit(symbol: string | undefined): string | undefined {
 }
 
 /**
- * Returns the datastream properties of a feature created by {@link createDatastreamFeature}.
+ * Returns the datastream properties of a feature created by {@link createDatastreamFeature},
+ * or `undefined` for other features (e.g. of other layers at a map click).
  */
 export function getDatastreamProperties(feature: FeatureLike): StaDatastreamProperties | undefined {
-    const properties = feature.getProperties();
-    if (typeof properties.observationsUrl !== "string") {
-        return undefined;
-    }
-    return {
-        dataLayerId: properties.dataLayerId,
-        datastreamUrl: properties.datastreamUrl,
-        observationsUrl: properties.observationsUrl,
-        name: properties.name,
-        unit: properties.unit,
-        observedProperty: properties.observedProperty,
-        thing: properties.thing,
-        thingId: properties.thingId,
-        position: properties.position
-    };
+    return feature.get(DATASTREAM_PROPERTY) as StaDatastreamProperties | undefined;
 }
 
 /** A single observation, `time` in milliseconds since epoch. */
