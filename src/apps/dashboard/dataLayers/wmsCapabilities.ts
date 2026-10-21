@@ -206,7 +206,6 @@ async function loadCapabilities(endpoint: string): Promise<WmsCapabilities> {
 }
 
 const cache = new Map<string, Promise<WmsCapabilities>>();
-
 const loaded = new Map<string, WmsCapabilities>();
 
 /**
