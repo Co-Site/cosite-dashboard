@@ -62,15 +62,18 @@ export async function queryWmsFeatureInfo(
     const projection = view.getProjection();
     const results = await Promise.all(
         layers.map(async (layer): Promise<FeatureInfoResult | undefined> => {
+            const config = getDataLayerConfig(layer);
+            if (config?.type !== "wms") {
+                return undefined;
+            }
+            const format = await getFeatureInfoFormat(config);
+            if (!format) {
+                return undefined;
+            }
             const result: FeatureInfoResult = {
                 layerId: layer.id,
                 features: []
             };
-            const config = getDataLayerConfig(layer);
-            const format = config?.type === "wms" ? await getFeatureInfoFormat(config) : undefined;
-            if (!format) {
-                return undefined;
-            }
             const url = layer.olSource?.getFeatureInfoUrl(coordinate, resolution, projection, {
                 INFO_FORMAT: format,
                 FEATURE_COUNT: 10
@@ -89,7 +92,7 @@ export async function queryWmsFeatureInfo(
                         properties?: Record<string, unknown> | null;
                     }[];
                 };
-                const fields = config?.type === "wms" ? config.wms.featureInfo?.fields : undefined;
+                const fields = config.wms.featureInfo?.fields;
                 result.features = (json.features ?? []).map((feature, index) => ({
                     id: String(feature.id ?? index),
                     values: toValues(feature.properties ?? {}, fields)
