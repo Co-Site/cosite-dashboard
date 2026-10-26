@@ -69,13 +69,16 @@ function reportFailedImageRequests(layer: WMSLayer): void {
     });
 }
 
-/** Uses the titles (and the abstract) from the capabilities for a WMS layer without configured name. */
+/**
+ * Uses the titles from the capabilities for the sublayers and, if the layer has no configured name,
+ * for the layer itself (together with the abstract).
+ */
 function applyCapabilitiesTitles(layer: WMSLayer, config: WmsDataLayerConfig): void {
     fetchWmsCapabilities(config.endpoint)
         .then((capabilities) => {
             const find = (name: string | undefined) => capabilities.layers.find((l) => l.name === name);
             const [first] = config.wms.layers.map(find);
-            if (first && config.wms.layers.length === 1) {
+            if (config.name == null && first && config.wms.layers.length === 1) {
                 layer.setTitle(first.title);
                 if (config.description == null && first.abstract && first.abstract !== first.title) {
                     layer.setDescription(first.abstract);
@@ -110,7 +113,7 @@ function createWmsLayer(config: WmsDataLayerConfig, context: DataLayerContext): 
             attributions: config.attribution ?? []
         }
     });
-    if (config.name == null) {
+    if (config.name == null || config.wms.layers.length > 1) {
         applyCapabilitiesTitles(layer, config);
     }
     reportFailedImageRequests(layer);
