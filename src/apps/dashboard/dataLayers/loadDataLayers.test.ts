@@ -20,42 +20,42 @@ describe("parseDataLayers", () => {
                 "group",
                 [
                     ["dwd-icon-t2m", "wms"],
-                    ["dwd-radolan-rw", "wms"]
-                ]
-            ],
-            [
-                "leverkusen",
-                "group",
-                [
+                    ["dwd-radolan-rw", "wms"],
                     [
-                        "lev-stadtklima",
+                        "leverkusen",
                         "group",
                         [
-                            ["lev-heisse-tage", "wms"],
-                            ["lev-sommertage", "wms"],
-                            ["lev-tropennaechte", "wms"]
+                            [
+                                "lev-stadtklima",
+                                "group",
+                                [
+                                    ["lev-heisse-tage", "wms"],
+                                    ["lev-sommertage", "wms"],
+                                    ["lev-tropennaechte", "wms"]
+                                ]
+                            ],
+                            [
+                                "lev-hochwasser",
+                                "group",
+                                [
+                                    ["lev-hochwasser-dhuenn", "wms"],
+                                    ["lev-hochwasser-mutzbach", "wms"],
+                                    ["lev-hochwasser-rhein", "wms"],
+                                    ["lev-hochwasser-wiembach", "wms"]
+                                ]
+                            ],
+                            [
+                                "lev-starkregen",
+                                "group",
+                                [
+                                    ["lev-starkregen-t50", "wms"],
+                                    ["lev-starkregen-t100", "wms"],
+                                    ["lev-starkregen-hn90", "wms"]
+                                ]
+                            ],
+                            ["lev-grundwassernutzungsverbot", "wms"]
                         ]
-                    ],
-                    [
-                        "lev-hochwasser",
-                        "group",
-                        [
-                            ["lev-hochwasser-dhuenn", "wms"],
-                            ["lev-hochwasser-mutzbach", "wms"],
-                            ["lev-hochwasser-rhein", "wms"],
-                            ["lev-hochwasser-wiembach", "wms"]
-                        ]
-                    ],
-                    [
-                        "lev-starkregen",
-                        "group",
-                        [
-                            ["lev-starkregen-t50", "wms"],
-                            ["lev-starkregen-t100", "wms"],
-                            ["lev-starkregen-hn90", "wms"]
-                        ]
-                    ],
-                    ["lev-grundwassernutzungsverbot", "wms"]
+                    ]
                 ]
             ],
             [
