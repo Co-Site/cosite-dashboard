@@ -136,4 +136,20 @@ describe("parseDataLayers", () => {
         });
         expect(summarize(layers)).toEqual([["outer", "group", [["inner", "group", [["a", "sta-datastream"]]]]]]);
     });
+
+    it("resolves relative endpoints against the URL of the app", () => {
+        const layers = parseDataLayers(
+            {
+                layers: [
+                    { id: "rel", type: "wms", endpoint: "./proxy/wms", wms: { layers: ["a"] } },
+                    { id: "abs", type: "wms", endpoint: "https://example.com/wms", wms: { layers: ["a"] } }
+                ]
+            },
+            "https://host/dashboard/index.html"
+        );
+        expect(layers.map((layer) => layer.type !== "group" && layer.endpoint)).toEqual([
+            "https://host/dashboard/proxy/wms",
+            "https://example.com/wms"
+        ]);
+    });
 });
