@@ -176,7 +176,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
 „Sensoren (STA)“).
 
 - **Entscheidung:** Ein Eintrag mit `"type": "group"` hat eine eigene `layers`-Liste und darf verschachtelt werden.
-  Daraus wird ein `GroupLayer`, im TOC mit `collapsibleGroups` einklappbar und als Ganzes schaltbar.
+  Daraus wird ein `GroupLayer`, im TOC mit `collapsibleGroups` einklappbar (beim Start zugeklappt, `initiallyCollapsed`) und als Ganzes schaltbar.
 - **Warum so:** Kategorien sind damit derselbe Mechanismus wie Layer (gleiche Felder, gleicher Parser), statt einer
   zweiten Struktur daneben.
 - **Zu wissen:** Die Reihenfolge in der Datei ist die Zeichenreihenfolge: spätere Einträge liegen auf der Karte oben und
