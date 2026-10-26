@@ -7,6 +7,18 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, UserConfig } from "vite";
 import { dependencySourcemaps } from "./support/vite/dependency-sourcemaps.ts";
 
+/**
+ * Services without CORS headers are requested through the server that serves the dashboard
+ * (same origin). In production, the web server provides the same paths (see docs/DashboardWiring.md).
+ */
+const SERVICE_PROXIES = {
+    "/proxy/leverkusen": {
+        target: "https://geoportal.leverkusen.de",
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/proxy\/leverkusen/, "")
+    }
+};
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
     const devMode = mode === "development";
@@ -101,6 +113,10 @@ export default defineConfig(({ mode }) => {
             // in dev mode press "r" to trigger reload and make changes active
             // See also: https://vitejs.dev/config/server-options.html#server-hmr
             // hmr: false
+            proxy: SERVICE_PROXIES
+        },
+        preview: {
+            proxy: SERVICE_PROXIES
         }
     } satisfies UserConfig;
 });
