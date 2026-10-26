@@ -571,3 +571,37 @@ wenig Eingaben (höchstens ein Titel, nicht mehrere Textfelder).
           scheitern (`reportFailedImageRequests` in `createDataLayer.ts`).
 - **Offen:** siehe Abschnitt 15 (GML-FeatureInfo, Styles, Zeitdimension, Zoom auf den Layer).
 - **Commits:** `fd05554`, `2b15b8b`, `ac864aa`, `ba0a99a`, `d5ca6bb`; Rückmeldung: `20f6df2`, `ba62eac`
+
+## 18. Geoportal Leverkusen (Proxy)
+
+🟡 **Was:** Kundenwunsch: die wichtigsten Layer aus dem Geoportal Leverkusen (Thema „Natur, Umwelt und Mobilität“)
+standardmäßig sichtbar: Stadtklimaprojektionen, Hochwasser, Starkregen, Grundwassernutzungsverbot.
+
+- **Dienst:** `https://geoportal.leverkusen.de/GCGisService` (GC OSIRIS auf GeoServer, WMS 1.1.1/1.3.0, öffentlich,
+  EPSG:3857, GetFeatureInfo als `application/json`). Gefunden über die Netzwerk-Requests des Geoportals; die
+  Themen-Links auf leverkusen.de/service/geoportal enthalten die Layernamen.
+- **Namensabgleich** (Capabilities vom 2026-10-26):
+    - Stadtklima: `LEV:Heisse_Tage_…`, `LEV:Sommertage_…`, `LEV:Tropennaechte_…` je für `1971_bis_2000`,
+      `2031_bis_2060`, `2071_bis_2100`. Alle drei Zeiträume aufgenommen, je Indikator ein Eintrag mit drei Unterlayern.
+    - Hochwasser: `LEV:hw_<gewässer>_<ueg|gg>_hq_<10|100|extrem>` (`ueg` Überschwemmungsgebiet, `gg` geschütztes
+      Gebiet, `hq_10` = „HQ häufig“). Je Gewässer (Dhünn, Mutzbach, Rhein, Wiembach) ein Eintrag mit allen vorhandenen
+      Kombinationen. Die Wupper gibt es auch, sie stand nicht auf der Kundenliste und fehlt bewusst.
+    - Starkregen: `LEV:Starkregen_T50`, `LEV:Starkregen_T100`, `LEV:Starkregen_hN90mm` (Blockregen 90 mm, das „sehr
+      seltene Ereignis“).
+    - Grundwasser: `LEV:Grundwassernutzungsverbot GL` (diesen nutzt das Geoportal).
+- **Kein CORS:** Der Dienst sendet keinen `Access-Control-Allow-Origin` (DWD sendet `*`). `@open-pioneer/map` lädt
+  Bilder und Capabilities per `fetch`, also blieben die Layer leer, lokal wie produktiv.
+- **Entscheidung: Proxy auf dem eigenen Server.** Verworfen:
+    - Bilder per `<img>` laden: ginge ohne CORS, aber ohne Capabilities, FeatureInfo und Legende (die Legende steht nur
+      im FeatureInfo-Popup), Unterlayer nur mit technischen Namen, Canvas „tainted“.
+    - Stadt um CORS bitten: richtig, aber Zeitpunkt offen. Setzt die Stadt den Header, kann der Proxy entfallen
+      (Endpoint wieder absolut).
+- **Umsetzung:** Relative Endpoints werden gegen die App-URL aufgelöst, Vite leitet `/proxy/leverkusen/` weiter,
+  produktiv braucht nginx denselben Pfad (Beispiel in `DashboardWiring.md`). Mehrere Layer pro Eintrag (ein GetMap
+  statt 31), die Unterlayer-Titel kommen aus den Capabilities.
+- **Stolpersteine:**
+    - GetLegendGraphic der Stadtklima-Layer antwortet mit einer `NullPointerException`; die `*_dummy`-Layer, die das
+      Geoportal dafür nutzt, liefern leere Bilder. Legende für Stadtklima deshalb aus.
+    - Die drei Zeiträume eines Indikators decken jeweils die ganze Stadt ab. Sind alle sichtbar, sieht man nur den
+      obersten (2071–2100). Noch offen.
+- **Commits:** `a32bf8e`, `2e4777f`, `2bf530b`, `1d735c6`

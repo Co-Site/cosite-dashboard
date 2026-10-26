@@ -21,6 +21,8 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
     - `sites: [...]` → weitere Ordner mit eigener `index.html` (z. B. `"sites/foo"`).
     - `apps: [...]` → Apps, die zusätzlich als eigenständige `.js`-Dateien (Embedding) ausgeliefert werden.
 - Eine Site lädt eine App per `<script type="module" src="./apps/<app>/app.ts">` und enthält das Custom Element (z. B. `<dashboard-app>`).
+- `server.proxy` und `preview.proxy` (`SERVICE_PROXIES`): leiten `/proxy/leverkusen/…` an `https://geoportal.leverkusen.de/…`
+  weiter, siehe [Proxy für Dienste ohne CORS](#proxy-für-dienste-ohne-cors).
 
 ## App-Aufbau (`src/apps/dashboard`)
 
@@ -87,7 +89,7 @@ und stehen im TOC weiter oben.
 | `visible`                 | nein        | Initial sichtbar (Default `true`)                                               |
 | `opacity`                 | nein        | Deckkraft 0–1 (Default `1`)                                                     |
 | `layers`                  | bei `group` | Enthaltene Layer und Kategorien                                                 |
-| `endpoint`                | bei Layern  | URL des Dienstes (WMS-Basis-URL bzw. URL des SensorThings-Datastreams)          |
+| `endpoint`                | bei Layern  | URL des Dienstes (WMS-Basis-URL bzw. URL des SensorThings-Datastreams)²         |
 | `attribution`             | nein        | Quellenangabe auf der Karte                                                     |
 | `wms.layers`              | bei `wms`   | Liste der WMS-Layernamen aus den Capabilities                                   |
 | `wms.featureInfo.enabled` | nein        | GetFeatureInfo beim Kartenklick (Default `true`)                                |
@@ -100,6 +102,10 @@ und stehen im TOC weiter oben.
 ¹ Bei `wms` optional: Ohne `name` zeigt das TOC den Titel aus den Capabilities (Sprache des Dienstes, meist Deutsch),
 bis dahin den Layernamen. Ohne `description` wird der Abstract übernommen, wenn er sich vom Titel unterscheidet.
 Dafür lädt die App die Capabilities selbst (`dataLayers/wmsCapabilities.ts`, ohne `LANGUAGE`, einmal pro Dienst).
+Hat ein WMS-Eintrag mehrere `wms.layers`, bekommen die Unterlayer ihre Titel immer aus den Capabilities.
+
+² Relative URLs (z. B. `./proxy/leverkusen/GCGisService`) löst `parseDataLayers` gegen die URL der App auf. So
+funktioniert derselbe Eintrag lokal und auf dem Server, siehe [Proxy für Dienste ohne CORS](#proxy-für-dienste-ohne-cors).
 
 **FeatureInfo-Format:** Die App liest nur GeoJSON. Ohne `format` wählt sie aus den Capabilities `application/json`
 (GeoServer), sonst `application/geo+json` (ArcGIS, MapServer). Bietet der Dienst beides nicht an oder ist der Layer
@@ -253,6 +259,31 @@ Layer steht oben. Ohne eigene Layer verschwindet die Gruppe. Die UI erreicht die
 Für temporäre Layer lädt `WMSLayer` keine Capabilities (`fetchCapabilities: false`), die App hat sie schon. Die
 Legende kommt dann aus der `LegendURL` der Capabilities, sonst per GetLegendGraphic. Legendenbilder, die nicht laden,
 werden ausgeblendet.
+
+## Proxy für Dienste ohne CORS
+
+Der Browser gibt einem Skript die Antwort eines fremden Servers nur, wenn dieser `Access-Control-Allow-Origin`
+sendet. `@open-pioneer/map` lädt WMS-Bilder und Capabilities per `fetch`, die App ebenso FeatureInfo. Ohne den Header
+bleibt der Layer leer. Für solche Dienste fragt der Browser beim Server des Dashboards an (gleiche Herkunft, keine
+CORS-Prüfung), der die Anfrage an den Dienst weiterleitet.
+
+- **Konfiguration:** `endpoint` relativ zur App, z. B. `./proxy/leverkusen/GCGisService`.
+- **Lokal:** `pnpm dev` und `pnpm preview` leiten `/proxy/leverkusen/` per Vite weiter (`SERVICE_PROXIES` in
+  `vite.config.ts`).
+- **Produktiv:** Der Webserver, der das Dashboard ausliefert, braucht denselben Pfad relativ zur App. Beispiel für
+  nginx, wenn das Dashboard unter `/dashboard/` liegt:
+
+```nginx
+location /dashboard/proxy/leverkusen/ {
+    proxy_pass https://geoportal.leverkusen.de/;
+    proxy_ssl_server_name on;
+}
+```
+
+- Das Ziel steht fest in der Konfiguration. Nie die Ziel-URL aus der Anfrage übernehmen, sonst ist es ein offener
+  Proxy.
+- Liegt vor dem nginx noch ein Load Balancer oder Ingress, muss er den Pfad durchlassen.
+- Eigene WMS (temporär) gehen nicht über den Proxy, Dienste ohne CORS lassen sich dort weiterhin nicht hinzufügen.
 
 ## Sprache (i18n)
 
