@@ -114,7 +114,7 @@ function validateEntry(entry: unknown): string | undefined {
     }
 }
 
-function parseNodes(entries: unknown[], path: string, ids: Set<string>): DataLayerNode[] {
+function parseNodes(entries: unknown[], path: string, ids: Set<string>, baseUrl: string): DataLayerNode[] {
     const result: DataLayerNode[] = [];
     entries.forEach((entry, index) => {
         const entryPath = `${path}[${index}]`;
@@ -130,10 +130,11 @@ function parseNodes(entries: unknown[], path: string, ids: Set<string>): DataLay
         }
         ids.add(node.id);
         if (node.type === "group") {
-            const layers = parseNodes(node.layers, `${entryPath}.layers`, ids);
+            const layers = parseNodes(node.layers, `${entryPath}.layers`, ids, baseUrl);
             result.push({ ...node, layers });
         } else {
-            result.push(node);
+            // Relative endpoints (e.g. `./proxy/...`) point to the server that serves the app.
+            result.push({ ...node, endpoint: new URL(node.endpoint, baseUrl).href });
         }
     });
     return result;
@@ -144,12 +145,13 @@ function parseNodes(entries: unknown[], path: string, ids: Set<string>): DataLay
  *
  * Invalid entries are skipped with a warning so that a single broken entry
  * does not prevent the remaining layers from being shown.
+ * Relative endpoints are resolved against `baseUrl` (default: the URL of the app).
  */
-export function parseDataLayers(json: unknown): DataLayerNode[] {
+export function parseDataLayers(json: unknown, baseUrl = document.baseURI): DataLayerNode[] {
     if (!isObject(json) || !Array.isArray(json.layers)) {
         throw new Error("Invalid data layer configuration: expected an object with a 'layers' array.");
     }
-    return parseNodes(json.layers, "layers", new Set());
+    return parseNodes(json.layers, "layers", new Set(), baseUrl);
 }
 
 /**

@@ -97,7 +97,7 @@ export function TocPanel() {
                 >
                     <AddWmsLayer />
                     <Box css={INFO_ICON_CSS}>
-                        <Toc collapsibleGroups onReady={connectToc} onDisposed={disconnectToc} />
+                        <Toc collapsibleGroups initiallyCollapsed onReady={connectToc} onDisposed={disconnectToc} />
                     </Box>
                     <TocItemExtensions api={tocApi} render={layerItemContent} />
                 </TitledSection>

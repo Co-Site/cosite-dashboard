@@ -107,6 +107,347 @@
                             }
                         }
                     }
+                },
+                {
+                    "id": "leverkusen",
+                    "type": "group",
+                    "name": {
+                        "de": "Geoportal Leverkusen",
+                        "en": "Geoportal Leverkusen"
+                    },
+                    "description": {
+                        "de": "Karten aus dem Geoportal der Stadt Leverkusen (Natur, Umwelt und Mobilität).",
+                        "en": "Maps from the geoportal of the city of Leverkusen (nature, environment and mobility)."
+                    },
+                    "layers": [
+                        {
+                            "id": "lev-stadtklima",
+                            "type": "group",
+                            "name": {
+                                "de": "Stadtklimaprojektionen",
+                                "en": "Urban climate projections"
+                            },
+                            "description": {
+                                "de": "Heiße Tage, Sommertage und Tropennächte für 1971–2000, 2031–2060 und 2071–2100.",
+                                "en": "Hot days, summer days and tropical nights for 1971–2000, 2031–2060 and 2071–2100."
+                            },
+                            "layers": [
+                                {
+                                    "id": "lev-heisse-tage",
+                                    "type": "wms",
+                                    "name": {
+                                        "de": "Heiße Tage",
+                                        "en": "Hot days"
+                                    },
+                                    "description": {
+                                        "de": "Stadtklimaprojektion der Stadt Leverkusen: Anzahl Tage mit einer Höchsttemperatur von mindestens 30 °C pro Jahr, für 1971–2000, 2031–2060 und 2071–2100.",
+                                        "en": "Urban climate projection of the city of Leverkusen: number of days with a maximum temperature of at least 30 °C per year, for 1971–2000, 2031–2060 and 2071–2100."
+                                    },
+                                    "endpoint": "./proxy/leverkusen/GCGisService",
+                                    "visible": true,
+                                    "opacity": 0.6,
+                                    "attribution": "© Stadt Leverkusen",
+                                    "wms": {
+                                        "layers": [
+                                            "LEV:Heisse_Tage_1971_bis_2000",
+                                            "LEV:Heisse_Tage_2031_bis_2060",
+                                            "LEV:Heisse_Tage_2071_bis_2100"
+                                        ],
+                                        "featureInfo": {
+                                            "format": "application/json"
+                                        },
+                                        "legend": {
+                                            "enabled": false
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "lev-sommertage",
+                                    "type": "wms",
+                                    "name": {
+                                        "de": "Sommertage",
+                                        "en": "Summer days"
+                                    },
+                                    "description": {
+                                        "de": "Stadtklimaprojektion der Stadt Leverkusen: Anzahl Tage mit einer Höchsttemperatur von mindestens 25 °C pro Jahr, für 1971–2000, 2031–2060 und 2071–2100.",
+                                        "en": "Urban climate projection of the city of Leverkusen: number of days with a maximum temperature of at least 25 °C per year, for 1971–2000, 2031–2060 and 2071–2100."
+                                    },
+                                    "endpoint": "./proxy/leverkusen/GCGisService",
+                                    "visible": true,
+                                    "opacity": 0.6,
+                                    "attribution": "© Stadt Leverkusen",
+                                    "wms": {
+                                        "layers": [
+                                            "LEV:Sommertage_1971_bis_2000",
+                                            "LEV:Sommertage_2031_bis_2060",
+                                            "LEV:Sommertage_2071_bis_2100"
+                                        ],
+                                        "featureInfo": {
+                                            "format": "application/json"
+                                        },
+                                        "legend": {
+                                            "enabled": false
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "lev-tropennaechte",
+                                    "type": "wms",
+                                    "name": {
+                                        "de": "Tropennächte",
+                                        "en": "Tropical nights"
+                                    },
+                                    "description": {
+                                        "de": "Stadtklimaprojektion der Stadt Leverkusen: Anzahl Nächte, in denen die Temperatur nicht unter 20 °C fällt pro Jahr, für 1971–2000, 2031–2060 und 2071–2100.",
+                                        "en": "Urban climate projection of the city of Leverkusen: number of nights in which the temperature does not drop below 20 °C per year, for 1971–2000, 2031–2060 and 2071–2100."
+                                    },
+                                    "endpoint": "./proxy/leverkusen/GCGisService",
+                                    "visible": true,
+                                    "opacity": 0.6,
+                                    "attribution": "© Stadt Leverkusen",
+                                    "wms": {
+                                        "layers": [
+                                            "LEV:Tropennaechte_1971_bis_2000",
+                                            "LEV:Tropennaechte_2031_bis_2060",
+                                            "LEV:Tropennaechte_2071_bis_2100"
+                                        ],
+                                        "featureInfo": {
+                                            "format": "application/json"
+                                        },
+                                        "legend": {
+                                            "enabled": false
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": "lev-hochwasser",
+                            "type": "group",
+                            "name": {
+                                "de": "Hochwasser",
+                                "en": "Floods"
+                            },
+                            "description": {
+                                "de": "Hochwassergefahrenkarten für Dhünn, Mutzbach, Rhein und Wiembach.",
+                                "en": "Flood hazard maps for the Dhünn, Mutzbach, Rhine and Wiembach."
+                            },
+                            "layers": [
+                                {
+                                    "id": "lev-hochwasser-dhuenn",
+                                    "type": "wms",
+                                    "name": {
+                                        "de": "Hochwasser Dhünn",
+                                        "en": "Floods Dhünn"
+                                    },
+                                    "description": {
+                                        "de": "Hochwassergefahrenkarte Dhünn: Überschwemmungsgebiete und geschützte Gebiete bei häufigem, 100-jährlichem und extremem Hochwasser (HQ häufig, HQ100, HQ extrem).",
+                                        "en": "Flood hazard map Dhünn: flooded and protected areas for frequent, 100-year and extreme floods (HQ frequent, HQ100, HQ extreme)."
+                                    },
+                                    "endpoint": "./proxy/leverkusen/GCGisService",
+                                    "visible": true,
+                                    "opacity": 0.6,
+                                    "attribution": "© Stadt Leverkusen",
+                                    "wms": {
+                                        "layers": [
+                                            "LEV:hw_dhuenn_ueg_hq_extrem",
+                                            "LEV:hw_dhuenn_ueg_hq_100",
+                                            "LEV:hw_dhuenn_ueg_hq_10",
+                                            "LEV:hw_dhuenn_gg_hq_extrem",
+                                            "LEV:hw_dhuenn_gg_hq_100",
+                                            "LEV:hw_dhuenn_gg_hq_10"
+                                        ],
+                                        "featureInfo": {
+                                            "format": "application/json"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "lev-hochwasser-mutzbach",
+                                    "type": "wms",
+                                    "name": {
+                                        "de": "Hochwasser Mutzbach",
+                                        "en": "Floods Mutzbach"
+                                    },
+                                    "description": {
+                                        "de": "Hochwassergefahrenkarte Mutzbach: Überschwemmungsgebiete und geschützte Gebiete bei häufigem, 100-jährlichem und extremem Hochwasser (HQ häufig, HQ100, HQ extrem).",
+                                        "en": "Flood hazard map Mutzbach: flooded and protected areas for frequent, 100-year and extreme floods (HQ frequent, HQ100, HQ extreme)."
+                                    },
+                                    "endpoint": "./proxy/leverkusen/GCGisService",
+                                    "visible": true,
+                                    "opacity": 0.6,
+                                    "attribution": "© Stadt Leverkusen",
+                                    "wms": {
+                                        "layers": [
+                                            "LEV:hw_mutzbach_ueg_hq_extrem",
+                                            "LEV:hw_mutzbach_ueg_hq_100",
+                                            "LEV:hw_mutzbach_ueg_hq_10",
+                                            "LEV:hw_mutzbach_gg_hq_10"
+                                        ],
+                                        "featureInfo": {
+                                            "format": "application/json"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "lev-hochwasser-rhein",
+                                    "type": "wms",
+                                    "name": {
+                                        "de": "Hochwasser Rhein",
+                                        "en": "Floods Rhein"
+                                    },
+                                    "description": {
+                                        "de": "Hochwassergefahrenkarte Rhein: Überschwemmungsgebiete und geschützte Gebiete bei häufigem, 100-jährlichem und extremem Hochwasser (HQ häufig, HQ100, HQ extrem).",
+                                        "en": "Flood hazard map Rhein: flooded and protected areas for frequent, 100-year and extreme floods (HQ frequent, HQ100, HQ extreme)."
+                                    },
+                                    "endpoint": "./proxy/leverkusen/GCGisService",
+                                    "visible": true,
+                                    "opacity": 0.6,
+                                    "attribution": "© Stadt Leverkusen",
+                                    "wms": {
+                                        "layers": [
+                                            "LEV:hw_rhein_ueg_hq_extrem",
+                                            "LEV:hw_rhein_ueg_hq_100",
+                                            "LEV:hw_rhein_ueg_hq_10",
+                                            "LEV:hw_rhein_gg_hq_100",
+                                            "LEV:hw_rhein_gg_hq_10"
+                                        ],
+                                        "featureInfo": {
+                                            "format": "application/json"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "lev-hochwasser-wiembach",
+                                    "type": "wms",
+                                    "name": {
+                                        "de": "Hochwasser Wiembach",
+                                        "en": "Floods Wiembach"
+                                    },
+                                    "description": {
+                                        "de": "Hochwassergefahrenkarte Wiembach: Überschwemmungsgebiete und geschützte Gebiete bei häufigem, 100-jährlichem und extremem Hochwasser (HQ häufig, HQ100, HQ extrem).",
+                                        "en": "Flood hazard map Wiembach: flooded and protected areas for frequent, 100-year and extreme floods (HQ frequent, HQ100, HQ extreme)."
+                                    },
+                                    "endpoint": "./proxy/leverkusen/GCGisService",
+                                    "visible": true,
+                                    "opacity": 0.6,
+                                    "attribution": "© Stadt Leverkusen",
+                                    "wms": {
+                                        "layers": [
+                                            "LEV:hw_wiembach_ueg_hq_extrem",
+                                            "LEV:hw_wiembach_ueg_hq_100",
+                                            "LEV:hw_wiembach_ueg_hq_10"
+                                        ],
+                                        "featureInfo": {
+                                            "format": "application/json"
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": "lev-starkregen",
+                            "type": "group",
+                            "name": {
+                                "de": "Starkregen",
+                                "en": "Heavy rain"
+                            },
+                            "description": {
+                                "de": "Starkregengefahrenkarten für drei Starkregenereignisse.",
+                                "en": "Heavy rain hazard maps for three heavy rain events."
+                            },
+                            "layers": [
+                                {
+                                    "id": "lev-starkregen-t50",
+                                    "type": "wms",
+                                    "name": {
+                                        "de": "Starkregen 50-jährliches Ereignis",
+                                        "en": "Heavy rain 50-year event"
+                                    },
+                                    "description": {
+                                        "de": "Starkregengefahrenkarte: simulierte Überflutung bei einem Starkregen, der statistisch einmal in 50 Jahren auftritt.",
+                                        "en": "Heavy rain hazard map: simulated flooding for heavy rain that statistically occurs once in 50 years."
+                                    },
+                                    "endpoint": "./proxy/leverkusen/GCGisService",
+                                    "visible": true,
+                                    "opacity": 0.7,
+                                    "attribution": "© Stadt Leverkusen",
+                                    "wms": {
+                                        "layers": ["LEV:Starkregen_T50"],
+                                        "featureInfo": {
+                                            "format": "application/json"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "lev-starkregen-t100",
+                                    "type": "wms",
+                                    "name": {
+                                        "de": "Starkregen 100-jährliches Ereignis",
+                                        "en": "Heavy rain 100-year event"
+                                    },
+                                    "description": {
+                                        "de": "Starkregengefahrenkarte: simulierte Überflutung bei einem Starkregen, der statistisch einmal in 100 Jahren auftritt.",
+                                        "en": "Heavy rain hazard map: simulated flooding for heavy rain that statistically occurs once in 100 years."
+                                    },
+                                    "endpoint": "./proxy/leverkusen/GCGisService",
+                                    "visible": true,
+                                    "opacity": 0.7,
+                                    "attribution": "© Stadt Leverkusen",
+                                    "wms": {
+                                        "layers": ["LEV:Starkregen_T100"],
+                                        "featureInfo": {
+                                            "format": "application/json"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "lev-starkregen-hn90",
+                                    "type": "wms",
+                                    "name": {
+                                        "de": "Starkregen sehr seltenes Ereignis (90 mm)",
+                                        "en": "Heavy rain very rare event (90 mm)"
+                                    },
+                                    "description": {
+                                        "de": "Starkregengefahrenkarte: simulierte Überflutung bei einem sehr seltenen Ereignis (Blockregen mit 90 mm Niederschlag).",
+                                        "en": "Heavy rain hazard map: simulated flooding for a very rare event (block rain with 90 mm of precipitation)."
+                                    },
+                                    "endpoint": "./proxy/leverkusen/GCGisService",
+                                    "visible": true,
+                                    "opacity": 0.7,
+                                    "attribution": "© Stadt Leverkusen",
+                                    "wms": {
+                                        "layers": ["LEV:Starkregen_hN90mm"],
+                                        "featureInfo": {
+                                            "format": "application/json"
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": "lev-grundwassernutzungsverbot",
+                            "type": "wms",
+                            "name": {
+                                "de": "Grundwassernutzungsverbot",
+                                "en": "Groundwater use ban"
+                            },
+                            "description": {
+                                "de": "Gebiete in Leverkusen, in denen die Nutzung von Grundwasser verboten ist.",
+                                "en": "Areas in Leverkusen where the use of groundwater is prohibited."
+                            },
+                            "endpoint": "./proxy/leverkusen/GCGisService",
+                            "visible": true,
+                            "opacity": 0.6,
+                            "attribution": "© Stadt Leverkusen",
+                            "wms": {
+                                "layers": ["LEV:Grundwassernutzungsverbot GL"],
+                                "featureInfo": {
+                                    "format": "application/json"
+                                }
+                            }
+                        }
+                    ]
                 }
             ]
         },

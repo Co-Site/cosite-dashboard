@@ -23,7 +23,10 @@ export interface DataLayerNodeBase {
 
 /** Properties shared by all data layer types. */
 export interface DataLayerConfigBase extends DataLayerNodeBase {
-    /** Service endpoint (base URL of the service or resource). */
+    /**
+     * Service endpoint (base URL of the service or resource).
+     * A relative URL (e.g. `./proxy/leverkusen/GCGisService`) is resolved against the URL of the app.
+     */
     endpoint: string;
 
     /** Attribution text shown on the map. */
