@@ -20,7 +20,42 @@ describe("parseDataLayers", () => {
                 "group",
                 [
                     ["dwd-icon-t2m", "wms"],
-                    ["dwd-radolan-rw", "wms"]
+                    ["dwd-radolan-rw", "wms"],
+                    [
+                        "leverkusen",
+                        "group",
+                        [
+                            [
+                                "lev-stadtklima",
+                                "group",
+                                [
+                                    ["lev-heisse-tage", "wms"],
+                                    ["lev-sommertage", "wms"],
+                                    ["lev-tropennaechte", "wms"]
+                                ]
+                            ],
+                            [
+                                "lev-hochwasser",
+                                "group",
+                                [
+                                    ["lev-hochwasser-dhuenn", "wms"],
+                                    ["lev-hochwasser-mutzbach", "wms"],
+                                    ["lev-hochwasser-rhein", "wms"],
+                                    ["lev-hochwasser-wiembach", "wms"]
+                                ]
+                            ],
+                            [
+                                "lev-starkregen",
+                                "group",
+                                [
+                                    ["lev-starkregen-t50", "wms"],
+                                    ["lev-starkregen-t100", "wms"],
+                                    ["lev-starkregen-hn90", "wms"]
+                                ]
+                            ],
+                            ["lev-grundwassernutzungsverbot", "wms"]
+                        ]
+                    ]
                 ]
             ],
             [
@@ -135,5 +170,21 @@ describe("parseDataLayers", () => {
             ]
         });
         expect(summarize(layers)).toEqual([["outer", "group", [["inner", "group", [["a", "sta-datastream"]]]]]]);
+    });
+
+    it("resolves relative endpoints against the URL of the app", () => {
+        const layers = parseDataLayers(
+            {
+                layers: [
+                    { id: "rel", type: "wms", endpoint: "./proxy/wms", wms: { layers: ["a"] } },
+                    { id: "abs", type: "wms", endpoint: "https://example.com/wms", wms: { layers: ["a"] } }
+                ]
+            },
+            "https://host/dashboard/index.html"
+        );
+        expect(layers.map((layer) => layer.type !== "group" && layer.endpoint)).toEqual([
+            "https://host/dashboard/proxy/wms",
+            "https://example.com/wms"
+        ]);
     });
 });
