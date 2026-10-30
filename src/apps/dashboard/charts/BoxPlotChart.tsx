@@ -3,7 +3,7 @@ import { BoxAndWiskers, BoxPlotController, IBoxPlot } from "@sgratzl/chartjs-cha
 import { CategoryScale, Chart, ChartConfiguration, LinearScale, Tooltip } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback } from "react";
-import { Observation } from "../dataLayers/sta";
+import { Observation } from "../dataLayers/sta/sta";
 import { createValueFormatter, GRID_COLOR, SERIES_COLOR, SERIES_FILL, TEXT_SECONDARY, valueScale } from "./chartStyle";
 import { useChart } from "./useChart";
 

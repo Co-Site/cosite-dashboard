@@ -2,7 +2,7 @@ import { Box, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
 import { MapModel } from "@open-pioneer/map";
 import { PackageIntl } from "@open-pioneer/runtime";
 import { useIntl } from "open-pioneer:react-hooks";
-import { localize } from "../dataLayers/localizedText";
+import { localize } from "../dataLayers/config/localizedText";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { FeatureInfoResult, FeatureInfoValue } from "./featureInfo";
 import { PopupFrame } from "./PopupFrame";

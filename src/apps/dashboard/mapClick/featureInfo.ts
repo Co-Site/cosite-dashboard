@@ -1,9 +1,19 @@
-import { AnyLayer, MapModel, WMSLayer } from "@open-pioneer/map";
+import { AnyLayer, isLayer, Layer, MapModel, WMSLayer } from "@open-pioneer/map";
 import { Coordinate } from "ol/coordinate";
-import { getDataLayerConfig } from "../dataLayers/createDataLayer";
-import { LocalizedText } from "../dataLayers/localizedText";
-import { FeatureInfoField, WmsDataLayerConfig } from "../dataLayers/types";
-import { chooseFeatureInfoFormat, fetchWmsCapabilities } from "../dataLayers/wmsCapabilities";
+import Feature from "ol/Feature";
+import { Geometry } from "ol/geom";
+import BaseLayer from "ol/layer/Base";
+import { Pixel } from "ol/pixel";
+import { LocalizedText } from "../dataLayers/config/localizedText";
+import {
+    DataLayerNode,
+    FeatureInfoConfig,
+    FeatureInfoField,
+    WfsDataLayerConfig,
+    WmsDataLayerConfig
+} from "../dataLayers/config/types";
+import { getDataLayerConfig } from "../dataLayers/dataLayerBase";
+import { chooseFeatureInfoFormat, fetchWmsCapabilities } from "../dataLayers/ows/wmsCapabilities";
 
 export interface FeatureInfoValue {
     /** Name of the property in the response. */
@@ -18,7 +28,7 @@ export interface FeatureInfoFeature {
     values: FeatureInfoValue[];
 }
 
-/** Feature info of a single WMS layer at the clicked position. */
+/** Feature info of a single layer (WMS or WFS) at the clicked position. */
 export interface FeatureInfoResult {
     layerId: string;
 
@@ -39,19 +49,44 @@ function isEffectivelyVisible(layer: AnyLayer): boolean {
     return true;
 }
 
+function featureInfoConfig(config: DataLayerNode | undefined): FeatureInfoConfig | undefined {
+    switch (config?.type) {
+        case "wms":
+            return config.wms.featureInfo;
+        case "wfs":
+            return config.wfs.featureInfo;
+        default:
+            return undefined;
+    }
+}
+
+/** The visible layers of the given type whose features are shown on click, topmost first. */
+function getQueryableLayers(map: MapModel, type: "wms" | "wfs"): AnyLayer[] {
+    return map.layers
+        .getRecursiveLayers({ filter: "operational", sortByDisplayOrder: true })
+        .filter((layer) => isEffectivelyVisible(layer))
+        .filter((layer) => {
+            const config = getDataLayerConfig(layer);
+            return config?.type === type && featureInfoConfig(config)?.enabled !== false;
+        })
+        .reverse();
+}
+
 /**
  * Returns the visible WMS layers of the map that support GetFeatureInfo.
  */
 export function getQueryableWmsLayers(map: MapModel): WMSLayer[] {
-    return map.layers
-        .getRecursiveLayers({ filter: "operational", sortByDisplayOrder: true })
-        .filter((layer): layer is WMSLayer => layer instanceof WMSLayer)
-        .filter((layer) => isEffectivelyVisible(layer))
-        .filter((layer) => {
+    return getQueryableLayers(map, "wms").filter((layer): layer is WMSLayer => layer instanceof WMSLayer);
+}
+
+/** The visible WFS layers whose features are shown on click, with their config, by their OpenLayers layer. */
+function getQueryableWfsLayers(map: MapModel): Map<BaseLayer, { layer: Layer; config: WfsDataLayerConfig }> {
+    return new Map(
+        getQueryableLayers(map, "wfs").flatMap((layer) => {
             const config = getDataLayerConfig(layer);
-            return config?.type === "wms" && config.wms.featureInfo?.enabled !== false;
+            return isLayer(layer) && config?.type === "wfs" ? [[layer.olLayer, { layer, config }] as const] : [];
         })
-        .reverse(); // topmost layer first
+    );
 }
 
 function toValues(properties: Record<string, unknown>, fields: FeatureInfoField[] | undefined): FeatureInfoValue[] {
@@ -70,6 +105,65 @@ function toValues(properties: Record<string, unknown>, fields: FeatureInfoField[
             value: properties[field.property],
             unit: field.unit
         }));
+}
+
+/** GML properties that describe the feature itself, not its content. */
+const TECHNICAL_PROPERTIES = ["boundedBy"];
+
+/** The attributes of a WFS feature, without its geometry. */
+function featureProperties(feature: Feature): Record<string, unknown> {
+    const properties = { ...feature.getProperties() };
+    for (const key of [feature.getGeometryName(), ...TECHNICAL_PROPERTIES]) {
+        delete properties[key];
+    }
+    return properties;
+}
+
+/** Whether a feature of a WFS layer that shows its features on click is at the pixel. */
+export function hasWfsFeatureAt(map: MapModel, pixel: Pixel, hitTolerance: number): boolean {
+    const layers = getQueryableWfsLayers(map);
+    return map.olMap.hasFeatureAtPixel(pixel, { layerFilter: (l) => layers.has(l), hitTolerance });
+}
+
+/** The WFS features at a pixel: their attributes per layer (topmost first) and their geometries. */
+interface WfsFeatureHits {
+    results: FeatureInfoResult[];
+    geometries: Geometry[];
+}
+
+/**
+ * Collects the features of visible WFS layers at the pixel. Unlike WMS no request is needed, the features are
+ * already on the map.
+ */
+export function getWfsFeatureInfo(map: MapModel, pixel: Pixel, hitTolerance: number): WfsFeatureHits {
+    const layers = getQueryableWfsLayers(map);
+    const results = new Map<string, FeatureInfoResult>();
+    const geometries: Geometry[] = [];
+    map.olMap.forEachFeatureAtPixel(
+        pixel,
+        (feature, olLayer) => {
+            const hit = layers.get(olLayer);
+            if (!hit || !(feature instanceof Feature)) {
+                return;
+            }
+            const { layer, config } = hit;
+            let result = results.get(layer.id);
+            if (!result) {
+                result = { layerId: layer.id, features: [] };
+                results.set(layer.id, result);
+            }
+            result.features.push({
+                id: String(feature.getId() ?? result.features.length),
+                values: toValues(featureProperties(feature), config.wfs.featureInfo?.fields)
+            });
+            const geometry = feature.getGeometry();
+            if (geometry) {
+                geometries.push(geometry);
+            }
+        },
+        { layerFilter: (l) => layers.has(l), hitTolerance }
+    );
+    return { results: [...results.values()], geometries };
 }
 
 /**

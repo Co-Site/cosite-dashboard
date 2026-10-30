@@ -4,9 +4,9 @@ import { LocaleService, ServiceOptions } from "@open-pioneer/runtime";
 import TileLayer from "ol/layer/Tile";
 import { fromLonLat } from "ol/proj";
 import OSM from "ol/source/OSM";
+import { DATA_LAYERS_URL, loadDataLayers } from "./dataLayers/config/loadDataLayers";
+import { DataLayerNode } from "./dataLayers/config/types";
 import { createDataLayer } from "./dataLayers/createDataLayer";
-import { DATA_LAYERS_URL, loadDataLayers } from "./dataLayers/loadDataLayers";
-import { DataLayerNode } from "./dataLayers/types";
 
 const LOG = createLogger("dashboard:MainMapProvider");
 

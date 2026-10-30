@@ -40,6 +40,9 @@ Jedes Element folgt demselben Schema: **Was** · **Entscheidung** · **Warum** �
 | 14  | [Testen](#14-testen)                                                                | 🟢            |
 | 15  | [Offene Punkte](#15-offene-punkte-und-ideen)                                        |               |
 | 16  | [Branches und Arbeitsweise](#16-branches-und-arbeitsweise)                          |               |
+| 17  | [Eigene WMS-Layer (temporär)](#17-eigene-wms-layer-temporär)                        | 🔴            |
+| 18  | [Geoportal Leverkusen (Proxy)](#18-geoportal-leverkusen-proxy)                      | 🟡            |
+| 19  | [Eigene WFS-Layer](#19-eigene-wfs-layer)                                            | 🟡            |
 
 Alle Commits auf `dashboard` (2026-10-09, älteste zuerst):
 
@@ -215,7 +218,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - `degC` aus der STA wird als `°C` angezeigt.
     - Höchstens 20.000 Werte, danach Hinweis „gekürzt“.
     - Ungültiger Zeitraum (von ≥ bis) wird markiert, der letzte gültige bleibt aktiv.
-- **Abfrage der Messwerte** (`dataLayers/sta.ts`): Zeitraum und neuester Wert bauen ihre URL mit demselben Helfer
+- **Abfrage der Messwerte** (`dataLayers/sta/sta.ts`): Zeitraum und neuester Wert bauen ihre URL mit demselben Helfer
   (`observationsQueryUrl`) und laden Seiten mit `fetchObservationPage`. Sie unterscheiden sich nur in Richtung,
   Seitengröße und Zeitraum.
     - **Sortiert und gefiltert wird nach `phenomenonTime`**, dem Zeitpunkt der Messung. Eine Observation hat in der STA
@@ -240,11 +243,11 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - Sensorvergleich: zwei Hälften nebeneinander (schmal: untereinander), jede mit eigenem Dropdown.
     - Der Zeitfilter gilt für beide Tabs, damit der Vergleich denselben Zeitraum zeigt.
     - Vorauswahl: erster Sensor bzw. erster und zweiter Sensor. Ausgewählt wird über die Layer-ID, die Daten des
-      Datastreams kommen aus dem Feature des Layers (`dataLayers/useStaSensors.ts`).
+      Datastreams kommen aus dem Feature des Layers (`dataLayers/sta/useStaSensors.ts`).
     - Dropdown als natives `<select>` (`NativeSelect`), damit kein Popup im Shadow DOM positioniert werden muss.
     - Nur der aktive Tab lädt Messwerte (`lazyMount`, `unmountOnExit`).
-- **Sensor nicht verfügbar** (`createStaDatastreamLayer` in `dataLayers/createDataLayer.ts`, `useSensorLoadFailed` in
-  `dataLayers/useStaSensors.ts`): Statt eines endlosen Spinners steht im Panel in Rot „Sensor nicht verfügbar …“.
+- **Sensor nicht verfügbar** (`createStaDatastreamLayer` in `dataLayers/sta/staLayer.ts`, `useSensorLoadFailed` in
+  `dataLayers/sta/useStaSensors.ts`): Statt eines endlosen Spinners steht im Panel in Rot „Sensor nicht verfügbar …“.
   Das TOC markiert den Layer wie jeden anderen nicht verfügbaren Layer.
     - **Auslöser:** Das Laden des Datastreams scheitert, dauert länger als 30 s (`DATASTREAM_TIMEOUT_MS`), der
       Datastream hat keinen Standort, oder der `healthCheck` des Endpoints schlägt fehl.
@@ -256,7 +259,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - **Ohne Standort kein Sensor** (Entscheidung des Nutzers, 2026-10-21): Das Dashboard wird über die Karte
       erkundet, es geht darum, _wo_ ein Sensor steht. Ein Datastream ohne Standort wird deshalb nicht ohne
       Kartenpunkt angezeigt, sondern gilt als nicht verfügbar. So fällt der Konfigurationsfehler auf.
-- **Annahmen der STA-Hooks** (`dataLayers/useStaSensors.ts`):
+- **Annahmen der STA-Hooks** (`dataLayers/sta/useStaSensors.ts`):
     - **Ein Layer, ein Datastream:** Die Hooks lesen nur das erste Feature der Quelle (`datastreamFeature`). Wird
       künftig z. B. ein ganzes Thing mit mehreren Datastreams als _ein_ Layer importiert, zeigen Dropdown, Diagramm
       und Kacheln stillschweigend nur den ersten. Dann entweder pro Datastream einen eigenen Layer erzeugen
@@ -299,7 +302,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
       Auswahl über das Dropdown, und der Auswahl-Zustand bleibt eine einzelne Layer-ID.
     - **Standard ist der Ort**, nicht das Thing: Es ist nicht sicher, dass jeder Server Stationen sauber als Things
       modelliert. Gleicher Ort heißt: Die Punktkoordinaten (EPSG:4326 aus dem GeoJSON, `position` in
-      `dataLayers/sta.ts`) liegen höchstens `VITE_SENSOR_GROUPING_RADIUS` Meter auseinander (Standard 1 m,
+      `dataLayers/sta/sta.ts`) liegen höchstens `VITE_SENSOR_GROUPING_RADIUS` Meter auseinander (Standard 1 m,
       Großkreisabstand mit `getDistance` aus `ol/sphere`). Andere Geometrien werden nie gruppiert.
     - **Abstand statt gerundeter Koordinaten:** Früher wurde der auf 6 Nachkommastellen gerundete Koordinaten-String
       verglichen. Dabei wurden leicht versetzt eingetragene Sensoren nie gruppiert, und fast gleiche Punkte fielen an
@@ -307,7 +310,7 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
       Buffer um den Punkt, eine Projektion ist nicht nötig. Die Gruppierung gilt relativ zum gewählten Sensor und ist
       nicht transitiv: Liegen A–B und B–C je 0,8 m auseinander, zeigt A nur B, B zeigt A und C.
     - **Umschaltbar** über `VITE_SENSOR_GROUPING` (`location`, `thing`, `location-or-thing`,
-      `dataLayers/colocation.ts`). Bei Datastream 14 und 15 liefern alle drei dasselbe (gleicher Ort, Thing 2).
+      `dataLayers/sta/colocation.ts`). Bei Datastream 14 und 15 liefern alle drei dasselbe (gleicher Ort, Thing 2).
     - **Offen/Risiko (2026-10-30):** Die Gruppierung bleibt vorerst beim Radius von 1 m. In der Realität können die
       Sensoren einer Station mehr als 1 m auseinanderstehen (sie werden dann getrennt), und nahe Sensoren können zu
       verschiedenen Stationen gehören (sie werden dann zusammengelegt); STA-Modell und Praxis können auseinandergehen.
@@ -577,7 +580,7 @@ wenig Eingaben (höchstens ein Titel, nicht mehrere Textfelder).
           `loadState` des Layers hilft nicht, `@open-pioneer/map` setzt ihn nur bei Fehlern der Initialisierung.
         - Stolperstein: Bei HTTP-Fehlern (z. B. 500) loggt `@open-pioneer/map` nur und lässt das Bild unvollendet,
           OpenLayers meldet dann nichts. Die App umhüllt die Ladefunktion der Quelle und lässt ein solches Bild
-          scheitern (`reportFailedImageRequests` in `createDataLayer.ts`).
+          scheitern (`reportFailedImageRequests` in `ows/wmsLayer.ts`).
 - **Offen:** siehe Abschnitt 15 (GML-FeatureInfo, Styles, Zeitdimension, Zoom auf den Layer).
 - **Commits:** `fd05554`, `2b15b8b`, `ac864aa`, `ba0a99a`, `d5ca6bb`; Rückmeldung: `20f6df2`, `ba62eac`
 
@@ -614,3 +617,62 @@ standardmäßig sichtbar: Stadtklimaprojektionen, Hochwasser, Starkregen, Grundw
     - Die drei Zeiträume eines Indikators decken jeweils die ganze Stadt ab. Sind alle sichtbar, sieht man nur den
       obersten (2071–2100). Noch offen.
 - **Commits:** `a32bf8e`, `2e4777f`, `2bf530b`, `1d735c6`
+
+## 19. Eigene WFS-Layer
+
+🟡 **Was:** Wie bei WMS (Abschnitt 17) sollen WFS-Dienste für die Sitzung hinzugefügt und dauerhaft in
+`dataLayers.json` eingetragen werden können (`TODO.md`, besprochen am 2026-10-30).
+
+- **Entscheidung:** Eigene Zeile „WFS hinzufügen“ unter „WMS hinzufügen“ mit demselben Ablauf (URL laden, Feature-Typ
+  suchen, hinzufügen). WFS 2.0.0 und 1.1.0, GeoJSON und GML (3.2, 3.1, 2) gleich von Anfang an. Gruppe „Eigene WFS“
+  (`user-wfs`) über dem obersten Layer mit WMS, also über den Kartenbildern und unter den Sensoren. Eine Farbe pro
+  Layer aus einer festen Palette (`dataLayers/ows/wfsStyle.ts`), kein Style-Picker. Beim Kartenklick stehen die Attribute
+  im vorhandenen Popup vor den WMS-Ergebnissen, das Feature wird hervorgehoben. Kein allgemeiner Proxy.
+- **Gemeinsam mit WMS statt kopiert:** Session-Gruppe (`dataLayers/userLayers.ts`), Laden der Capabilities
+  (`toc/useServiceCapabilities.ts`), Suche (`toc/LayerSearch.tsx`) und Formular
+  (`toc/AddServiceLayer.tsx`) sind generisch. Was je Diensttyp anders ist, beschreibt `toc/userServices.ts`
+  (Capabilities, Einträge, Prüfung, Config). URL-Normalisierung, der Fehler „nicht erreichbar“, Session-Cache,
+  Exception-Meldungen und die Beschreibung eigener Layer liegen in `dataLayers/ows/owsService.ts`. Texte: gemeinsame unter `addService.*`, typspezifische unter `addWms.*` und
+  `addWfs.*`. Der Titel aus den Capabilities (`applyCapabilitiesTitle`) und `FeatureInfoConfig` gelten für beide.
+- **Capabilities:** OpenLayers hat keinen Parser für WFS-Capabilities (`ol/format/WFS` liest nur GetFeature-Antworten).
+  Eigener Parser in `dataLayers/ows/wfsCapabilities.ts`, der Elemente nur über den lokalen Namen liest, weil sich die
+  Präfixe je Server unterscheiden. Ausgabeformate stehen je Feature-Typ (deegree) oder nur an `GetFeature` in
+  `OperationsMetadata` (GeoServer). Gefragt wird mit `ACCEPTVERSIONS=2.0.0,1.1.0`, der Dienst antwortet mit der neuesten
+  Version, die er kann (Hamburg, DWD und NRW antworten mit 2.0.0).
+- **KBS (Abweichung vom Plan):** Geplant war EPSG:3857, dann 4326, dann 25832/25833. Gewählt werden jetzt nur
+  projizierte Systeme: 3857, 25832, 25833. Listet ein Feature-Typ keins davon, wird trotzdem 3857 angefragt.
+    - Warum: Bei EPSG:4326 hängt die Achsenreihenfolge (Lat/Lon oder Lon/Lat) von Server, Version und Schreibweise ab.
+      Ein Fehler legt die Features ohne jede Meldung an die falsche Stelle. Projizierte Systeme sind immer Rechts-/Hochwert.
+    - DWD listet nur EPSG:4258, liefert auf Anfrage aber 3857. Dienste, die das nicht können, fängt die Prüfung vor
+      dem Hinzufügen ab.
+- **Laden:** `bbox`-Strategie (nur der Kartenausschnitt), höchstens `maxFeatures` (Standard 1000) pro Anfrage. Liefert
+  eine Anfrage genau so viele Features, zeigt das TOC „Nicht alle Features geladen“. Ein Exception-Report mit HTTP 200
+  zählt als Fehler, das TOC warnt dann wie beim WMS (`featuresloaderror`, `toc/LayerLoadWarning.tsx`).
+- **Prüfung vor dem Hinzufügen:** GetFeature mit einem Feature im gewählten Format und KBS (`probeWfsFeatureType`).
+  Nur eine FeatureCollection zählt. Feature-Typen ohne GeoJSON- und GML-Ausgabe werden mit Meldung abgelehnt.
+- **Stolpersteine:**
+    - deegree (Hamburg) lässt bei leerem Ergebnis `features` im GeoJSON weg (`{"type":"FeatureCollection"}`), daran
+      bricht `ol/format/GeoJSON` ab. Die App liest das JSON vorher selbst.
+    - Nach einem Fehler ließ `removeLoadedExtent` den Ausschnitt sofort neu laden: eine Anfrage-Schleife. Ein
+      fehlgeschlagener Ausschnitt gilt jetzt als geladen und wird erst bei einem neuen Ausschnitt wieder angefragt.
+    - happy-dom (Tests) kennt `lookupNamespaceURI` nicht und keine XML-Deklaration mit einfachen Anführungszeichen. Der
+      Namespace des Feature-Typs (für GML) wird deshalb über die `xmlns:`-Attribute selbst gesucht.
+- **Im Browser geprüft:** Hamburg Verwaltungsgrenzen (deegree; 2.0 mit GeoJSON und 1.1 mit GML 3.1.1 deckungsgleich),
+  DWD GeoServer (61 Feature-Typen, Hinzufügen und Entfernen, Obergrenze), Leverkusen direkt (ohne CORS:
+  Fehlermeldung), ein falscher Feature-Typ (Ladewarnung). „WMS hinzufügen“ nach dem Umbau unverändert.
+- **Aufräumen vor dem Merge** (Grilling am 2026-10-30, Maßstab: einfach, wo es einfach sein kann, genau bei KBS/Achsen,
+  Formaterkennung und Config-Prüfung):
+    - Ordner: `dataLayers/config/` (Schema, Laden, Texte), `ows/` (WMS, WFS), `sta/` (SensorThings). Die Erzeugung
+      pro Typ liegt im Ordner (`ows/wmsLayer.ts`, `ows/wfsLayer.ts`, `sta/staLayer.ts`), `createDataLayer.ts` verteilt
+      nur noch. Was alle teilen, steht in `dataLayerBase.ts`, sonst entstünden Import-Zyklen zwischen den Ordnern.
+      `userLayers.ts` bleibt oben als allgemeiner Baustein (kann später auch andere Diensttypen aufnehmen).
+    - Vereinfacht: Session-Gruppen ohne Generics (eine Klasse, zwei `switch`), GetFeature aus einem Settings-Objekt
+      (`resolveWfsRequest` liefert `undefined` statt zu werfen), Prüfungen liefern nur die Meldung des Dienstes, nur
+      noch „nicht erreichbar“ als eigene Fehlerklasse, eine Anfrage mit `ACCEPTVERSIONS` statt einer pro Version,
+      ein Hook für die Ladewarnung, ungenutzte Felder und Exports und triviale Tests entfernt.
+    - Bewusst behalten: `wfs.version` und `wfs.outputFormat` in der Config (Grundsatz Config vor Dienst), Style je
+      Geometrietyp und Farbe aus der Layer-ID.
+- **Offen:** Paging statt fester Obergrenze, Style-Picker, Legende. Ein dauerhafter WFS-Layer ist in
+  `dataLayers.json` noch nicht eingetragen.
+- **Commits:** `96b332d`, `e83aab9`, `9e60605`, `abad3d4`, `cd69e8e`, `c532ca8`, `c3a701b`, `ca342b2`; Doku: `3113d55`; Aufräumen: `5996bac`, `8591894`, `4040c3c`, `3da326f`, `27cd718`, `387c7c3`,
+  `5f30255`, `971d8d2`, `e9b51ed`, `e4cdc46`, `f882a36`

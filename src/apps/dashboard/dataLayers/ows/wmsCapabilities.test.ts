@@ -1,13 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-    chooseFeatureInfoFormat,
-    normalizeWmsEndpoint,
-    parseWmsCapabilities,
-    probeWmsLayer,
-    searchLayers,
-    WmsCapabilitiesError,
-    WmsCapabilitiesLayer
-} from "./wmsCapabilities";
+import { chooseFeatureInfoFormat, parseWmsCapabilities, probeWmsLayer } from "./wmsCapabilities";
 
 const CAPABILITIES = `<?xml version="1.0" encoding="UTF-8"?>
 <WMS_Capabilities version="1.3.0" xmlns="http://www.opengis.net/wms" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -62,7 +54,6 @@ describe("parseWmsCapabilities", () => {
 
     it("reads service information", () => {
         expect(capabilities).toMatchObject({
-            serviceTitle: "Wetterdienst",
             contactOrganization: "Deutscher Wetterdienst",
             fees: undefined,
             accessConstraints: "https://www.dwd.de/copyright",
@@ -101,25 +92,11 @@ describe("parseWmsCapabilities", () => {
     it("rejects exception reports and other documents", () => {
         const exception = `<?xml version="1.0"?>
             <ServiceExceptionReport version="1.3.0"><ServiceException>Unknown language</ServiceException></ServiceExceptionReport>`;
-        expect(() => parseWmsCapabilities(exception)).toThrow(WmsCapabilitiesError);
+        expect(() => parseWmsCapabilities(exception)).toThrow(/Not a WMS_Capabilities document/);
         expect(() => parseWmsCapabilities(exception)).toThrow(/Unknown language/);
-        expect(() => parseWmsCapabilities("<html><body>Not found</body></html>")).toThrow(WmsCapabilitiesError);
-    });
-});
-
-describe("normalizeWmsEndpoint", () => {
-    it("removes the parameters of a pasted GetCapabilities URL and keeps others", () => {
-        expect(
-            normalizeWmsEndpoint(" https://example.org/wms?service=WMS&REQUEST=GetCapabilities&Version=1.3.0 ")
-        ).toBe("https://example.org/wms");
-        expect(normalizeWmsEndpoint("https://example.org/cgi?map=/maps/x.map&SERVICE=WMS")).toBe(
-            "https://example.org/cgi?map=%2Fmaps%2Fx.map"
+        expect(() => parseWmsCapabilities("<html><body>Not found</body></html>")).toThrow(
+            /Not a WMS_Capabilities document/
         );
-    });
-
-    it("rejects other protocols and invalid URLs", () => {
-        expect(() => normalizeWmsEndpoint("javascript:alert(1)")).toThrow(/protocol/);
-        expect(() => normalizeWmsEndpoint("maps.dwd.de")).toThrow(/Invalid URL/);
     });
 });
 
@@ -136,27 +113,6 @@ describe("chooseFeatureInfoFormat", () => {
     });
 });
 
-describe("searchLayers", () => {
-    const layer = (name: string, title: string) => ({ name, title }) as WmsCapabilitiesLayer;
-    const layers = [
-        layer("RADOLAN-RX", "Radarreflektivität (RX)"),
-        layer("radar_mask", "Maske"),
-        layer("RADOLAN-RW", "Angeeichtes Radarkomposit (RW)"),
-        layer("T2M", "Temperatur")
-    ];
-    const names = (query: string) => searchLayers(layers, query).map((l) => l.name);
-
-    it("ranks an exact name first, then title matches, then name matches", () => {
-        expect(names("radar")).toEqual(["RADOLAN-RX", "RADOLAN-RW", "radar_mask"]);
-        expect(names("radolan-rw")).toEqual(["RADOLAN-RW"]);
-        expect(names("t2m")).toEqual(["T2M"]);
-    });
-
-    it("returns all layers in document order without a query", () => {
-        expect(searchLayers(layers, "  ")).toBe(layers);
-    });
-});
-
 describe("probeWmsLayer", () => {
     afterEach(() => {
         vi.unstubAllGlobals();
@@ -170,7 +126,7 @@ describe("probeWmsLayer", () => {
 
     it("accepts an image", async () => {
         respond("png", "image/png");
-        await expect(probeWmsLayer("https://example.org/wms", "a", [0, 0])).resolves.toEqual({ ok: true });
+        await expect(probeWmsLayer("https://example.org/wms", "a", [0, 0])).resolves.toBeUndefined();
         const url = new URL(vi.mocked(fetch).mock.calls[0]![0] as URL);
         expect(url.searchParams.get("REQUEST")).toBe("GetMap");
         expect(url.searchParams.get("LAYERS")).toBe("a");
@@ -183,27 +139,20 @@ describe("probeWmsLayer", () => {
                 Could not find layer Wetter</ServiceException></ServiceExceptionReport>`,
             "text/xml"
         );
-        await expect(probeWmsLayer("https://example.org/wms", "Wetter", [0, 0])).resolves.toEqual({
-            ok: false,
-            message: "Could not find layer Wetter"
-        });
+        await expect(probeWmsLayer("https://example.org/wms", "Wetter", [0, 0])).resolves.toBe(
+            "Could not find layer Wetter"
+        );
     });
 
     it("reports HTTP and network errors", async () => {
         respond("<html>Internal Server Error</html>", "text/html", 500);
-        await expect(probeWmsLayer("https://example.org/wms", "a", [0, 0])).resolves.toEqual({
-            ok: false,
-            message: "HTTP 500"
-        });
+        await expect(probeWmsLayer("https://example.org/wms", "a", [0, 0])).resolves.toBe("HTTP 500");
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => {
                 throw new TypeError("Failed to fetch");
             })
         );
-        await expect(probeWmsLayer("https://example.org/wms", "a", [0, 0])).resolves.toEqual({
-            ok: false,
-            message: "Failed to fetch"
-        });
+        await expect(probeWmsLayer("https://example.org/wms", "a", [0, 0])).resolves.toBe("Failed to fetch");
     });
 });
