@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { WfsDataLayerConfig, WfsVersion } from "../config/types";
 import { CapabilitiesError } from "./owsService";
 import {
     chooseCrs,
@@ -8,7 +9,10 @@ import {
     getFeatureUrl,
     outputFormatEncoding,
     parseWfsCapabilities,
-    probeWfsFeatureType
+    probeWfsFeatureType,
+    resolveWfsRequest,
+    WfsCapabilities,
+    WfsRequestSettings
 } from "./wfsCapabilities";
 
 /** Shortened from the WFS of Hamburg (deegree): output formats per feature type. */
@@ -203,23 +207,74 @@ describe("coordinate reference systems", () => {
     });
 });
 
+const RESOLVE_CAPABILITIES: WfsCapabilities = {
+    version: "2.0.0",
+    serviceTitle: undefined,
+    contactOrganization: undefined,
+    fees: undefined,
+    accessConstraints: undefined,
+    featureTypes: [
+        {
+            name: "app:a",
+            title: "A",
+            abstract: undefined,
+            namespace: "http://example.org/app",
+            crs: ["urn:ogc:def:crs:EPSG::25832", "urn:ogc:def:crs:EPSG::4326"],
+            outputFormats: ["GML2", "application/gml+xml; version=3.2", "application/json"]
+        }
+    ]
+};
+
+const wfs = (options: Partial<WfsDataLayerConfig["wfs"]> = {}): WfsDataLayerConfig["wfs"] => ({
+    featureType: "app:a",
+    ...options
+});
+
+describe("resolveWfsRequest", () => {
+    it("takes version and format from the capabilities and prefers GeoJSON and a projected CRS", () => {
+        expect(resolveWfsRequest(wfs(), RESOLVE_CAPABILITIES)).toMatchObject({
+            version: "2.0.0",
+            outputFormat: "application/json",
+            encoding: "geojson",
+            srsName: "urn:ogc:def:crs:EPSG::25832",
+            dataProjection: "EPSG:25832"
+        });
+    });
+
+    it("lets the configuration choose version and output format", () => {
+        expect(resolveWfsRequest(wfs({ version: "1.1.0", outputFormat: "GML2" }), RESOLVE_CAPABILITIES)).toMatchObject({
+            version: "1.1.0",
+            outputFormat: "GML2",
+            encoding: "gml2"
+        });
+    });
+
+    it("rejects unknown feature types and unreadable formats", () => {
+        expect(resolveWfsRequest(wfs({ featureType: "app:b" }), RESOLVE_CAPABILITIES)).toBeUndefined();
+        expect(resolveWfsRequest(wfs({ outputFormat: "SHAPE-ZIP" }), RESOLVE_CAPABILITIES)).toBeUndefined();
+        const csvOnly = {
+            ...RESOLVE_CAPABILITIES,
+            featureTypes: [{ ...RESOLVE_CAPABILITIES.featureTypes[0]!, outputFormats: ["csv"] }]
+        };
+        expect(resolveWfsRequest(wfs(), csvOnly)).toBeUndefined();
+    });
+});
+
 describe("getFeatureUrl", () => {
-    const request = {
-        endpoint: "https://example.org/wfs?map=x",
-        featureType: "app:landesgrenze",
+    const settings = (version: WfsVersion): WfsRequestSettings => ({
+        ...resolveWfsRequest(wfs({ version }), RESOLVE_CAPABILITIES)!,
         outputFormat: "application/geo+json",
-        srsName: "EPSG:3857",
-        maxFeatures: 1000
-    };
+        srsName: "EPSG:3857"
+    });
 
     it("names type and limit as WFS 2.0 does", () => {
-        const url = getFeatureUrl({ ...request, version: "2.0.0", extent: [1, 2, 3, 4] });
+        const url = getFeatureUrl("https://example.org/wfs?map=x", settings("2.0.0"), 1000, [1, 2, 3, 4]);
         expect(Object.fromEntries(url.searchParams)).toEqual({
             map: "x",
             SERVICE: "WFS",
             VERSION: "2.0.0",
             REQUEST: "GetFeature",
-            TYPENAMES: "app:landesgrenze",
+            TYPENAMES: "app:a",
             OUTPUTFORMAT: "application/geo+json",
             SRSNAME: "EPSG:3857",
             COUNT: "1000",
@@ -228,8 +283,8 @@ describe("getFeatureUrl", () => {
     });
 
     it("names type and limit as WFS 1.1 does, without extent all features", () => {
-        const params = getFeatureUrl({ ...request, version: "1.1.0" }).searchParams;
-        expect(params.get("TYPENAME")).toBe("app:landesgrenze");
+        const params = getFeatureUrl("https://example.org/wfs", settings("1.1.0"), 1000).searchParams;
+        expect(params.get("TYPENAME")).toBe("app:a");
         expect(params.get("MAXFEATURES")).toBe("1000");
         expect(params.has("TYPENAMES")).toBe(false);
         expect(params.has("BBOX")).toBe(false);
@@ -241,11 +296,9 @@ describe("probeWfsFeatureType", () => {
         vi.unstubAllGlobals();
     });
 
-    const request = {
-        endpoint: "https://example.org/wfs",
-        version: "2.0.0" as const,
-        featureType: "app:a",
-        srsName: "EPSG:3857"
+    const probe = (outputFormat: string) => {
+        const settings = resolveWfsRequest(wfs({ outputFormat }), RESOLVE_CAPABILITIES)!;
+        return probeWfsFeatureType("https://example.org/wfs", settings);
     };
     const respond = (body: string, status = 200) =>
         vi.stubGlobal(
@@ -255,24 +308,24 @@ describe("probeWfsFeatureType", () => {
 
     it("accepts a feature collection in the requested encoding", async () => {
         respond(`{"type":"FeatureCollection","features":[]}`);
-        await expect(probeWfsFeatureType({ ...request, outputFormat: "application/json" })).resolves.toEqual({
+        await expect(probe("application/json")).resolves.toEqual({
             ok: true
         });
         expect(new URL(vi.mocked(fetch).mock.calls[0]![0] as URL).searchParams.get("COUNT")).toBe("1");
 
         respond(`<wfs:FeatureCollection xmlns:wfs="http://www.opengis.net/wfs/2.0"/>`);
-        await expect(probeWfsFeatureType({ ...request, outputFormat: "GML2" })).resolves.toEqual({ ok: true });
+        await expect(probe("GML2")).resolves.toEqual({ ok: true });
     });
 
     it("reports exception reports (sent with HTTP 200), HTTP and network errors", async () => {
         respond(`<ows:ExceptionReport xmlns:ows="http://www.opengis.net/ows/1.1"><ows:Exception>
             <ows:ExceptionText>Unknown feature type</ows:ExceptionText></ows:Exception></ows:ExceptionReport>`);
-        await expect(probeWfsFeatureType({ ...request, outputFormat: "application/json" })).resolves.toEqual({
+        await expect(probe("application/json")).resolves.toEqual({
             ok: false,
             message: "Unknown feature type"
         });
         respond("<html>Error</html>", 500);
-        await expect(probeWfsFeatureType({ ...request, outputFormat: "GML2" })).resolves.toEqual({
+        await expect(probe("GML2")).resolves.toEqual({
             ok: false,
             message: "HTTP 500"
         });
@@ -282,7 +335,7 @@ describe("probeWfsFeatureType", () => {
                 throw new TypeError("Failed to fetch");
             })
         );
-        await expect(probeWfsFeatureType({ ...request, outputFormat: "GML2" })).resolves.toEqual({
+        await expect(probe("GML2")).resolves.toEqual({
             ok: false,
             message: "Failed to fetch"
         });

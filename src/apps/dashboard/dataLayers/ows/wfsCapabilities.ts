@@ -1,4 +1,4 @@
-import { WFS_VERSIONS, WfsVersion } from "../config/types";
+import { WFS_VERSIONS, WfsDataLayerConfig, WfsVersion } from "../config/types";
 /*
  * WFS client helpers: loads and parses GetCapabilities (WFS 2.0.0 and 1.1.0), picks output format and coordinate
  * reference system of a feature type, builds GetFeature requests and checks single feature types before they are
@@ -188,11 +188,6 @@ export function fetchWfsCapabilities(endpoint: string): Promise<WfsCapabilities>
     return capabilitiesCache.fetch(endpoint);
 }
 
-/** The feature type with the given qualified name, if the service offers it. */
-export function findFeatureType(capabilities: WfsCapabilities, name: string): WfsFeatureType | undefined {
-    return capabilities.featureTypes.find((type) => type.name === name);
-}
-
 /** How the features of an output format are encoded, or `undefined` if the dashboard cannot read them. */
 export function outputFormatEncoding(format: string): FeatureEncoding | undefined {
     const value = format.toLowerCase();
@@ -246,30 +241,63 @@ export function chooseCrs(crs: string[]): string {
     return FALLBACK_CRS;
 }
 
-/** Everything needed for a GetFeature request of one feature type. */
-export interface GetFeatureRequest {
-    endpoint: string;
+/** How the features of a feature type are requested and read. */
+export interface WfsRequestSettings {
+    featureType: WfsFeatureType;
     version: WfsVersion;
-    featureType: string;
     outputFormat: string;
+    encoding: FeatureEncoding;
 
-    /** CRS of the returned features and of `extent`. */
+    /** CRS as written in the request (e.g. `urn:ogc:def:crs:EPSG::25832`). */
     srsName: string;
-    maxFeatures: number;
 
-    /** Only features within this extent (in `srsName`); all features without it. */
-    extent?: number[];
+    /** The same CRS as OpenLayers projection code (e.g. `EPSG:25832`). */
+    dataProjection: string;
 }
 
-/** The GetFeature URL (KVP encoding). WFS 2.0 and 1.1 name the type and the limit differently. */
-export function getFeatureUrl(request: GetFeatureRequest): URL {
-    const { endpoint, version, featureType, outputFormat, srsName, maxFeatures, extent } = request;
+/**
+ * Settings for a feature type: version and output format from the configuration, otherwise from the capabilities;
+ * the CRS always from the capabilities. `undefined` if the service does not offer the feature type or no output format
+ * the dashboard can read.
+ */
+export function resolveWfsRequest(
+    wfs: Pick<WfsDataLayerConfig["wfs"], "featureType" | "version" | "outputFormat">,
+    capabilities: WfsCapabilities
+): WfsRequestSettings | undefined {
+    const featureType = capabilities.featureTypes.find((type) => type.name === wfs.featureType);
+    const outputFormat = wfs.outputFormat ?? (featureType && chooseOutputFormat(featureType.outputFormats));
+    const encoding = outputFormat && outputFormatEncoding(outputFormat);
+    if (!featureType || !outputFormat || !encoding) {
+        return undefined;
+    }
+    const srsName = chooseCrs(featureType.crs);
+    return {
+        featureType,
+        version: wfs.version ?? capabilities.version,
+        outputFormat,
+        encoding,
+        srsName,
+        dataProjection: `EPSG:${epsgCode(srsName)}`
+    };
+}
+
+/**
+ * The GetFeature URL (KVP encoding) for at most `maxFeatures` features, within `extent` (in the request's CRS) if
+ * given. WFS 2.0 and 1.1 name the type and the limit differently.
+ */
+export function getFeatureUrl(
+    endpoint: string,
+    settings: WfsRequestSettings,
+    maxFeatures: number,
+    extent?: number[]
+): URL {
+    const { version, featureType, outputFormat, srsName } = settings;
     const is2 = version === "2.0.0";
     const params: Record<string, string> = {
         SERVICE: "WFS",
         VERSION: version,
         REQUEST: "GetFeature",
-        [is2 ? "TYPENAMES" : "TYPENAME"]: featureType,
+        [is2 ? "TYPENAMES" : "TYPENAME"]: featureType.name,
         OUTPUTFORMAT: outputFormat,
         SRSNAME: srsName,
         [is2 ? "COUNT" : "MAXFEATURES"]: String(maxFeatures)
@@ -282,7 +310,7 @@ export function getFeatureUrl(request: GetFeatureRequest): URL {
 }
 
 /** Whether the response looks like a feature collection in the requested encoding. */
-function isFeatureCollection(body: string, encoding: FeatureEncoding | undefined): boolean {
+function isFeatureCollection(body: string, encoding: FeatureEncoding): boolean {
     if (encoding === "geojson") {
         try {
             const json: unknown = JSON.parse(body);
@@ -301,13 +329,11 @@ function isFeatureCollection(body: string, encoding: FeatureEncoding | undefined
  * Requests a single feature to find out whether the service can deliver the feature type in the chosen format and
  * CRS. Services answer errors with HTTP 200 and an exception report, so only a feature collection counts as success.
  */
-export async function probeWfsFeatureType(
-    request: Omit<GetFeatureRequest, "maxFeatures" | "extent">
-): Promise<LayerProbe> {
+export async function probeWfsFeatureType(endpoint: string, settings: WfsRequestSettings): Promise<LayerProbe> {
     try {
-        const response = await fetch(getFeatureUrl({ ...request, maxFeatures: 1 }));
+        const response = await fetch(getFeatureUrl(endpoint, settings, 1));
         const body = await response.text();
-        if (response.ok && isFeatureCollection(body, outputFormatEncoding(request.outputFormat))) {
+        if (response.ok && isFeatureCollection(body, settings.encoding)) {
             return { ok: true };
         }
         return { ok: false, message: exceptionMessage(body) ?? `HTTP ${response.status}` };

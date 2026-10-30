@@ -1,13 +1,13 @@
 import { createLogger } from "@open-pioneer/core";
 import { MapModel } from "@open-pioneer/map";
-import { errorMessage } from "../dataLayers/ows/owsService";
 import {
     fetchWfsCapabilities,
     probeWfsFeatureType,
+    resolveWfsRequest,
     WfsCapabilities,
     WfsFeatureType
 } from "../dataLayers/ows/wfsCapabilities";
-import { resolveWfsRequest, userWfsLayerInput, WfsRequestSettings } from "../dataLayers/ows/wfsLayer";
+import { userWfsLayerInput } from "../dataLayers/ows/wfsLayer";
 import { paletteColor } from "../dataLayers/ows/wfsStyle";
 import {
     fetchWmsCapabilities,
@@ -71,15 +71,6 @@ export const WMS_SERVICE: UserService<"wms", WmsCapabilities, WmsCapabilitiesLay
     input: userWmsLayerInput
 };
 
-/** Settings for requesting the feature type, or why it cannot be read (no GeoJSON or GML output). */
-function requestSettings(capabilities: WfsCapabilities, featureType: WfsFeatureType): WfsRequestSettings | string {
-    try {
-        return resolveWfsRequest({ featureType: featureType.name }, capabilities);
-    } catch (error) {
-        return errorMessage(error);
-    }
-}
-
 /** Colour of the next WFS layer the user adds: the palette in order (session only). */
 let nextColor = 0;
 
@@ -90,19 +81,13 @@ export const WFS_SERVICE: UserService<"wfs", WfsCapabilities, WfsFeatureType> = 
     fetchCapabilities: fetchWfsCapabilities,
     entries: (capabilities) => capabilities.featureTypes,
     async check(endpoint, capabilities, featureType) {
-        const settings = requestSettings(capabilities, featureType);
-        if (typeof settings === "string") {
-            LOG.warn(`Feature type '${featureType.name}' of ${endpoint} cannot be read: ${settings}`);
+        const settings = resolveWfsRequest({ featureType: featureType.name }, capabilities);
+        if (!settings) {
+            LOG.warn(`Feature type '${featureType.name}' of ${endpoint} has no GeoJSON or GML output.`);
             return { messageId: "error.noFormat" };
         }
         // Not every service can deliver every feature type in the chosen format and CRS.
-        const probe = await probeWfsFeatureType({
-            endpoint,
-            version: settings.version,
-            featureType: featureType.name,
-            outputFormat: settings.outputFormat,
-            srsName: settings.srsName
-        });
+        const probe = await probeWfsFeatureType(endpoint, settings);
         if (probe.ok) {
             return undefined;
         }

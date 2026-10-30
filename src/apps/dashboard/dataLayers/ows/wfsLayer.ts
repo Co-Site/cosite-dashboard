@@ -14,22 +14,19 @@ import VectorLayer from "ol/layer/Vector";
 import { bbox } from "ol/loadingstrategy";
 import { transformExtent } from "ol/proj";
 import VectorSource from "ol/source/Vector";
-import { WfsDataLayerConfig, WfsVersion } from "../config/types";
+import { WfsDataLayerConfig } from "../config/types";
 import { applyCapabilitiesTitle, commonOptions, DataLayerContext } from "../dataLayerBase";
 import type { UserLayerInput } from "../userLayers";
 import { describeLayer, exceptionMessage } from "./owsService";
 import {
-    chooseCrs,
-    chooseOutputFormat,
-    epsgCode,
     FeatureEncoding,
     fetchWfsCapabilities,
-    findFeatureType,
     getFeatureUrl,
     namePrefix,
-    outputFormatEncoding,
+    resolveWfsRequest,
     WfsCapabilities,
-    WfsFeatureType
+    WfsFeatureType,
+    WfsRequestSettings
 } from "./wfsCapabilities";
 import { createWfsStyle, wfsLayerColor } from "./wfsStyle";
 
@@ -40,47 +37,6 @@ export const DEFAULT_MAX_FEATURES = 1000;
 
 /** Source property: whether the last request returned the maximum number of features (so some may be missing). */
 export const TRUNCATED_PROPERTY = "truncated";
-
-/** How the features of a WFS layer are requested and read. */
-export interface WfsRequestSettings {
-    featureType: WfsFeatureType;
-    version: WfsVersion;
-    outputFormat: string;
-    encoding: FeatureEncoding;
-
-    /** CRS as written in the request (e.g. `urn:ogc:def:crs:EPSG::25832`). */
-    srsName: string;
-
-    /** The same CRS as OpenLayers projection code (e.g. `EPSG:25832`). */
-    dataProjection: string;
-}
-
-/**
- * Settings for the configured feature type: version and output format from the configuration, otherwise from the
- * capabilities; the CRS always from the capabilities. Throws if the service does not offer the feature type or no
- * output format the dashboard can read.
- */
-export function resolveWfsRequest(wfs: WfsDataLayerConfig["wfs"], capabilities: WfsCapabilities): WfsRequestSettings {
-    const name = wfs.featureType;
-    const featureType = findFeatureType(capabilities, name);
-    if (!featureType) {
-        throw new Error(`The service does not offer the feature type '${name}'.`);
-    }
-    const outputFormat = wfs.outputFormat ?? chooseOutputFormat(featureType.outputFormats);
-    const encoding = outputFormat && outputFormatEncoding(outputFormat);
-    if (!outputFormat || !encoding) {
-        throw new Error(`No readable output format (GeoJSON or GML) for '${name}': ${outputFormat ?? "none offered"}.`);
-    }
-    const srsName = chooseCrs(featureType.crs);
-    return {
-        featureType,
-        version: wfs.version ?? capabilities.version,
-        outputFormat,
-        encoding,
-        srsName,
-        dataProjection: `EPSG:${epsgCode(srsName)}`
-    };
-}
 
 const GML_FORMATS = { gml32: GML32, gml3: GML3, gml2: GML2 };
 
@@ -113,15 +69,12 @@ async function requestFeatures(
     extent: number[],
     mapProjection: string
 ): Promise<string> {
-    const url = getFeatureUrl({
-        endpoint: config.endpoint,
-        version: settings.version,
-        featureType: settings.featureType.name,
-        outputFormat: settings.outputFormat,
-        srsName: settings.srsName,
-        maxFeatures: config.wfs.maxFeatures ?? DEFAULT_MAX_FEATURES,
-        extent: transformExtent(extent, mapProjection, settings.dataProjection)
-    });
+    const url = getFeatureUrl(
+        config.endpoint,
+        settings,
+        config.wfs.maxFeatures ?? DEFAULT_MAX_FEATURES,
+        transformExtent(extent, mapProjection, settings.dataProjection)
+    );
     const response = await fetch(url);
     const body = await response.text();
     // Services report errors with HTTP 200 and an exception report.
@@ -146,9 +99,13 @@ export function createWfsSource(config: WfsDataLayerConfig): VectorSource {
         // The signature is given by OpenLayers.
         // oxlint-disable-next-line max-params
         loader: (extent, _resolution, projection, success, failure) => {
-            settings ??= fetchWfsCapabilities(config.endpoint).then((capabilities) =>
-                resolveWfsRequest(config.wfs, capabilities)
-            );
+            settings ??= fetchWfsCapabilities(config.endpoint).then((capabilities) => {
+                const resolved = resolveWfsRequest(config.wfs, capabilities);
+                if (!resolved) {
+                    throw new Error(`Feature type '${config.wfs.featureType}' is not offered or not readable.`);
+                }
+                return resolved;
+            });
             const mapProjection = projection.getCode();
             settings
                 .then(async (resolved) =>
@@ -186,7 +143,7 @@ export function createWfsLayer(config: WfsDataLayerConfig, context: DataLayerCon
     if (config.name == null) {
         fetchWfsCapabilities(config.endpoint)
             .then((capabilities) => {
-                const featureType = findFeatureType(capabilities, config.wfs.featureType);
+                const featureType = capabilities.featureTypes.find((type) => type.name === config.wfs.featureType);
                 if (featureType) {
                     applyCapabilitiesTitle(layer, config, featureType);
                 }
