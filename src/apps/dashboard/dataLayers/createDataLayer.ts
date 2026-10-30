@@ -7,12 +7,16 @@ import { Circle, Fill, Stroke, Style } from "ol/style";
 import { localize } from "./localizedText";
 import { createDatastreamFeature, fetchDatastream } from "./sta";
 import {
+    DataLayerConfig,
     DataLayerGroupConfig,
     DataLayerNode,
     StaDatastreamLayerConfig,
     WfsDataLayerConfig,
     WmsDataLayerConfig
 } from "./types";
+import { fetchWfsCapabilities, findFeatureType } from "./wfsCapabilities";
+import { createWfsSource } from "./wfsLayer";
+import { colorForId, createWfsStyle } from "./wfsStyle";
 import { fetchWmsCapabilities } from "./wmsCapabilities";
 
 const LOG = createLogger("dashboard:createDataLayer");
@@ -83,19 +87,34 @@ function reportFailedImageRequests(layer: WMSLayer): void {
 }
 
 /**
+ * Uses title and abstract of the layer from the capabilities if the configuration has no name
+ * (the abstract only if there is no configured description and it says more than the title).
+ */
+function applyCapabilitiesTitle(
+    layer: Layer,
+    config: DataLayerConfig,
+    entry: { title: string; abstract: string | undefined }
+): void {
+    if (config.name != null) {
+        return;
+    }
+    layer.setTitle(entry.title);
+    if (config.description == null && entry.abstract && entry.abstract !== entry.title) {
+        layer.setDescription(entry.abstract);
+    }
+}
+
+/**
  * Uses the titles from the capabilities for the sublayers and, if the layer has no configured name,
  * for the layer itself (together with the abstract).
  */
-function applyCapabilitiesTitles(layer: WMSLayer, config: WmsDataLayerConfig): void {
+function applyWmsCapabilitiesTitles(layer: WMSLayer, config: WmsDataLayerConfig): void {
     fetchWmsCapabilities(config.endpoint)
         .then((capabilities) => {
             const find = (name: string | undefined) => capabilities.layers.find((l) => l.name === name);
             const [first] = config.wms.layers.map(find);
-            if (config.name == null && first && config.wms.layers.length === 1) {
-                layer.setTitle(first.title);
-                if (config.description == null && first.abstract && first.abstract !== first.title) {
-                    layer.setDescription(first.abstract);
-                }
+            if (first && config.wms.layers.length === 1) {
+                applyCapabilitiesTitle(layer, config, first);
             }
             for (const sublayer of layer.sublayers.getRecursiveLayers()) {
                 const title = find(sublayer.name)?.title;
@@ -127,7 +146,7 @@ function createWmsLayer(config: WmsDataLayerConfig, context: DataLayerContext): 
         }
     });
     if (config.name == null || config.wms.layers.length > 1) {
-        applyCapabilitiesTitles(layer, config);
+        applyWmsCapabilitiesTitles(layer, config);
     }
     reportFailedImageRequests(layer);
     return layer;
@@ -177,11 +196,25 @@ function createStaDatastreamLayer(
 }
 
 function createWfsLayer(config: WfsDataLayerConfig, context: DataLayerContext): Layer {
-    return context.layerFactory.create({
+    const layer = context.layerFactory.create({
         type: SimpleLayer,
         ...commonOptions(config, context),
-        olLayer: new VectorLayer({ source: new VectorSource({ attributions: config.attribution }) })
+        olLayer: new VectorLayer({
+            source: createWfsSource(config),
+            style: createWfsStyle(config.wfs.color ?? colorForId(config.id))
+        })
     });
+    if (config.name == null) {
+        fetchWfsCapabilities(config.endpoint)
+            .then((capabilities) => {
+                const featureType = findFeatureType(capabilities, config.wfs.featureType);
+                if (featureType) {
+                    applyCapabilitiesTitle(layer, config, featureType);
+                }
+            })
+            .catch((error) => LOG.warn(`Failed to load capabilities for the title of '${config.id}'.`, error));
+    }
+    return layer;
 }
 
 function createGroupLayer(config: DataLayerGroupConfig, context: DataLayerContext): Layer {

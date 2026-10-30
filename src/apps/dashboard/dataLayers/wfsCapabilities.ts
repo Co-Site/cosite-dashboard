@@ -98,13 +98,19 @@ function serviceOutputFormats(root: Element): string[] {
     return formats.length ? formats : parameterValues(metadata, "outputFormat");
 }
 
+/** Namespace prefix of a qualified name (`app` of `app:landesgrenze`), if it has one. */
+export function namePrefix(name: string): string | undefined {
+    const separator = name.indexOf(":");
+    return separator > 0 ? name.slice(0, separator) : undefined;
+}
+
 function parseFeatureType(element: Element, serviceFormats: string[]): WfsFeatureType | undefined {
     const nameElement = child(element, "Name");
     const name = text(nameElement?.textContent);
     if (!nameElement || !name) {
         return undefined;
     }
-    const prefix = name.includes(":") ? name.slice(0, name.indexOf(":")) : undefined;
+    const prefix = namePrefix(name);
     const typeFormats = [...(child(element, "OutputFormats")?.children ?? [])]
         .map((format) => text(format.textContent))
         .filter((format): format is string => !!format);
@@ -180,6 +186,11 @@ const capabilitiesCache = createCapabilitiesCache(loadCapabilities);
 /** Loads and parses the capabilities of a WFS (once per endpoint and session, failures are not cached). */
 export function fetchWfsCapabilities(endpoint: string): Promise<WfsCapabilities> {
     return capabilitiesCache.fetch(endpoint);
+}
+
+/** The feature type with the given qualified name, if the service offers it. */
+export function findFeatureType(capabilities: WfsCapabilities, name: string): WfsFeatureType | undefined {
+    return capabilities.featureTypes.find((type) => type.name === name);
 }
 
 /** How the features of an output format are encoded, or `undefined` if the dashboard cannot read them. */
