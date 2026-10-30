@@ -7,13 +7,12 @@
  */
 import WMSCapabilities from "ol/format/WMSCapabilities";
 import {
-    CapabilitiesError,
     createCapabilitiesCache,
-    describeUnexpectedDocument,
     errorMessage,
     exceptionMessage,
     fetchCapabilitiesText,
     meaningful,
+    parseCapabilitiesRoot,
     serviceUrl,
     text
 } from "./owsService";
@@ -116,20 +115,11 @@ function collectLayers(
 
 /**
  * Parses a WMS 1.3.0 capabilities document.
- * Throws a {@link CapabilitiesError} for exception reports and other documents.
+ * Throws for exception reports and other documents.
  */
 export function parseWmsCapabilities(xml: string): WmsCapabilities {
-    const document = new DOMParser().parseFromString(xml, "application/xml");
-    const root = document.documentElement;
-    if (root?.localName !== "WMS_Capabilities") {
-        const content = describeUnexpectedDocument(root);
-        throw new CapabilitiesError(
-            "invalid",
-            `Not a WMS 1.3.0 capabilities document${content ? `: ${content}` : "."}`
-        );
-    }
-
-    const parsed = new WMSCapabilities().read(document) as RawCapabilities;
+    const root = parseCapabilitiesRoot(xml, "WMS_Capabilities");
+    const parsed = new WMSCapabilities().read(root.ownerDocument) as RawCapabilities;
     const service = parsed.Service ?? {};
     const layers: WmsCapabilitiesLayer[] = [];
     collectLayers(parsed.Capability?.Layer, [], layers);

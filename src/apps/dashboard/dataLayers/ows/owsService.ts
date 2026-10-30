@@ -5,21 +5,11 @@
  */
 import { LocalizedText } from "../config/localizedText";
 
-/** Why the capabilities could not be loaded. */
-export type CapabilitiesErrorKind =
-    /** Network error, e.g. wrong host or CORS. */
-    | "unreachable"
-    /** The response is not a capabilities document of the service type (or the server reports an exception). */
-    | "invalid";
-
-export class CapabilitiesError extends Error {
-    constructor(
-        readonly kind: CapabilitiesErrorKind,
-        message: string,
-        options?: ErrorOptions
-    ) {
+/** The service could not be reached (network error, wrong host or no CORS); other failures are plain errors. */
+export class ServiceUnreachableError extends Error {
+    constructor(message: string, options?: ErrorOptions) {
         super(message, options);
-        this.name = "CapabilitiesError";
+        this.name = "ServiceUnreachableError";
     }
 }
 
@@ -73,25 +63,32 @@ export function serviceUrl(endpoint: string, params: Record<string, string>): UR
 
 /**
  * Loads a GetCapabilities document as text.
- * Throws a {@link CapabilitiesError} for network errors and HTTP errors.
+ * Throws a {@link ServiceUnreachableError} for network errors and an `Error` for HTTP errors.
  */
 export async function fetchCapabilitiesText(endpoint: string, params: Record<string, string>): Promise<string> {
     let response: Response;
     try {
         response = await fetch(serviceUrl(endpoint, { ...params, REQUEST: "GetCapabilities" }));
     } catch (error) {
-        throw new CapabilitiesError("unreachable", `Failed to load capabilities from ${endpoint}.`, { cause: error });
+        throw new ServiceUnreachableError(`Failed to load capabilities from ${endpoint}.`, { cause: error });
     }
     if (!response.ok) {
-        throw new CapabilitiesError("invalid", `Failed to load capabilities from ${endpoint}: HTTP ${response.status}`);
+        throw new Error(`Failed to load capabilities from ${endpoint}: HTTP ${response.status}`);
     }
     return response.text();
 }
 
-/** Text of the root element of a document that is not the expected one (e.g. an exception report), shortened. */
-export function describeUnexpectedDocument(root: Element | null): string | undefined {
-    const content = root?.textContent?.trim().replace(/\s+/g, " ");
-    return content ? content.slice(0, 300) : undefined;
+/**
+ * Parses a capabilities document and returns its root element. Throws if the root is not `rootName`, e.g. for an
+ * exception report; the message contains the start of the document's text.
+ */
+export function parseCapabilitiesRoot(xml: string, rootName: string): Element {
+    const root = new DOMParser().parseFromString(xml, "application/xml").documentElement;
+    if (root?.localName !== rootName) {
+        const content = root?.textContent?.trim().replace(/\s+/g, " ").slice(0, 300);
+        throw new Error(`Not a ${rootName} document${content ? `: ${content}` : "."}`);
+    }
+    return root;
 }
 
 /** Message of a WMS service exception or an OWS exception report, if the text contains one. */

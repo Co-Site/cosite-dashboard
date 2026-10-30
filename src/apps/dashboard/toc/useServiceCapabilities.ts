@@ -1,7 +1,7 @@
 import { createLogger } from "@open-pioneer/core";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useRef, useState } from "react";
-import { CapabilitiesError, normalizeServiceEndpoint } from "../dataLayers/ows/owsService";
+import { normalizeServiceEndpoint, ServiceUnreachableError } from "../dataLayers/ows/owsService";
 import { UserLayerKind } from "../dataLayers/userLayers";
 import { SearchOption } from "./LayerSearch";
 import { UserService } from "./userServices";
@@ -59,8 +59,11 @@ export function useServiceCapabilities<Capabilities, Entry extends SearchOption>
                     return;
                 }
                 LOG.warn(`Failed to load the capabilities of ${endpoint}.`, e);
-                const unreachable = e instanceof CapabilitiesError && e.kind === "unreachable";
-                fail(unreachable ? "addService.error.unreachable" : `${service.messages}.error.invalid`);
+                fail(
+                    e instanceof ServiceUnreachableError
+                        ? "addService.error.unreachable"
+                        : `${service.messages}.error.invalid`
+                );
             });
     };
 

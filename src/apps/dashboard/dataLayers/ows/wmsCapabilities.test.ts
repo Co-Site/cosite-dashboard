@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CapabilitiesError } from "./owsService";
 import { chooseFeatureInfoFormat, parseWmsCapabilities, probeWmsLayer } from "./wmsCapabilities";
 
 const CAPABILITIES = `<?xml version="1.0" encoding="UTF-8"?>
@@ -94,9 +93,11 @@ describe("parseWmsCapabilities", () => {
     it("rejects exception reports and other documents", () => {
         const exception = `<?xml version="1.0"?>
             <ServiceExceptionReport version="1.3.0"><ServiceException>Unknown language</ServiceException></ServiceExceptionReport>`;
-        expect(() => parseWmsCapabilities(exception)).toThrow(CapabilitiesError);
+        expect(() => parseWmsCapabilities(exception)).toThrow(/Not a WMS_Capabilities document/);
         expect(() => parseWmsCapabilities(exception)).toThrow(/Unknown language/);
-        expect(() => parseWmsCapabilities("<html><body>Not found</body></html>")).toThrow(CapabilitiesError);
+        expect(() => parseWmsCapabilities("<html><body>Not found</body></html>")).toThrow(
+            /Not a WMS_Capabilities document/
+        );
     });
 });
 

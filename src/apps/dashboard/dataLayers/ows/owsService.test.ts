@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-    CapabilitiesError,
     createCapabilitiesCache,
     exceptionMessage,
     fetchCapabilitiesText,
-    normalizeServiceEndpoint
+    normalizeServiceEndpoint,
+    ServiceUnreachableError
 } from "./owsService";
 
 describe("normalizeServiceEndpoint", () => {
@@ -65,16 +65,16 @@ describe("fetchCapabilitiesText", () => {
                 throw new TypeError("Failed to fetch");
             })
         );
-        await expect(fetchCapabilitiesText("https://example.org/wfs", {})).rejects.toMatchObject({
-            kind: "unreachable"
-        });
+        await expect(fetchCapabilitiesText("https://example.org/wfs", {})).rejects.toBeInstanceOf(
+            ServiceUnreachableError
+        );
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => new Response("", { status: 404 }))
         );
         const error = await fetchCapabilitiesText("https://example.org/wfs", {}).catch((e: unknown) => e);
-        expect(error).toBeInstanceOf(CapabilitiesError);
-        expect(error).toMatchObject({ kind: "invalid" });
+        expect(error).toBeInstanceOf(Error);
+        expect(error).not.toBeInstanceOf(ServiceUnreachableError);
     });
 });
 

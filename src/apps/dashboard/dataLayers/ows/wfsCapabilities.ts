@@ -5,14 +5,14 @@ import { WFS_VERSIONS, WfsDataLayerConfig, WfsVersion } from "../config/types";
  * added. Shared service helpers are in `owsService.ts`.
  */
 import {
-    CapabilitiesError,
     createCapabilitiesCache,
-    describeUnexpectedDocument,
     errorMessage,
     exceptionMessage,
     fetchCapabilitiesText,
     meaningful,
+    parseCapabilitiesRoot,
     serviceUrl,
+    ServiceUnreachableError,
     text
 } from "./owsService";
 
@@ -130,17 +130,13 @@ function parseFeatureType(element: Element, serviceFormats: string[]): WfsFeatur
 
 /**
  * Parses a WFS 2.0.0 or 1.1.0 capabilities document. Elements are matched by local name, so namespace prefixes do
- * not matter. Throws a {@link CapabilitiesError} for exception reports, other documents and other versions.
+ * not matter. Throws for exception reports, other documents and other versions.
  */
 export function parseWfsCapabilities(xml: string): WfsCapabilities {
-    const root = new DOMParser().parseFromString(xml, "application/xml").documentElement;
-    if (root?.localName !== "WFS_Capabilities") {
-        const content = describeUnexpectedDocument(root);
-        throw new CapabilitiesError("invalid", `Not a WFS capabilities document${content ? `: ${content}` : "."}`);
-    }
+    const root = parseCapabilitiesRoot(xml, "WFS_Capabilities");
     const version = WFS_VERSIONS.find((supported) => supported === root.getAttribute("version"));
     if (!version) {
-        throw new CapabilitiesError("invalid", `Unsupported WFS version '${root.getAttribute("version")}'.`);
+        throw new Error(`Unsupported WFS version '${root.getAttribute("version")}'.`);
     }
 
     const identification = child(root, "ServiceIdentification");
@@ -170,7 +166,7 @@ async function loadCapabilities(endpoint: string): Promise<WfsCapabilities> {
         try {
             return parseWfsCapabilities(await fetchCapabilitiesText(endpoint, { SERVICE: "WFS", VERSION: version }));
         } catch (error) {
-            if (error instanceof CapabilitiesError && error.kind === "unreachable") {
+            if (error instanceof ServiceUnreachableError) {
                 throw error;
             }
             lastError = error;

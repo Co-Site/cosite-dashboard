@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WfsDataLayerConfig, WfsVersion } from "../config/types";
-import { CapabilitiesError } from "./owsService";
 import {
     chooseCrs,
     chooseOutputFormat,
@@ -121,9 +120,11 @@ describe("parseWfsCapabilities", () => {
     it("rejects exception reports, other documents and other versions", () => {
         const exception = `<ows:ExceptionReport xmlns:ows="http://www.opengis.net/ows/1.1">
             <ows:Exception><ows:ExceptionText>Unknown service</ows:ExceptionText></ows:Exception></ows:ExceptionReport>`;
-        expect(() => parseWfsCapabilities(exception)).toThrow(CapabilitiesError);
+        expect(() => parseWfsCapabilities(exception)).toThrow(/Not a WFS_Capabilities document/);
         expect(() => parseWfsCapabilities(exception)).toThrow(/Unknown service/);
-        expect(() => parseWfsCapabilities(`<WMS_Capabilities version="1.3.0"/>`)).toThrow(CapabilitiesError);
+        expect(() => parseWfsCapabilities(`<WMS_Capabilities version="1.3.0"/>`)).toThrow(
+            /Not a WFS_Capabilities document/
+        );
         expect(() => parseWfsCapabilities(`<WFS_Capabilities version="1.0.0"/>`)).toThrow(/version '1.0.0'/);
     });
 });
@@ -154,9 +155,7 @@ describe("fetchWfsCapabilities", () => {
                 throw new TypeError("Failed to fetch");
             })
         );
-        await expect(fetchWfsCapabilities("https://example.org/unreachable")).rejects.toMatchObject({
-            kind: "unreachable"
-        });
+        await expect(fetchWfsCapabilities("https://example.org/unreachable")).rejects.toThrow("Failed to load");
         expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
     });
 });
