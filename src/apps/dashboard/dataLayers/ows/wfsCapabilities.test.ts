@@ -308,36 +308,25 @@ describe("probeWfsFeatureType", () => {
 
     it("accepts a feature collection in the requested encoding", async () => {
         respond(`{"type":"FeatureCollection","features":[]}`);
-        await expect(probe("application/json")).resolves.toEqual({
-            ok: true
-        });
+        await expect(probe("application/json")).resolves.toBeUndefined();
         expect(new URL(vi.mocked(fetch).mock.calls[0]![0] as URL).searchParams.get("COUNT")).toBe("1");
 
         respond(`<wfs:FeatureCollection xmlns:wfs="http://www.opengis.net/wfs/2.0"/>`);
-        await expect(probe("GML2")).resolves.toEqual({ ok: true });
+        await expect(probe("GML2")).resolves.toBeUndefined();
     });
 
     it("reports exception reports (sent with HTTP 200), HTTP and network errors", async () => {
         respond(`<ows:ExceptionReport xmlns:ows="http://www.opengis.net/ows/1.1"><ows:Exception>
             <ows:ExceptionText>Unknown feature type</ows:ExceptionText></ows:Exception></ows:ExceptionReport>`);
-        await expect(probe("application/json")).resolves.toEqual({
-            ok: false,
-            message: "Unknown feature type"
-        });
+        await expect(probe("application/json")).resolves.toBe("Unknown feature type");
         respond("<html>Error</html>", 500);
-        await expect(probe("GML2")).resolves.toEqual({
-            ok: false,
-            message: "HTTP 500"
-        });
+        await expect(probe("GML2")).resolves.toBe("HTTP 500");
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => {
                 throw new TypeError("Failed to fetch");
             })
         );
-        await expect(probe("GML2")).resolves.toEqual({
-            ok: false,
-            message: "Failed to fetch"
-        });
+        await expect(probe("GML2")).resolves.toBe("Failed to fetch");
     });
 });

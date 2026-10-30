@@ -13,7 +13,6 @@ import {
     errorMessage,
     exceptionMessage,
     fetchCapabilitiesText,
-    LayerProbe,
     meaningful,
     serviceUrl,
     text
@@ -165,13 +164,14 @@ export function peekWmsCapabilities(endpoint: string): WmsCapabilities | undefin
 
 /**
  * Requests a tiny map image (1 × 1 pixel around `center`, EPSG:3857) to find out whether the service can deliver the
- * layer. Services answer errors with HTTP 200 and an XML exception, so only an image counts as success.
+ * layer. Services answer errors with HTTP 200 and an XML exception, so only an image counts as success. Resolves to
+ * the service's error message, or `undefined` if the layer can be delivered.
  */
 export async function probeWmsLayer(
     endpoint: string,
     layerName: string,
     center: [number, number]
-): Promise<LayerProbe> {
+): Promise<string | undefined> {
     const [x, y] = center;
     const url = serviceUrl(endpoint, {
         SERVICE: "WMS",
@@ -190,11 +190,11 @@ export async function probeWmsLayer(
         const response = await fetch(url);
         const contentType = response.headers.get("content-type") ?? "";
         if (response.ok && contentType.startsWith("image/")) {
-            return { ok: true };
+            return undefined;
         }
-        return { ok: false, message: exceptionMessage(await response.text()) ?? `HTTP ${response.status}` };
+        return exceptionMessage(await response.text()) ?? `HTTP ${response.status}`;
     } catch (error) {
-        return { ok: false, message: errorMessage(error) };
+        return errorMessage(error);
     }
 }
 

@@ -24,7 +24,15 @@ const LOG = createLogger("dashboard:userServices");
 /** Why a layer cannot be added: a text below the service's message prefix, with its values. */
 export interface CheckFailure {
     messageId: string;
-    values?: Record<string, string>;
+
+    /** Error message of the service, shown in the text. */
+    message?: string;
+}
+
+/** The failure for a layer the service cannot deliver, logged with the service's message. */
+function notRequestable(endpoint: string, layerName: string, message: string): CheckFailure {
+    LOG.warn(`'${layerName}' of ${endpoint} cannot be requested: ${message}`);
+    return { messageId: "error.notRequestable", message };
 }
 
 /**
@@ -61,12 +69,8 @@ export const WMS_SERVICE: UserService<WmsCapabilities, WmsCapabilitiesLayer> = {
         }
         // Some services list layers that cannot be requested (e.g. folders with a name).
         const center = (map.olMap.getView().getCenter() ?? [0, 0]) as [number, number];
-        const probe = await probeWmsLayer(endpoint, layer.name, center);
-        if (probe.ok) {
-            return undefined;
-        }
-        LOG.warn(`Layer '${layer.name}' of ${endpoint} cannot be requested: ${probe.message}`);
-        return { messageId: "error.notRequestable", values: { message: probe.message ?? "" } };
+        const message = await probeWmsLayer(endpoint, layer.name, center);
+        return message === undefined ? undefined : notRequestable(endpoint, layer.name, message);
     },
     input: userWmsLayerConfig
 };
@@ -87,12 +91,8 @@ export const WFS_SERVICE: UserService<WfsCapabilities, WfsFeatureType> = {
             return { messageId: "error.noFormat" };
         }
         // Not every service can deliver every feature type in the chosen format and CRS.
-        const probe = await probeWfsFeatureType(endpoint, settings);
-        if (probe.ok) {
-            return undefined;
-        }
-        LOG.warn(`Feature type '${featureType.name}' of ${endpoint} cannot be requested: ${probe.message}`);
-        return { messageId: "error.notRequestable", values: { message: probe.message ?? "" } };
+        const message = await probeWfsFeatureType(endpoint, settings);
+        return message === undefined ? undefined : notRequestable(endpoint, featureType.name, message);
     },
     input: (endpoint, capabilities, featureType) =>
         userWfsLayerConfig(endpoint, capabilities, featureType, paletteColor(nextColor++))

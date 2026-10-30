@@ -23,14 +23,6 @@ export class CapabilitiesError extends Error {
     }
 }
 
-/** Result of checking whether a service can deliver a layer before it is added. */
-export interface LayerProbe {
-    ok: boolean;
-
-    /** Error message of the service (e.g. from an exception report), if any. */
-    message?: string;
-}
-
 /** The trimmed text, or `undefined` if it is empty. */
 export function text(value: string | undefined | null): string | undefined {
     const trimmed = value?.trim();

@@ -65,7 +65,7 @@ function AddServiceForm<Capabilities, Entry extends SearchOption>(props: AddServ
         const failure = await service.check(state.endpoint, state.capabilities, entry, map);
         setChecking(false);
         if (failure) {
-            setError(specific(failure.messageId, failure.values));
+            setError(specific(failure.messageId, { message: failure.message ?? "" }));
             return;
         }
         userLayers.add(service.input(state.endpoint, state.capabilities, entry));

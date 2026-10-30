@@ -11,7 +11,6 @@ import {
     errorMessage,
     exceptionMessage,
     fetchCapabilitiesText,
-    LayerProbe,
     meaningful,
     serviceUrl,
     text
@@ -328,16 +327,17 @@ function isFeatureCollection(body: string, encoding: FeatureEncoding): boolean {
 /**
  * Requests a single feature to find out whether the service can deliver the feature type in the chosen format and
  * CRS. Services answer errors with HTTP 200 and an exception report, so only a feature collection counts as success.
+ * Resolves to the service's error message, or `undefined` if the feature type can be delivered.
  */
-export async function probeWfsFeatureType(endpoint: string, settings: WfsRequestSettings): Promise<LayerProbe> {
+export async function probeWfsFeatureType(endpoint: string, settings: WfsRequestSettings): Promise<string | undefined> {
     try {
         const response = await fetch(getFeatureUrl(endpoint, settings, 1));
         const body = await response.text();
         if (response.ok && isFeatureCollection(body, settings.encoding)) {
-            return { ok: true };
+            return undefined;
         }
-        return { ok: false, message: exceptionMessage(body) ?? `HTTP ${response.status}` };
+        return exceptionMessage(body) ?? `HTTP ${response.status}`;
     } catch (error) {
-        return { ok: false, message: errorMessage(error) };
+        return errorMessage(error);
     }
 }
