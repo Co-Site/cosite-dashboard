@@ -44,7 +44,6 @@ describe("readFeatures", () => {
 describe("userWfsLayerConfig", () => {
     const capabilities: WfsCapabilities = {
         version: "2.0.0",
-        serviceTitle: "Verwaltungsgrenzen",
         contactOrganization: "LGV Hamburg",
         fees: undefined,
         accessConstraints: undefined,

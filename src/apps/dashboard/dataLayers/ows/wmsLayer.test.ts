@@ -15,7 +15,6 @@ describe("userWmsLayerConfig", () => {
         isGroup: false
     };
     const capabilities: WmsCapabilities = {
-        serviceTitle: "Service",
         contactOrganization: "DWD",
         fees: undefined,
         accessConstraints: "CC BY 4.0",

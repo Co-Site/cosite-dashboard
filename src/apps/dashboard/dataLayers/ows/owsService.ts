@@ -123,7 +123,7 @@ export function createCapabilitiesCache<T>(load: (endpoint: string) => Promise<T
 }
 
 /** What a description of a user layer is made of: the layer's abstract and information about its service. */
-export interface ServiceDescription {
+interface ServiceDescription {
     contactOrganization: string | undefined;
     fees: string | undefined;
     accessConstraints: string | undefined;

@@ -75,7 +75,6 @@ describe("parseWfsCapabilities", () => {
         const capabilities = parseWfsCapabilities(HAMBURG_2_0);
         expect(capabilities).toMatchObject({
             version: "2.0.0",
-            serviceTitle: "WFS ALKIS Verwaltungsgrenzen Hamburg",
             contactOrganization: "LGV Hamburg",
             fees: "Datenlizenz Deutschland Namensnennung 2.0",
             accessConstraints: "Es gelten keine Zugriffsbeschränkungen"
@@ -194,7 +193,6 @@ describe("coordinate reference systems", () => {
 
 const RESOLVE_CAPABILITIES: WfsCapabilities = {
     version: "2.0.0",
-    serviceTitle: undefined,
     contactOrganization: undefined,
     fees: undefined,
     accessConstraints: undefined,

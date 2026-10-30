@@ -42,7 +42,6 @@ export interface WmsCapabilitiesLayer {
 
 /** What the dashboard uses from a WMS GetCapabilities document (version 1.3.0). */
 export interface WmsCapabilities {
-    serviceTitle: string | undefined;
     contactOrganization: string | undefined;
     fees: string | undefined;
     accessConstraints: string | undefined;
@@ -124,7 +123,6 @@ export function parseWmsCapabilities(xml: string): WmsCapabilities {
     const layers: WmsCapabilitiesLayer[] = [];
     collectLayers(parsed.Capability?.Layer, [], layers);
     return {
-        serviceTitle: text(service.Title),
         contactOrganization: text(service.ContactInformation?.ContactPersonPrimary?.ContactOrganization),
         fees: meaningful(service.Fees),
         accessConstraints: meaningful(service.AccessConstraints),

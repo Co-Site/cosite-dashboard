@@ -22,7 +22,7 @@ import { SearchOption } from "./LayerSearch";
 const LOG = createLogger("dashboard:userServices");
 
 /** Why a layer cannot be added: a text below the service's message prefix, with its values. */
-export interface CheckFailure {
+interface CheckFailure {
     messageId: string;
 
     /** Error message of the service, shown in the text. */

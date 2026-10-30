@@ -5,7 +5,13 @@ import { Geometry } from "ol/geom";
 import BaseLayer from "ol/layer/Base";
 import { Pixel } from "ol/pixel";
 import { LocalizedText } from "../dataLayers/config/localizedText";
-import { DataLayerNode, FeatureInfoConfig, FeatureInfoField, WmsDataLayerConfig } from "../dataLayers/config/types";
+import {
+    DataLayerNode,
+    FeatureInfoConfig,
+    FeatureInfoField,
+    WfsDataLayerConfig,
+    WmsDataLayerConfig
+} from "../dataLayers/config/types";
 import { getDataLayerConfig } from "../dataLayers/dataLayerBase";
 import { chooseFeatureInfoFormat, fetchWmsCapabilities } from "../dataLayers/ows/wmsCapabilities";
 
@@ -73,12 +79,13 @@ export function getQueryableWmsLayers(map: MapModel): WMSLayer[] {
     return getQueryableLayers(map, "wms").filter((layer): layer is WMSLayer => layer instanceof WMSLayer);
 }
 
-/** The visible WFS layers whose features are shown on click, by their OpenLayers layer. */
-function getQueryableWfsLayers(map: MapModel): Map<BaseLayer, Layer> {
+/** The visible WFS layers whose features are shown on click, with their config, by their OpenLayers layer. */
+function getQueryableWfsLayers(map: MapModel): Map<BaseLayer, { layer: Layer; config: WfsDataLayerConfig }> {
     return new Map(
-        getQueryableLayers(map, "wfs")
-            .filter((layer) => isLayer(layer))
-            .map((layer) => [layer.olLayer, layer])
+        getQueryableLayers(map, "wfs").flatMap((layer) => {
+            const config = getDataLayerConfig(layer);
+            return isLayer(layer) && config?.type === "wfs" ? [[layer.olLayer, { layer, config }] as const] : [];
+        })
     );
 }
 
@@ -115,11 +122,11 @@ function featureProperties(feature: Feature): Record<string, unknown> {
 /** Whether a feature of a WFS layer that shows its features on click is at the pixel. */
 export function hasWfsFeatureAt(map: MapModel, pixel: Pixel, hitTolerance: number): boolean {
     const layers = getQueryableWfsLayers(map);
-    return layers.size > 0 && map.olMap.hasFeatureAtPixel(pixel, { layerFilter: (l) => layers.has(l), hitTolerance });
+    return map.olMap.hasFeatureAtPixel(pixel, { layerFilter: (l) => layers.has(l), hitTolerance });
 }
 
 /** The WFS features at a pixel: their attributes per layer (topmost first) and their geometries. */
-export interface WfsFeatureHits {
+interface WfsFeatureHits {
     results: FeatureInfoResult[];
     geometries: Geometry[];
 }
@@ -132,17 +139,14 @@ export function getWfsFeatureInfo(map: MapModel, pixel: Pixel, hitTolerance: num
     const layers = getQueryableWfsLayers(map);
     const results = new Map<string, FeatureInfoResult>();
     const geometries: Geometry[] = [];
-    if (layers.size === 0) {
-        return { results: [], geometries };
-    }
     map.olMap.forEachFeatureAtPixel(
         pixel,
         (feature, olLayer) => {
-            const layer = layers.get(olLayer);
-            const config = layer && getDataLayerConfig(layer);
-            if (!layer || config?.type !== "wfs" || !(feature instanceof Feature)) {
+            const hit = layers.get(olLayer);
+            if (!hit || !(feature instanceof Feature)) {
                 return;
             }
+            const { layer, config } = hit;
             let result = results.get(layer.id);
             if (!result) {
                 result = { layerId: layer.id, features: [] };

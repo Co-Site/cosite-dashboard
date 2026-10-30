@@ -8,7 +8,7 @@ import { UserService } from "./userServices";
 
 const LOG = createLogger("dashboard:useServiceCapabilities");
 
-export type ServiceState<Capabilities> =
+type ServiceState<Capabilities> =
     | { kind: "idle" }
     | { kind: "loading" }
     | { kind: "error"; message: string }

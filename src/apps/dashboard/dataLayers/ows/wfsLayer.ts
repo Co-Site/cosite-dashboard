@@ -32,7 +32,7 @@ import { createWfsStyle, wfsLayerColor } from "./wfsStyle";
 const LOG = createLogger("dashboard:wfsLayer");
 
 /** Maximum number of features per request if the configuration sets none. */
-export const DEFAULT_MAX_FEATURES = 1000;
+const DEFAULT_MAX_FEATURES = 1000;
 
 /** Source property: whether the last request returned the maximum number of features (so some may be missing). */
 export const TRUNCATED_PROPERTY = "truncated";
@@ -61,19 +61,8 @@ export function readFeatures(body: string, settings: WfsRequestSettings, mapProj
     return Array.isArray(json.features) ? new GeoJSON().readFeatures(json, options) : [];
 }
 
-/** Requests the features within `extent` (in the map projection) and returns the response text. */
-async function requestFeatures(
-    config: WfsDataLayerConfig,
-    settings: WfsRequestSettings,
-    extent: number[],
-    mapProjection: string
-): Promise<string> {
-    const url = getFeatureUrl(
-        config.endpoint,
-        settings,
-        config.wfs.maxFeatures ?? DEFAULT_MAX_FEATURES,
-        transformExtent(extent, mapProjection, settings.dataProjection)
-    );
+/** Requests features and returns the response text; throws for HTTP errors and exception reports. */
+async function requestFeatures(url: URL): Promise<string> {
     const response = await fetch(url);
     const body = await response.text();
     // Services report errors with HTTP 200 and an exception report.
@@ -90,7 +79,8 @@ async function requestFeatures(
  * `featuresloaderror`; their extent counts as loaded, so it is requested again only when the view shows more
  * (retrying at once would repeat a broken request in a loop).
  */
-export function createWfsSource(config: WfsDataLayerConfig): VectorSource {
+function createWfsSource(config: WfsDataLayerConfig): VectorSource {
+    const maxFeatures = config.wfs.maxFeatures ?? DEFAULT_MAX_FEATURES;
     let settings: Promise<WfsRequestSettings> | undefined;
     const source: VectorSource = new VectorSource({
         attributions: config.attribution,
@@ -107,16 +97,16 @@ export function createWfsSource(config: WfsDataLayerConfig): VectorSource {
             });
             const mapProjection = projection.getCode();
             settings
-                .then(async (resolved) =>
-                    readFeatures(
-                        await requestFeatures(config, resolved, extent, mapProjection),
-                        resolved,
-                        mapProjection
-                    )
-                )
+                .then(async (resolved) => {
+                    const dataExtent = transformExtent(extent, mapProjection, resolved.dataProjection);
+                    const body = await requestFeatures(
+                        getFeatureUrl(config.endpoint, resolved, maxFeatures, dataExtent)
+                    );
+                    return readFeatures(body, resolved, mapProjection);
+                })
                 .then((features) => {
                     source.addFeatures(features);
-                    source.set(TRUNCATED_PROPERTY, features.length >= (config.wfs.maxFeatures ?? DEFAULT_MAX_FEATURES));
+                    source.set(TRUNCATED_PROPERTY, features.length >= maxFeatures);
                     success?.(features);
                 })
                 .catch((error: unknown) => {

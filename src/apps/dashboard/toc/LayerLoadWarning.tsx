@@ -1,7 +1,6 @@
 import { Flex } from "@chakra-ui/react";
 import { AnyLayer } from "@open-pioneer/map";
 import { useReactiveSnapshot } from "@open-pioneer/reactivity";
-import { EventsKey } from "ol/events";
 import { unByKey } from "ol/Observable";
 import ImageWMS from "ol/source/ImageWMS";
 import VectorSource from "ol/source/Vector";
@@ -13,41 +12,26 @@ import { TRUNCATED_PROPERTY } from "../dataLayers/ows/wfsLayer";
 /** Source of a layer whose loading the TOC watches: map images of a WMS or features of a WFS. */
 export type WatchedSource = ImageWMS | VectorSource;
 
-/** Whether the last request of the source failed (map image or features). */
-function useLoadError(source: WatchedSource | undefined): boolean {
-    const [failed, setFailed] = useState(false);
+/** What the TOC warns about: the last request failed, or (WFS) it returned the maximum number of features. */
+type LoadStatus = "failed" | "limitReached" | undefined;
+
+function useLoadStatus(source: WatchedSource | undefined): LoadStatus {
+    const [status, setStatus] = useState<LoadStatus>();
     useEffect(() => {
         if (!source) {
             return;
         }
-        const fail = () => setFailed(true);
-        const succeed = () => setFailed(false);
-        const keys: EventsKey[] =
-            source instanceof VectorSource
-                ? [source.on("featuresloaderror", fail), source.on("featuresloadend", succeed)]
-                : [source.on("imageloaderror", fail), source.on("imageloadend", succeed)];
+        const fail = () => setStatus("failed");
+        if (source instanceof VectorSource) {
+            // The WFS loader sets the property before it reports success.
+            const succeed = () => setStatus(source.get(TRUNCATED_PROPERTY) ? "limitReached" : undefined);
+            const keys = [source.on("featuresloaderror", fail), source.on("featuresloadend", succeed)];
+            return () => unByKey(keys);
+        }
+        const keys = [source.on("imageloaderror", fail), source.on("imageloadend", () => setStatus(undefined))];
         return () => unByKey(keys);
     }, [source]);
-    return failed;
-}
-
-/** Whether the last feature request returned the maximum number of features (see `dataLayers/wfsLayer.ts`). */
-function useFeatureLimitReached(source: WatchedSource | undefined): boolean {
-    const [reached, setReached] = useState(false);
-    useEffect(() => {
-        if (!(source instanceof VectorSource)) {
-            return;
-        }
-        const update = () => setReached(!!source.get(TRUNCATED_PROPERTY));
-        update();
-        const key = source.on("propertychange", (event) => {
-            if (event.key === TRUNCATED_PROPERTY) {
-                update();
-            }
-        });
-        return () => unByKey(key);
-    }, [source]);
-    return reached;
+    return status;
 }
 
 /**
@@ -59,11 +43,10 @@ function useFeatureLimitReached(source: WatchedSource | undefined): boolean {
  */
 export function LayerLoadWarning({ layer, source }: { layer: AnyLayer; source: WatchedSource | undefined }) {
     const intl = useIntl();
-    const failed = useLoadError(source);
-    const limitReached = useFeatureLimitReached(source);
+    const status = useLoadStatus(source);
     const visible = useReactiveSnapshot(() => layer.visible, [layer]);
     const loadErrorId = source instanceof VectorSource ? "toc.featuresLoadError" : "toc.loadError";
-    const messageId = failed ? loadErrorId : limitReached ? "toc.featureLimit" : undefined;
+    const messageId = status === "failed" ? loadErrorId : status === "limitReached" ? "toc.featureLimit" : undefined;
     return (
         // The status region stays in place so that screen readers announce the warning when it appears.
         <Flex role="status" alignItems="center" gap={1} fontSize="xs" color="fg.warning">

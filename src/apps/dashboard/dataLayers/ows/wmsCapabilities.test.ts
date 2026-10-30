@@ -54,7 +54,6 @@ describe("parseWmsCapabilities", () => {
 
     it("reads service information", () => {
         expect(capabilities).toMatchObject({
-            serviceTitle: "Wetterdienst",
             contactOrganization: "Deutscher Wetterdienst",
             fees: undefined,
             accessConstraints: "https://www.dwd.de/copyright",

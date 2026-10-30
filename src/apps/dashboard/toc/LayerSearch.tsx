@@ -47,8 +47,8 @@ export function useLayerSearch<T extends SearchOption>(options: T[] | undefined)
     const [query, setQuery] = useState("");
     const [active, setActive] = useState(0);
     const results = useMemo(() => (options ? searchLayers(options, query) : []), [options, query]);
-    const activeOption = results[Math.min(active, results.length - 1)];
-    const activeIndex = activeOption ? results.indexOf(activeOption) : -1;
+    const activeIndex = Math.min(active, results.length - 1);
+    const activeOption = results[activeIndex];
 
     const changeQuery = (value: string) => {
         setQuery(value);
@@ -60,7 +60,7 @@ export function useLayerSearch<T extends SearchOption>(options: T[] | undefined)
     return { listId, query, changeQuery, results, activeOption, activeIndex, setActive, move, optionId };
 }
 
-export type LayerSearchState<T extends SearchOption> = ReturnType<typeof useLayerSearch<T>>;
+type LayerSearchState<T extends SearchOption> = ReturnType<typeof useLayerSearch<T>>;
 
 interface LayerListProps<T extends SearchOption> {
     search: LayerSearchState<T>;

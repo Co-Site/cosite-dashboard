@@ -34,7 +34,6 @@ export interface WfsFeatureType {
 /** What the dashboard uses from a WFS GetCapabilities document. */
 export interface WfsCapabilities {
     version: WfsVersion;
-    serviceTitle: string | undefined;
     contactOrganization: string | undefined;
     fees: string | undefined;
     accessConstraints: string | undefined;
@@ -143,7 +142,6 @@ export function parseWfsCapabilities(xml: string): WfsCapabilities {
     const featureTypeList = child(root, "FeatureTypeList");
     return {
         version,
-        serviceTitle: childText(identification, "Title"),
         contactOrganization: childText(child(root, "ServiceProvider"), "ProviderName"),
         fees: meaningful(childText(identification, "Fees")),
         accessConstraints: meaningful(childText(identification, "AccessConstraints")),
