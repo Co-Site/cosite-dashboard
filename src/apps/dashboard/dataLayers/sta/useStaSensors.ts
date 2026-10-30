@@ -5,7 +5,7 @@ import VectorLayer from "ol/layer/Vector";
 import { unByKey } from "ol/Observable";
 import VectorSource from "ol/source/Vector";
 import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
-import { getDataLayerConfig } from "../createDataLayer";
+import { getDataLayerConfig } from "../dataLayerBase";
 import { colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
 import { getDatastreamProperties, StaDatastreamProperties } from "./sta";
 

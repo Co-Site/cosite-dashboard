@@ -6,7 +6,7 @@ import BaseLayer from "ol/layer/Base";
 import { Pixel } from "ol/pixel";
 import { LocalizedText } from "../dataLayers/config/localizedText";
 import { DataLayerNode, FeatureInfoConfig, FeatureInfoField, WmsDataLayerConfig } from "../dataLayers/config/types";
-import { getDataLayerConfig } from "../dataLayers/createDataLayer";
+import { getDataLayerConfig } from "../dataLayers/dataLayerBase";
 import { chooseFeatureInfoFormat, fetchWmsCapabilities } from "../dataLayers/ows/wmsCapabilities";
 
 export interface FeatureInfoValue {

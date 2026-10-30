@@ -2,7 +2,7 @@ import { LayerFactory, useMapModelValue } from "@open-pioneer/map";
 import { LocaleService } from "@open-pioneer/runtime";
 import { useService } from "open-pioneer:react-hooks";
 import { useMemo } from "react";
-import { DataLayerContext } from "../dataLayers/createDataLayer";
+import { DataLayerContext } from "../dataLayers/dataLayerBase";
 import { getUserLayers, UserLayerConfigs, UserLayerInput, UserLayerKind } from "../dataLayers/userLayers";
 import { PROJECTION } from "../services";
 

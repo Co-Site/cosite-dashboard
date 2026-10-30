@@ -5,7 +5,7 @@ import VectorLayer from "ol/layer/Vector";
 import { useIntl } from "open-pioneer:react-hooks";
 import { ReactNode } from "react";
 import { LuTrash2 } from "react-icons/lu";
-import { getDataLayerConfig } from "../dataLayers/createDataLayer";
+import { getDataLayerConfig } from "../dataLayers/dataLayerBase";
 import { wfsLayerColor } from "../dataLayers/ows/wfsStyle";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { UserLayerKind } from "../dataLayers/userLayers";

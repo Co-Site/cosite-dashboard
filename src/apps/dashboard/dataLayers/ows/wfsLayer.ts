@@ -1,18 +1,21 @@
 /*
- * The vector source of a WFS layer: which version, output format and CRS are requested, how the features are read
- * (GeoJSON or GML) and how they are loaded for the visible extent.
+ * WFS layers: which version, output format and CRS are requested, how the features are read (GeoJSON or GML),
+ * how they are loaded for the visible extent, and the map layer itself.
  */
 import { createLogger } from "@open-pioneer/core";
+import { Layer, SimpleLayer } from "@open-pioneer/map";
 import Feature from "ol/Feature";
 import GeoJSON from "ol/format/GeoJSON";
 import GML2 from "ol/format/GML2";
 import GML3 from "ol/format/GML3";
 import GML32 from "ol/format/GML32";
 import WFS from "ol/format/WFS";
+import VectorLayer from "ol/layer/Vector";
 import { bbox } from "ol/loadingstrategy";
 import { transformExtent } from "ol/proj";
 import VectorSource from "ol/source/Vector";
 import { WfsDataLayerConfig, WfsVersion } from "../config/types";
+import { applyCapabilitiesTitle, commonOptions, DataLayerContext } from "../dataLayerBase";
 import { exceptionMessage } from "./owsService";
 import {
     chooseCrs,
@@ -27,6 +30,7 @@ import {
     WfsCapabilities,
     WfsFeatureType
 } from "./wfsCapabilities";
+import { createWfsStyle, wfsLayerColor } from "./wfsStyle";
 
 const LOG = createLogger("dashboard:wfsLayer");
 
@@ -167,4 +171,26 @@ export function createWfsSource(config: WfsDataLayerConfig): VectorSource {
         }
     });
     return source;
+}
+
+export function createWfsLayer(config: WfsDataLayerConfig, context: DataLayerContext): Layer {
+    const layer = context.layerFactory.create({
+        type: SimpleLayer,
+        ...commonOptions(config, context),
+        olLayer: new VectorLayer({
+            source: createWfsSource(config),
+            style: createWfsStyle(wfsLayerColor(config))
+        })
+    });
+    if (config.name == null) {
+        fetchWfsCapabilities(config.endpoint)
+            .then((capabilities) => {
+                const featureType = findFeatureType(capabilities, config.wfs.featureType);
+                if (featureType) {
+                    applyCapabilitiesTitle(layer, config, featureType);
+                }
+            })
+            .catch((error) => LOG.warn(`Failed to load capabilities for the title of '${config.id}'.`, error));
+    }
+    return layer;
 }

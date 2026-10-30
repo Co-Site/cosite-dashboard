@@ -1,6 +1,6 @@
 import { WMSLayer } from "@open-pioneer/map";
 import { WmsLegendConfig } from "../dataLayers/config/types";
-import { getDataLayerConfig } from "../dataLayers/createDataLayer";
+import { getDataLayerConfig } from "../dataLayers/dataLayerBase";
 import { peekWmsCapabilities } from "../dataLayers/ows/wmsCapabilities";
 
 function getLegendConfig(layer: WMSLayer): { legend: WmsLegendConfig; temporary: boolean } | undefined {
