@@ -1,7 +1,9 @@
 /*
  * Helpers shared by the OGC service clients (WMS, WFS): normalizing service URLs entered by the user,
- * loading capabilities documents with a session cache, and reading error messages of the services.
+ * loading capabilities documents with a session cache, reading error messages of the services, and describing a
+ * layer added by the user with the information about its service.
  */
+import { LocalizedText } from "../config/localizedText";
 
 /** Why the capabilities could not be loaded. */
 export type CapabilitiesErrorKind =
@@ -129,4 +131,36 @@ export function createCapabilitiesCache<T>(load: (endpoint: string) => Promise<T
             return loaded.get(endpoint);
         }
     };
+}
+
+/** What a description of a user layer is made of: the layer's abstract and information about its service. */
+export interface ServiceDescription {
+    contactOrganization: string | undefined;
+    fees: string | undefined;
+    accessConstraints: string | undefined;
+}
+
+/** Labels of the service information in the layer description (both languages, like the configuration). */
+const LABELS = {
+    provider: { de: "Anbieter", en: "Provider" },
+    constraints: { de: "Nutzungsbedingungen", en: "Terms of use" },
+    fees: { de: "Gebühren", en: "Fees" }
+};
+
+/** Abstract of the layer and information about the service (provider, terms of use, fees). */
+export function describeLayer(
+    service: ServiceDescription,
+    layer: { title: string; abstract: string | undefined }
+): LocalizedText | undefined {
+    const parts = (language: "de" | "en") =>
+        [
+            layer.abstract !== layer.title ? layer.abstract : undefined,
+            service.contactOrganization && `${LABELS.provider[language]}: ${service.contactOrganization}`,
+            service.accessConstraints && `${LABELS.constraints[language]}: ${service.accessConstraints}`,
+            service.fees && `${LABELS.fees[language]}: ${service.fees}`
+        ]
+            .filter(Boolean)
+            .join("\n\n");
+    const de = parts("de");
+    return de ? { de, en: parts("en") } : undefined;
 }

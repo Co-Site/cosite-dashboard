@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { WfsDataLayerConfig } from "../config/types";
 import { WfsCapabilities } from "./wfsCapabilities";
-import { readFeatures, resolveWfsRequest } from "./wfsLayer";
+import { readFeatures, resolveWfsRequest, userWfsLayerInput } from "./wfsLayer";
 
 const CAPABILITIES: WfsCapabilities = {
     version: "2.0.0",
@@ -78,5 +78,33 @@ describe("readFeatures", () => {
         expect(features.map((feature) => feature.getId())).toEqual(["a.1"]);
         expect(features[0]!.get("n")).toBe(1);
         expect(readFeatures(`{"type":"FeatureCollection"}`, settings, "EPSG:3857")).toEqual([]);
+    });
+});
+
+describe("userWfsLayerInput", () => {
+    const capabilities: WfsCapabilities = {
+        version: "2.0.0",
+        serviceTitle: "Verwaltungsgrenzen",
+        contactOrganization: "LGV Hamburg",
+        fees: undefined,
+        accessConstraints: undefined,
+        featureTypes: []
+    };
+    const featureType = {
+        name: "app:bezirke",
+        title: "Bezirke",
+        abstract: undefined,
+        namespace: undefined,
+        crs: ["EPSG:25832"],
+        outputFormats: ["application/geo+json"]
+    };
+
+    it("builds the layer from the feature type with the given colour", () => {
+        expect(userWfsLayerInput("https://example.org/wfs", capabilities, featureType, "#2b6cb0")).toEqual({
+            name: "Bezirke",
+            description: { de: "Anbieter: LGV Hamburg", en: "Provider: LGV Hamburg" },
+            endpoint: "https://example.org/wfs",
+            wfs: { featureType: "app:bezirke", color: "#2b6cb0" }
+        });
     });
 });

@@ -3,8 +3,6 @@ import { LocalizedText } from "./config/localizedText";
 import { DataLayerConfig, DataLayerNode, WfsDataLayerConfig, WmsDataLayerConfig } from "./config/types";
 import { createDataLayer } from "./createDataLayer";
 import { DataLayerContext, getDataLayerConfig } from "./dataLayerBase";
-import { WfsCapabilities, WfsFeatureType } from "./ows/wfsCapabilities";
-import { chooseFeatureInfoFormat, WmsCapabilities, WmsCapabilitiesLayer } from "./ows/wmsCapabilities";
 
 /** The configuration type of the user's layers per kind of service. */
 export interface UserLayerConfigs {
@@ -17,72 +15,6 @@ export type UserLayerKind = keyof UserLayerConfigs;
 
 /** What the user chose for a new layer; id, type and `temporary` are assigned here. */
 export type UserLayerInput<C extends DataLayerConfig> = Omit<C, "id" | "type" | "temporary">;
-
-/** What a description of a user layer is made of: the layer's abstract and information about its service. */
-export interface ServiceDescription {
-    contactOrganization: string | undefined;
-    fees: string | undefined;
-    accessConstraints: string | undefined;
-}
-
-/** Labels of the service information in the layer description (both languages, like the configuration). */
-const LABELS = {
-    provider: { de: "Anbieter", en: "Provider" },
-    constraints: { de: "Nutzungsbedingungen", en: "Terms of use" },
-    fees: { de: "Gebühren", en: "Fees" }
-};
-
-/** Abstract of the layer and information about the service (provider, terms of use, fees). */
-export function describe(
-    service: ServiceDescription,
-    layer: { title: string; abstract: string | undefined }
-): LocalizedText | undefined {
-    const parts = (language: "de" | "en") =>
-        [
-            layer.abstract !== layer.title ? layer.abstract : undefined,
-            service.contactOrganization && `${LABELS.provider[language]}: ${service.contactOrganization}`,
-            service.accessConstraints && `${LABELS.constraints[language]}: ${service.accessConstraints}`,
-            service.fees && `${LABELS.fees[language]}: ${service.fees}`
-        ]
-            .filter(Boolean)
-            .join("\n\n");
-    const de = parts("de");
-    return de ? { de, en: parts("en") } : undefined;
-}
-
-/** Builds the configuration of a user WMS layer from the capabilities of its service. */
-export function userWmsLayerInput(
-    endpoint: string,
-    capabilities: WmsCapabilities,
-    layer: WmsCapabilitiesLayer
-): UserLayerInput<WmsDataLayerConfig> {
-    const format = layer.queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
-    return {
-        name: layer.title,
-        description: describe(capabilities, layer),
-        endpoint,
-        attribution: layer.attribution,
-        wms: {
-            layers: [layer.name],
-            featureInfo: format ? { format } : { enabled: false }
-        }
-    };
-}
-
-/** Builds the configuration of a user WFS layer from the capabilities of its service. */
-export function userWfsLayerInput(
-    endpoint: string,
-    capabilities: WfsCapabilities,
-    featureType: WfsFeatureType,
-    color: string
-): UserLayerInput<WfsDataLayerConfig> {
-    return {
-        name: featureType.title,
-        description: describe(capabilities, featureType),
-        endpoint,
-        wfs: { featureType: featureType.name, color }
-    };
-}
 
 /** Takes over visibility and opacity of the layer into its config. */
 export function withLayerState<C extends DataLayerConfig>(

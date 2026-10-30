@@ -7,7 +7,7 @@ import {
     WfsCapabilities,
     WfsFeatureType
 } from "../dataLayers/ows/wfsCapabilities";
-import { resolveWfsRequest, WfsRequestSettings } from "../dataLayers/ows/wfsLayer";
+import { resolveWfsRequest, userWfsLayerInput, WfsRequestSettings } from "../dataLayers/ows/wfsLayer";
 import { paletteColor } from "../dataLayers/ows/wfsStyle";
 import {
     fetchWmsCapabilities,
@@ -15,13 +15,8 @@ import {
     WmsCapabilities,
     WmsCapabilitiesLayer
 } from "../dataLayers/ows/wmsCapabilities";
-import {
-    UserLayerConfigs,
-    UserLayerInput,
-    UserLayerKind,
-    userWfsLayerInput,
-    userWmsLayerInput
-} from "../dataLayers/userLayers";
+import { userWmsLayerInput } from "../dataLayers/ows/wmsLayer";
+import { UserLayerConfigs, UserLayerInput, UserLayerKind } from "../dataLayers/userLayers";
 import { SearchOption } from "./LayerSearch";
 
 const LOG = createLogger("dashboard:userServices");

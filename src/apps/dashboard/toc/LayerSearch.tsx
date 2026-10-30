@@ -1,14 +1,41 @@
 import { Badge, Box, Text } from "@chakra-ui/react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { searchLayers, SearchableLayer } from "../dataLayers/layerSearch";
 
 /** An entry of the search: a WMS layer or a WFS feature type. */
-export interface SearchOption extends SearchableLayer {
+export interface SearchOption {
+    name: string;
+    title: string;
+
     /** Titles of the parent layers, shown below the name. */
     path?: string[];
 
     /** Whether the entry groups other entries (marked with a badge). */
     isGroup?: boolean;
+}
+
+/**
+ * Filters layers by name or title (case-insensitive); without a query all layers are returned, in document order.
+ * An exact name comes first, then title matches, then name matches.
+ */
+export function searchLayers<T extends SearchOption>(layers: T[], query: string): T[] {
+    const term = query.trim().toLowerCase();
+    if (!term) {
+        return layers;
+    }
+    const rank = (layer: T) => {
+        if (layer.name.toLowerCase() === term) {
+            return 0;
+        }
+        if (layer.title.toLowerCase().includes(term)) {
+            return 1;
+        }
+        return layer.name.toLowerCase().includes(term) ? 2 : undefined;
+    };
+    return layers
+        .map((layer, index) => ({ layer, index, rank: rank(layer) }))
+        .filter((match): match is { layer: T; index: number; rank: number } => match.rank !== undefined)
+        .sort((a, b) => a.rank - b.rank || a.index - b.index)
+        .map((match) => match.layer);
 }
 
 /**

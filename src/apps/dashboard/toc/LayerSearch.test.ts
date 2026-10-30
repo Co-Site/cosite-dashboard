@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { searchLayers } from "./layerSearch";
+import { searchLayers } from "./LayerSearch";
 
 describe("searchLayers", () => {
     const layer = (name: string, title: string) => ({ name, title });

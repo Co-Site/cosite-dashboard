@@ -16,7 +16,8 @@ import { transformExtent } from "ol/proj";
 import VectorSource from "ol/source/Vector";
 import { WfsDataLayerConfig, WfsVersion } from "../config/types";
 import { applyCapabilitiesTitle, commonOptions, DataLayerContext } from "../dataLayerBase";
-import { exceptionMessage } from "./owsService";
+import type { UserLayerInput } from "../userLayers";
+import { describeLayer, exceptionMessage } from "./owsService";
 import {
     chooseCrs,
     chooseOutputFormat,
@@ -193,4 +194,19 @@ export function createWfsLayer(config: WfsDataLayerConfig, context: DataLayerCon
             .catch((error) => LOG.warn(`Failed to load capabilities for the title of '${config.id}'.`, error));
     }
     return layer;
+}
+
+/** Builds the configuration of a user WFS layer from the capabilities of its service. */
+export function userWfsLayerInput(
+    endpoint: string,
+    capabilities: WfsCapabilities,
+    featureType: WfsFeatureType,
+    color: string
+): UserLayerInput<WfsDataLayerConfig> {
+    return {
+        name: featureType.title,
+        description: describeLayer(capabilities, featureType),
+        endpoint,
+        wfs: { featureType: featureType.name, color }
+    };
 }

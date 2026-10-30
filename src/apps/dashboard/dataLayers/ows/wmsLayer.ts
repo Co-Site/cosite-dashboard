@@ -3,7 +3,14 @@ import { Layer, WMSLayer } from "@open-pioneer/map";
 import { LayerTocAttributes } from "@open-pioneer/toc";
 import { WmsDataLayerConfig } from "../config/types";
 import { applyCapabilitiesTitle, commonOptions, DataLayerContext } from "../dataLayerBase";
-import { fetchWmsCapabilities } from "./wmsCapabilities";
+import type { UserLayerInput } from "../userLayers";
+import { describeLayer } from "./owsService";
+import {
+    chooseFeatureInfoFormat,
+    fetchWmsCapabilities,
+    WmsCapabilities,
+    WmsCapabilitiesLayer
+} from "./wmsCapabilities";
 
 const LOG = createLogger("dashboard:wmsLayer");
 
@@ -75,4 +82,23 @@ export function createWmsLayer(config: WmsDataLayerConfig, context: DataLayerCon
     }
     reportFailedImageRequests(layer);
     return layer;
+}
+
+/** Builds the configuration of a user WMS layer from the capabilities of its service. */
+export function userWmsLayerInput(
+    endpoint: string,
+    capabilities: WmsCapabilities,
+    layer: WmsCapabilitiesLayer
+): UserLayerInput<WmsDataLayerConfig> {
+    const format = layer.queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
+    return {
+        name: layer.title,
+        description: describeLayer(capabilities, layer),
+        endpoint,
+        attribution: layer.attribution,
+        wms: {
+            layers: [layer.name],
+            featureInfo: format ? { format } : { enabled: false }
+        }
+    };
 }
