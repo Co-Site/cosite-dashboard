@@ -1,12 +1,8 @@
 import { createLogger } from "@open-pioneer/core";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useRef, useState } from "react";
-import {
-    fetchWmsCapabilities,
-    normalizeWmsEndpoint,
-    WmsCapabilities,
-    WmsCapabilitiesError
-} from "../dataLayers/wmsCapabilities";
+import { CapabilitiesError, normalizeServiceEndpoint } from "../dataLayers/ogcService";
+import { fetchWmsCapabilities, WmsCapabilities } from "../dataLayers/wmsCapabilities";
 
 const LOG = createLogger("dashboard:useWmsService");
 
@@ -32,7 +28,7 @@ export function useWmsService() {
     const load = () => {
         let endpoint: string;
         try {
-            endpoint = normalizeWmsEndpoint(url);
+            endpoint = normalizeServiceEndpoint(url);
         } catch {
             setService({ kind: "error", message: intl.formatMessage({ id: "addWms.error.invalidUrl" }) });
             return;
@@ -56,7 +52,7 @@ export function useWmsService() {
                     return;
                 }
                 LOG.warn(`Failed to load the capabilities of ${endpoint}.`, e);
-                const kind = e instanceof WmsCapabilitiesError ? e.kind : "invalid";
+                const kind = e instanceof CapabilitiesError ? e.kind : "invalid";
                 setService({ kind: "error", message: intl.formatMessage({ id: `addWms.error.${kind}` }) });
             });
     };

@@ -1,7 +1,8 @@
 import { Badge, Box, Text } from "@chakra-ui/react";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { searchLayers, WmsCapabilitiesLayer } from "../dataLayers/wmsCapabilities";
+import { searchLayers } from "../dataLayers/layerSearch";
+import { WmsCapabilitiesLayer } from "../dataLayers/wmsCapabilities";
 
 /**
  * State of the layer search (a combobox): the search text, the matching layers and the active result,

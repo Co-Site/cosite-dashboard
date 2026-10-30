@@ -1,13 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-    chooseFeatureInfoFormat,
-    normalizeWmsEndpoint,
-    parseWmsCapabilities,
-    probeWmsLayer,
-    searchLayers,
-    WmsCapabilitiesError,
-    WmsCapabilitiesLayer
-} from "./wmsCapabilities";
+import { CapabilitiesError } from "./ogcService";
+import { chooseFeatureInfoFormat, parseWmsCapabilities, probeWmsLayer } from "./wmsCapabilities";
 
 const CAPABILITIES = `<?xml version="1.0" encoding="UTF-8"?>
 <WMS_Capabilities version="1.3.0" xmlns="http://www.opengis.net/wms" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -101,25 +94,9 @@ describe("parseWmsCapabilities", () => {
     it("rejects exception reports and other documents", () => {
         const exception = `<?xml version="1.0"?>
             <ServiceExceptionReport version="1.3.0"><ServiceException>Unknown language</ServiceException></ServiceExceptionReport>`;
-        expect(() => parseWmsCapabilities(exception)).toThrow(WmsCapabilitiesError);
+        expect(() => parseWmsCapabilities(exception)).toThrow(CapabilitiesError);
         expect(() => parseWmsCapabilities(exception)).toThrow(/Unknown language/);
-        expect(() => parseWmsCapabilities("<html><body>Not found</body></html>")).toThrow(WmsCapabilitiesError);
-    });
-});
-
-describe("normalizeWmsEndpoint", () => {
-    it("removes the parameters of a pasted GetCapabilities URL and keeps others", () => {
-        expect(
-            normalizeWmsEndpoint(" https://example.org/wms?service=WMS&REQUEST=GetCapabilities&Version=1.3.0 ")
-        ).toBe("https://example.org/wms");
-        expect(normalizeWmsEndpoint("https://example.org/cgi?map=/maps/x.map&SERVICE=WMS")).toBe(
-            "https://example.org/cgi?map=%2Fmaps%2Fx.map"
-        );
-    });
-
-    it("rejects other protocols and invalid URLs", () => {
-        expect(() => normalizeWmsEndpoint("javascript:alert(1)")).toThrow(/protocol/);
-        expect(() => normalizeWmsEndpoint("maps.dwd.de")).toThrow(/Invalid URL/);
+        expect(() => parseWmsCapabilities("<html><body>Not found</body></html>")).toThrow(CapabilitiesError);
     });
 });
 
@@ -133,27 +110,6 @@ describe("chooseFeatureInfoFormat", () => {
 
     it("returns nothing for formats the dashboard cannot read", () => {
         expect(chooseFeatureInfoFormat(["text/html", "application/vnd.ogc.gml"])).toBeUndefined();
-    });
-});
-
-describe("searchLayers", () => {
-    const layer = (name: string, title: string) => ({ name, title }) as WmsCapabilitiesLayer;
-    const layers = [
-        layer("RADOLAN-RX", "Radarreflektivität (RX)"),
-        layer("radar_mask", "Maske"),
-        layer("RADOLAN-RW", "Angeeichtes Radarkomposit (RW)"),
-        layer("T2M", "Temperatur")
-    ];
-    const names = (query: string) => searchLayers(layers, query).map((l) => l.name);
-
-    it("ranks an exact name first, then title matches, then name matches", () => {
-        expect(names("radar")).toEqual(["RADOLAN-RX", "RADOLAN-RW", "radar_mask"]);
-        expect(names("radolan-rw")).toEqual(["RADOLAN-RW"]);
-        expect(names("t2m")).toEqual(["T2M"]);
-    });
-
-    it("returns all layers in document order without a query", () => {
-        expect(searchLayers(layers, "  ")).toBe(layers);
     });
 });
 
