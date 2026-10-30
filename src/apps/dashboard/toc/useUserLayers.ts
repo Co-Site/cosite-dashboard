@@ -3,13 +3,13 @@ import { LocaleService } from "@open-pioneer/runtime";
 import { useService } from "open-pioneer:react-hooks";
 import { useMemo } from "react";
 import { DataLayerContext } from "../dataLayers/dataLayerBase";
-import { getUserLayers, UserLayerConfigs, UserLayerInput, UserLayerKind } from "../dataLayers/userLayers";
+import { getUserLayers, UserLayerConfig, UserLayerKind } from "../dataLayers/userLayers";
 import { PROJECTION } from "../services";
 
 /**
  * Adds and removes the user's layers of one kind of service (session only), see {@link getUserLayers}.
  */
-export function useUserLayers<K extends UserLayerKind>(kind: K) {
+export function useUserLayers(kind: UserLayerKind) {
     const map = useMapModelValue();
     const layerFactory = useService<LayerFactory>("map.LayerFactory");
     const localeService = useService<LocaleService>("runtime.LocaleService");
@@ -23,7 +23,7 @@ export function useUserLayers<K extends UserLayerKind>(kind: K) {
         });
         return {
             has: (endpoint: string, layerName: string) => layers.has(endpoint, layerName),
-            add: (input: UserLayerInput<UserLayerConfigs[K]>) => layers.add(input, context()),
+            add: (config: UserLayerConfig) => layers.add(config, context()),
             remove: (id: string) => layers.remove(id, context())
         };
     }, [map, kind, layerFactory, localeService]);

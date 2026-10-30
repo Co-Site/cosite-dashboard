@@ -3,7 +3,6 @@ import { Layer, WMSLayer } from "@open-pioneer/map";
 import { LayerTocAttributes } from "@open-pioneer/toc";
 import { WmsDataLayerConfig } from "../config/types";
 import { applyCapabilitiesTitle, commonOptions, DataLayerContext } from "../dataLayerBase";
-import type { UserLayerInput } from "../userLayers";
 import { describeLayer } from "./owsService";
 import {
     chooseFeatureInfoFormat,
@@ -84,14 +83,20 @@ export function createWmsLayer(config: WmsDataLayerConfig, context: DataLayerCon
     return layer;
 }
 
-/** Builds the configuration of a user WMS layer from the capabilities of its service. */
-export function userWmsLayerInput(
+/** Number of the next WMS layer the user adds, for its id (session only). */
+let nextUserLayer = 1;
+
+/** The configuration of a WMS layer the user adds, from the capabilities of its service. */
+export function userWmsLayerConfig(
     endpoint: string,
     capabilities: WmsCapabilities,
     layer: WmsCapabilitiesLayer
-): UserLayerInput<WmsDataLayerConfig> {
+): WmsDataLayerConfig {
     const format = layer.queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
     return {
+        id: `user-wms-${nextUserLayer++}`,
+        type: "wms",
+        temporary: true,
         name: layer.title,
         description: describeLayer(capabilities, layer),
         endpoint,

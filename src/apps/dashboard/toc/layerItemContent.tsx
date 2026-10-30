@@ -86,7 +86,7 @@ export function layerItemContent(layer: AnyLayer): ReactNode {
                 layer={layer}
                 olLayer={layer.olLayer}
                 source={layer.olSource}
-                userKind={config.temporary ? "wms" : undefined}
+                userKind={config.temporary ? config.type : undefined}
             />
         );
     }
@@ -97,7 +97,7 @@ export function layerItemContent(layer: AnyLayer): ReactNode {
                 olLayer={layer.olLayer}
                 source={layer.olLayer.getSource() ?? undefined}
                 color={wfsLayerColor(config)}
-                userKind={config.temporary ? "wfs" : undefined}
+                userKind={config.temporary ? config.type : undefined}
             />
         );
     }

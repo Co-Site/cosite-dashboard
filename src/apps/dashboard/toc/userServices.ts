@@ -7,7 +7,7 @@ import {
     WfsCapabilities,
     WfsFeatureType
 } from "../dataLayers/ows/wfsCapabilities";
-import { userWfsLayerInput } from "../dataLayers/ows/wfsLayer";
+import { userWfsLayerConfig } from "../dataLayers/ows/wfsLayer";
 import { paletteColor } from "../dataLayers/ows/wfsStyle";
 import {
     fetchWmsCapabilities,
@@ -15,8 +15,8 @@ import {
     WmsCapabilities,
     WmsCapabilitiesLayer
 } from "../dataLayers/ows/wmsCapabilities";
-import { userWmsLayerInput } from "../dataLayers/ows/wmsLayer";
-import { UserLayerConfigs, UserLayerInput, UserLayerKind } from "../dataLayers/userLayers";
+import { userWmsLayerConfig } from "../dataLayers/ows/wmsLayer";
+import { UserLayerConfig, UserLayerKind } from "../dataLayers/userLayers";
 import { SearchOption } from "./LayerSearch";
 
 const LOG = createLogger("dashboard:userServices");
@@ -31,8 +31,8 @@ export interface CheckFailure {
  * What differs between the kinds of services the user can add layers from (see `AddServiceLayer.tsx`):
  * how the capabilities are loaded, which entries can be added, how an entry is checked and turned into a layer.
  */
-export interface UserService<K extends UserLayerKind, Capabilities, Entry extends SearchOption> {
-    kind: K;
+export interface UserService<Capabilities, Entry extends SearchOption> {
+    kind: UserLayerKind;
 
     /** Prefix of the texts specific to the kind (shared texts are below `addService`). */
     messages: string;
@@ -46,11 +46,11 @@ export interface UserService<K extends UserLayerKind, Capabilities, Entry extend
     check(endpoint: string, capabilities: Capabilities, entry: Entry, map: MapModel): Promise<CheckFailure | undefined>;
 
     /** The configuration of the new layer. */
-    input(endpoint: string, capabilities: Capabilities, entry: Entry): UserLayerInput<UserLayerConfigs[K]>;
+    input(endpoint: string, capabilities: Capabilities, entry: Entry): UserLayerConfig;
 }
 
 /** Layers of a Web Map Service. */
-export const WMS_SERVICE: UserService<"wms", WmsCapabilities, WmsCapabilitiesLayer> = {
+export const WMS_SERVICE: UserService<WmsCapabilities, WmsCapabilitiesLayer> = {
     kind: "wms",
     messages: "addWms",
     fetchCapabilities: fetchWmsCapabilities,
@@ -68,14 +68,14 @@ export const WMS_SERVICE: UserService<"wms", WmsCapabilities, WmsCapabilitiesLay
         LOG.warn(`Layer '${layer.name}' of ${endpoint} cannot be requested: ${probe.message}`);
         return { messageId: "error.notRequestable", values: { message: probe.message ?? "" } };
     },
-    input: userWmsLayerInput
+    input: userWmsLayerConfig
 };
 
 /** Colour of the next WFS layer the user adds: the palette in order (session only). */
 let nextColor = 0;
 
 /** Feature types of a Web Feature Service. */
-export const WFS_SERVICE: UserService<"wfs", WfsCapabilities, WfsFeatureType> = {
+export const WFS_SERVICE: UserService<WfsCapabilities, WfsFeatureType> = {
     kind: "wfs",
     messages: "addWfs",
     fetchCapabilities: fetchWfsCapabilities,
@@ -95,5 +95,5 @@ export const WFS_SERVICE: UserService<"wfs", WfsCapabilities, WfsFeatureType> = 
         return { messageId: "error.notRequestable", values: { message: probe.message ?? "" } };
     },
     input: (endpoint, capabilities, featureType) =>
-        userWfsLayerInput(endpoint, capabilities, featureType, paletteColor(nextColor++))
+        userWfsLayerConfig(endpoint, capabilities, featureType, paletteColor(nextColor++))
 };

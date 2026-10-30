@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { WmsCapabilities, WmsCapabilitiesLayer } from "./wmsCapabilities";
-import { userWmsLayerInput } from "./wmsLayer";
+import { userWmsLayerConfig } from "./wmsLayer";
 
-describe("userWmsLayerInput", () => {
+describe("userWmsLayerConfig", () => {
     const layer: WmsCapabilitiesLayer = {
         name: "radar",
         title: "Radar",
@@ -24,7 +24,7 @@ describe("userWmsLayerInput", () => {
     };
 
     it("builds the layer from the capabilities, with a description in both languages", () => {
-        expect(userWmsLayerInput("https://example.org/wms", capabilities, layer)).toEqual({
+        expect(userWmsLayerConfig("https://example.org/wms", capabilities, layer)).toMatchObject({
             name: "Radar",
             description: {
                 de: "Precipitation of the last hour\n\nAnbieter: DWD\n\nNutzungsbedingungen: CC BY 4.0",
@@ -37,14 +37,18 @@ describe("userWmsLayerInput", () => {
     });
 
     it("disables the feature info for layers that are not queryable or without GeoJSON", () => {
-        const notQueryable = userWmsLayerInput("https://x", capabilities, { ...layer, queryable: false });
+        const notQueryable = userWmsLayerConfig("https://x", capabilities, { ...layer, queryable: false });
         expect(notQueryable.wms.featureInfo).toEqual({ enabled: false });
-        const noGeoJson = userWmsLayerInput("https://x", { ...capabilities, featureInfoFormats: ["text/html"] }, layer);
+        const noGeoJson = userWmsLayerConfig(
+            "https://x",
+            { ...capabilities, featureInfoFormats: ["text/html"] },
+            layer
+        );
         expect(noGeoJson.wms.featureInfo).toEqual({ enabled: false });
     });
 
     it("has no description without abstract and service information", () => {
         const bare = { ...capabilities, contactOrganization: undefined, accessConstraints: undefined };
-        expect(userWmsLayerInput("https://x", bare, { ...layer, abstract: "Radar" }).description).toBeUndefined();
+        expect(userWmsLayerConfig("https://x", bare, { ...layer, abstract: "Radar" }).description).toBeUndefined();
     });
 });

@@ -3,7 +3,6 @@ import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { ChangeEvent, KeyboardEvent, RefObject, useEffect, useId, useRef, useState } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
-import { UserLayerKind } from "../dataLayers/userLayers";
 import { LayerList, SearchOption, useLayerSearch } from "./LayerSearch";
 import { UserService } from "./userServices";
 import { useServiceCapabilities } from "./useServiceCapabilities";
@@ -12,17 +11,15 @@ import { useUserLayers } from "./useUserLayers";
 /** How long the confirmation of an added layer is shown (ms). */
 const STATUS_DURATION = 8000;
 
-interface AddServiceFormProps<K extends UserLayerKind, Capabilities, Entry extends SearchOption> {
+interface AddServiceFormProps<Capabilities, Entry extends SearchOption> {
     id: string;
-    service: UserService<K, Capabilities, Entry>;
+    service: UserService<Capabilities, Entry>;
     urlRef: RefObject<HTMLInputElement | null>;
     onAdded(title: string): void;
     onClose(): void;
 }
 
-function AddServiceForm<K extends UserLayerKind, Capabilities, Entry extends SearchOption>(
-    props: AddServiceFormProps<K, Capabilities, Entry>
-) {
+function AddServiceForm<Capabilities, Entry extends SearchOption>(props: AddServiceFormProps<Capabilities, Entry>) {
     const { id, service, urlRef, onAdded, onClose } = props;
     const intl = useIntl();
     const userLayers = useUserLayers(service.kind);
@@ -198,10 +195,10 @@ function AddServiceForm<K extends UserLayerKind, Capabilities, Entry extends Sea
  * Row below the TOC title to add a layer of a service for this session (e.g. a WMS layer):
  * enter the service URL, then find the layer by name or title.
  */
-export function AddServiceLayer<K extends UserLayerKind, Capabilities, Entry extends SearchOption>({
+export function AddServiceLayer<Capabilities, Entry extends SearchOption>({
     service
 }: {
-    service: UserService<K, Capabilities, Entry>;
+    service: UserService<Capabilities, Entry>;
 }) {
     const intl = useIntl();
     const formId = useId();

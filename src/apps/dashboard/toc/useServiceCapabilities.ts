@@ -21,8 +21,8 @@ const lastUrls = new Map<UserLayerKind, string>();
  * The service entered by the user: the URL input and its capabilities, loaded by `load()`.
  * Only the answer to the latest request counts; errors become a localized message.
  */
-export function useServiceCapabilities<K extends UserLayerKind, Capabilities, Entry extends SearchOption>(
-    service: UserService<K, Capabilities, Entry>
+export function useServiceCapabilities<Capabilities, Entry extends SearchOption>(
+    service: UserService<Capabilities, Entry>
 ) {
     const intl = useIntl();
     const [url, setUrl] = useState(() => lastUrls.get(service.kind) ?? "");

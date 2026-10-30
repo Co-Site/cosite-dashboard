@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WfsCapabilities, WfsRequestSettings } from "./wfsCapabilities";
-import { readFeatures, userWfsLayerInput } from "./wfsLayer";
+import { readFeatures, userWfsLayerConfig } from "./wfsLayer";
 
 const SETTINGS: WfsRequestSettings = {
     featureType: {
@@ -41,7 +41,7 @@ describe("readFeatures", () => {
     });
 });
 
-describe("userWfsLayerInput", () => {
+describe("userWfsLayerConfig", () => {
     const capabilities: WfsCapabilities = {
         version: "2.0.0",
         serviceTitle: "Verwaltungsgrenzen",
@@ -60,7 +60,7 @@ describe("userWfsLayerInput", () => {
     };
 
     it("builds the layer from the feature type with the given colour", () => {
-        expect(userWfsLayerInput("https://example.org/wfs", capabilities, featureType, "#2b6cb0")).toEqual({
+        expect(userWfsLayerConfig("https://example.org/wfs", capabilities, featureType, "#2b6cb0")).toMatchObject({
             name: "Bezirke",
             description: { de: "Anbieter: LGV Hamburg", en: "Provider: LGV Hamburg" },
             endpoint: "https://example.org/wfs",
