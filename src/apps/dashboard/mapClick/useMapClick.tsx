@@ -7,8 +7,14 @@ import { unByKey } from "ol/Observable";
 import { Pixel } from "ol/pixel";
 import { useEffect, useRef } from "react";
 import { getDatastreamProperties, StaDatastreamProperties } from "../dataLayers/sta";
-import { addClickMarker, addSensorSelection } from "./clickMarker";
-import { FeatureInfoResult, getQueryableWmsLayers, queryWmsFeatureInfo } from "./featureInfo";
+import { addClickMarker, addFeatureSelection, addSensorSelection } from "./clickMarker";
+import {
+    FeatureInfoResult,
+    getQueryableWmsLayers,
+    getWfsFeatureInfo,
+    hasWfsFeatureAt,
+    queryWmsFeatureInfo
+} from "./featureInfo";
 import { FeatureInfoPopup } from "./FeatureInfoPopup";
 import { createMapPopup } from "./mapPopup";
 import { getPopupMaxHeight } from "./popupPlacement";
@@ -21,7 +27,7 @@ export interface MapClickOptions {
     onShowDatastream?(dataLayerId: string): void;
 }
 
-/** Pixel tolerance for hitting a sensor point. */
+/** Pixel tolerance for hitting a sensor point or a WFS feature. */
 const HIT_TOLERANCE = 5;
 
 /** All sensors at the pixel (several sensors may share a location) and the location of the first one. */
@@ -50,8 +56,8 @@ function sensorsAt(
  * Handles clicks into the map:
  * - a click on a sensor point marks it and shows a popup with all sensors at that position; each one
  *   can be shown in the analysis panel (see {@link MapClickOptions.onShowDatastream}),
- * - otherwise, a marker is set at the clicked position and WMS GetFeatureInfo results
- *   are shown in a popup next to it.
+ * - otherwise, a marker is set at the clicked position, the WFS features there are highlighted, and their attributes
+ *   are shown in a popup next to it together with the WMS GetFeatureInfo results.
  */
 export function useMapClick(map: MapModel | undefined, options: MapClickOptions = {}) {
     const optionsRef = useRef(options);
@@ -66,18 +72,19 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
 
         const olMap = map.olMap;
         const popup = createMapPopup(map);
-        let marker: Highlight | undefined;
+        // Click position or selected sensor, and the clicked WFS features.
+        let markers: Highlight[] = [];
         let pendingRequest: AbortController | undefined;
         const closeOverlay = () => {
             pendingRequest?.abort();
             pendingRequest = undefined;
             popup.close();
         };
-        // Closes the popup and removes the marker (click position or selected sensor).
+        // Closes the popup and removes the markers.
         const closePopup = () => {
             closeOverlay();
-            marker?.destroy();
-            marker = undefined;
+            markers.forEach((marker) => marker.destroy());
+            markers = [];
         };
         const showDatastream = (dataLayerId: string) => {
             // Keep the sensor marked while it is shown in the analysis panel.
@@ -91,7 +98,10 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
             }
             const target = olMap.getTargetElement();
             if (target) {
-                target.style.cursor = sensorsAt(olMap, event.pixel).datastreams.length ? "pointer" : "";
+                const clickable =
+                    sensorsAt(olMap, event.pixel).datastreams.length > 0 ||
+                    hasWfsFeatureAt(map, event.pixel, HIT_TOLERANCE);
+                target.style.cursor = clickable ? "pointer" : "";
             }
         });
 
@@ -102,7 +112,7 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
             const { datastreams, location = event.coordinate } = sensorsAt(olMap, event.pixel);
             if (datastreams.length) {
                 // The sensor stays marked until the next click into the map (or the popup is closed).
-                marker = addSensorSelection(map, location);
+                markers = [addSensorSelection(map, location)];
                 popup.open(
                     location,
                     olMap.getPixelFromCoordinate(location) ?? event.pixel,
@@ -117,22 +127,32 @@ export function useMapClick(map: MapModel | undefined, options: MapClickOptions 
                 return;
             }
 
+            const wfs = getWfsFeatureInfo(map, event.pixel, HIT_TOLERANCE);
             const layers = getQueryableWmsLayers(map);
+            if (!layers.length && !wfs.results.length) {
+                return;
+            }
+
+            const content = (results: FeatureInfoResult[] | undefined) => (
+                <FeatureInfoPopup map={map} results={results} maxHeight={maxHeight} onClose={closePopup} />
+            );
+            markers = [addClickMarker(map, event.coordinate)];
+            if (wfs.geometries.length) {
+                markers.push(addFeatureSelection(map, wfs.geometries));
+            }
+            // WFS features are on the map already, only WMS needs requests.
             if (!layers.length) {
+                popup.open(event.coordinate, event.pixel, content(wfs.results));
                 return;
             }
 
             const request = (pendingRequest = new AbortController());
-            const content = (results: FeatureInfoResult[] | undefined) => (
-                <FeatureInfoPopup map={map} results={results} maxHeight={maxHeight} onClose={closePopup} />
-            );
-            marker = addClickMarker(map, event.coordinate);
             const overlay = popup.open(event.coordinate, event.pixel, content(undefined));
-
             queryWmsFeatureInfo(map, layers, event.coordinate, request.signal)
                 .then((results) => {
                     if (!overlay.isDestroyed) {
-                        overlay.setContent(content(results));
+                        // WFS features are drawn on top of the WMS images, so they come first.
+                        overlay.setContent(content([...wfs.results, ...results]));
                     }
                 })
                 .catch((error) => {
