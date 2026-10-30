@@ -97,6 +97,7 @@ export function layerItemContent(layer: AnyLayer): ReactNode {
                 olLayer={layer.olLayer}
                 source={layer.olLayer.getSource() ?? undefined}
                 color={wfsLayerColor(config)}
+                userKind={config.temporary ? "wfs" : undefined}
             />
         );
     }

@@ -59,6 +59,18 @@ messages:
       noLayers: "Der Dienst enthält keine abrufbaren Layer."
       projection: "Der Layer unterstützt die Kartenprojektion (EPSG:3857) nicht."
       notRequestable: "Der Dienst kann diesen Layer nicht liefern (oft eine reine Gliederungsgruppe). Meldung des Dienstes: {message}"
+  addWfs:
+    toggle: "WFS hinzufügen"
+    urlPlaceholder: "https://…/wfs"
+    layer: "Feature-Typ"
+    hint: "{count} Feature-Typen – scrollen oder nach Name oder Titel suchen."
+    noResults: "Keine passenden Feature-Typen."
+    checking: "Prüfe Feature-Typ …"
+    error:
+      invalid: "Keine gültige WFS-Antwort (GetCapabilities 2.0.0 oder 1.1.0)."
+      noLayers: "Der Dienst enthält keine Feature-Typen."
+      noFormat: "Der Dienst liefert diesen Feature-Typ weder als GeoJSON noch als GML."
+      notRequestable: "Der Dienst kann diesen Feature-Typ nicht liefern. Meldung des Dienstes: {message}"
   featureInfo:
     legend: "Legende"
     title: "Information"

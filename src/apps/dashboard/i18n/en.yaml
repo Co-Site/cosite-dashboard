@@ -59,6 +59,18 @@ messages:
       noLayers: "The service has no layers that can be requested."
       projection: "The layer does not support the map projection (EPSG:3857)."
       notRequestable: "The service cannot deliver this layer (often a group used only for structure). Service message: {message}"
+  addWfs:
+    toggle: "Add WFS"
+    urlPlaceholder: "https://…/wfs"
+    layer: "Feature type"
+    hint: "{count} feature types – scroll or search by name or title."
+    noResults: "No matching feature types."
+    checking: "Checking feature type …"
+    error:
+      invalid: "No valid WFS response (GetCapabilities 2.0.0 or 1.1.0)."
+      noLayers: "The service has no feature types."
+      noFormat: "The service offers this feature type neither as GeoJSON nor as GML."
+      notRequestable: "The service cannot deliver this feature type. Service message: {message}"
   featureInfo:
     legend: "Legend"
     title: "Information"

@@ -1,6 +1,21 @@
 import { createLogger } from "@open-pioneer/core";
 import { MapModel } from "@open-pioneer/map";
-import { UserLayerConfigs, UserLayerInput, UserLayerKind, userWmsLayerInput } from "../dataLayers/userLayers";
+import { errorMessage } from "../dataLayers/ogcService";
+import {
+    UserLayerConfigs,
+    UserLayerInput,
+    UserLayerKind,
+    userWfsLayerInput,
+    userWmsLayerInput
+} from "../dataLayers/userLayers";
+import {
+    fetchWfsCapabilities,
+    probeWfsFeatureType,
+    WfsCapabilities,
+    WfsFeatureType
+} from "../dataLayers/wfsCapabilities";
+import { resolveWfsRequest, WfsRequestSettings } from "../dataLayers/wfsLayer";
+import { paletteColor } from "../dataLayers/wfsStyle";
 import {
     fetchWmsCapabilities,
     probeWmsLayer,
@@ -59,4 +74,46 @@ export const WMS_SERVICE: UserService<"wms", WmsCapabilities, WmsCapabilitiesLay
         return { messageId: "error.notRequestable", values: { message: probe.message ?? "" } };
     },
     input: userWmsLayerInput
+};
+
+/** Settings for requesting the feature type, or why it cannot be read (no GeoJSON or GML output). */
+function requestSettings(capabilities: WfsCapabilities, featureType: WfsFeatureType): WfsRequestSettings | string {
+    try {
+        return resolveWfsRequest({ featureType: featureType.name }, capabilities);
+    } catch (error) {
+        return errorMessage(error);
+    }
+}
+
+/** Colour of the next WFS layer the user adds: the palette in order (session only). */
+let nextColor = 0;
+
+/** Feature types of a Web Feature Service. */
+export const WFS_SERVICE: UserService<"wfs", WfsCapabilities, WfsFeatureType> = {
+    kind: "wfs",
+    messages: "addWfs",
+    fetchCapabilities: fetchWfsCapabilities,
+    entries: (capabilities) => capabilities.featureTypes,
+    async check(endpoint, capabilities, featureType) {
+        const settings = requestSettings(capabilities, featureType);
+        if (typeof settings === "string") {
+            LOG.warn(`Feature type '${featureType.name}' of ${endpoint} cannot be read: ${settings}`);
+            return { messageId: "error.noFormat" };
+        }
+        // Not every service can deliver every feature type in the chosen format and CRS.
+        const probe = await probeWfsFeatureType({
+            endpoint,
+            version: settings.version,
+            featureType: featureType.name,
+            outputFormat: settings.outputFormat,
+            srsName: settings.srsName
+        });
+        if (probe.ok) {
+            return undefined;
+        }
+        LOG.warn(`Feature type '${featureType.name}' of ${endpoint} cannot be requested: ${probe.message}`);
+        return { messageId: "error.notRequestable", values: { message: probe.message ?? "" } };
+    },
+    input: (endpoint, capabilities, featureType) =>
+        userWfsLayerInput(endpoint, capabilities, featureType, paletteColor(nextColor++))
 };

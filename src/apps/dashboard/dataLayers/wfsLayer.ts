@@ -55,13 +55,13 @@ export interface WfsRequestSettings {
  * capabilities; the CRS always from the capabilities. Throws if the service does not offer the feature type or no
  * output format the dashboard can read.
  */
-export function resolveWfsRequest(config: WfsDataLayerConfig, capabilities: WfsCapabilities): WfsRequestSettings {
-    const name = config.wfs.featureType;
+export function resolveWfsRequest(wfs: WfsDataLayerConfig["wfs"], capabilities: WfsCapabilities): WfsRequestSettings {
+    const name = wfs.featureType;
     const featureType = findFeatureType(capabilities, name);
     if (!featureType) {
         throw new Error(`The service does not offer the feature type '${name}'.`);
     }
-    const outputFormat = config.wfs.outputFormat ?? chooseOutputFormat(featureType.outputFormats);
+    const outputFormat = wfs.outputFormat ?? chooseOutputFormat(featureType.outputFormats);
     const encoding = outputFormat && outputFormatEncoding(outputFormat);
     if (!outputFormat || !encoding) {
         throw new Error(`No readable output format (GeoJSON or GML) for '${name}': ${outputFormat ?? "none offered"}.`);
@@ -69,7 +69,7 @@ export function resolveWfsRequest(config: WfsDataLayerConfig, capabilities: WfsC
     const srsName = chooseCrs(featureType.crs);
     return {
         featureType,
-        version: config.wfs.version ?? capabilities.version,
+        version: wfs.version ?? capabilities.version,
         outputFormat,
         encoding,
         srsName,
@@ -142,7 +142,7 @@ export function createWfsSource(config: WfsDataLayerConfig): VectorSource {
         // oxlint-disable-next-line max-params
         loader: (extent, _resolution, projection, success, failure) => {
             settings ??= fetchWfsCapabilities(config.endpoint).then((capabilities) =>
-                resolveWfsRequest(config, capabilities)
+                resolveWfsRequest(config.wfs, capabilities)
             );
             const mapProjection = projection.getCode();
             settings

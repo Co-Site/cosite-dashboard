@@ -21,16 +21,14 @@ const CAPABILITIES: WfsCapabilities = {
     ]
 };
 
-const config = (wfs: Partial<WfsDataLayerConfig["wfs"]> = {}): WfsDataLayerConfig => ({
-    id: "a",
-    type: "wfs",
-    endpoint: "https://example.org/wfs",
-    wfs: { featureType: "app:a", ...wfs }
+const wfs = (options: Partial<WfsDataLayerConfig["wfs"]> = {}): WfsDataLayerConfig["wfs"] => ({
+    featureType: "app:a",
+    ...options
 });
 
 describe("resolveWfsRequest", () => {
     it("takes version and format from the capabilities and prefers GeoJSON and a projected CRS", () => {
-        expect(resolveWfsRequest(config(), CAPABILITIES)).toMatchObject({
+        expect(resolveWfsRequest(wfs(), CAPABILITIES)).toMatchObject({
             version: "2.0.0",
             outputFormat: "application/json",
             encoding: "geojson",
@@ -40,7 +38,7 @@ describe("resolveWfsRequest", () => {
     });
 
     it("lets the configuration choose version and output format", () => {
-        expect(resolveWfsRequest(config({ version: "1.1.0", outputFormat: "GML2" }), CAPABILITIES)).toMatchObject({
+        expect(resolveWfsRequest(wfs({ version: "1.1.0", outputFormat: "GML2" }), CAPABILITIES)).toMatchObject({
             version: "1.1.0",
             outputFormat: "GML2",
             encoding: "gml2"
@@ -48,18 +46,18 @@ describe("resolveWfsRequest", () => {
     });
 
     it("rejects unknown feature types and unreadable formats", () => {
-        expect(() => resolveWfsRequest(config({ featureType: "app:b" }), CAPABILITIES)).toThrow(/app:b/);
-        expect(() => resolveWfsRequest(config({ outputFormat: "SHAPE-ZIP" }), CAPABILITIES)).toThrow(/SHAPE-ZIP/);
+        expect(() => resolveWfsRequest(wfs({ featureType: "app:b" }), CAPABILITIES)).toThrow(/app:b/);
+        expect(() => resolveWfsRequest(wfs({ outputFormat: "SHAPE-ZIP" }), CAPABILITIES)).toThrow(/SHAPE-ZIP/);
         const csvOnly = {
             ...CAPABILITIES,
             featureTypes: [{ ...CAPABILITIES.featureTypes[0]!, outputFormats: ["csv"] }]
         };
-        expect(() => resolveWfsRequest(config(), csvOnly)).toThrow(/none offered/);
+        expect(() => resolveWfsRequest(wfs(), csvOnly)).toThrow(/none offered/);
     });
 });
 
 describe("readFeatures", () => {
-    const settings = resolveWfsRequest(config(), CAPABILITIES);
+    const settings = resolveWfsRequest(wfs(), CAPABILITIES);
 
     it("reads GeoJSON, also without a feature list", () => {
         const features = readFeatures(

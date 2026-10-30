@@ -1,12 +1,14 @@
 import { AddLayerOptions, AnyLayer, isLayer, Layer, MapModel } from "@open-pioneer/map";
 import { createDataLayer, DataLayerContext, getDataLayerConfig } from "./createDataLayer";
 import { LocalizedText } from "./localizedText";
-import { DataLayerConfig, WmsDataLayerConfig } from "./types";
+import { DataLayerConfig, DataLayerNode, WfsDataLayerConfig, WmsDataLayerConfig } from "./types";
+import { WfsCapabilities, WfsFeatureType } from "./wfsCapabilities";
 import { chooseFeatureInfoFormat, WmsCapabilities, WmsCapabilitiesLayer } from "./wmsCapabilities";
 
 /** The configuration type of the user's layers per kind of service. */
 export interface UserLayerConfigs {
     wms: WmsDataLayerConfig;
+    wfs: WfsDataLayerConfig;
 }
 
 /** Kinds of services the user can add layers from. */
@@ -14,8 +16,6 @@ export type UserLayerKind = keyof UserLayerConfigs;
 
 /** What the user chose for a new layer; id, type and `temporary` are assigned here. */
 export type UserLayerInput<C extends DataLayerConfig> = Omit<C, "id" | "type" | "temporary">;
-
-export type UserWmsLayerInput = UserLayerInput<WmsDataLayerConfig>;
 
 /** What a description of a user layer is made of: the layer's abstract and information about its service. */
 export interface ServiceDescription {
@@ -54,7 +54,7 @@ export function userWmsLayerInput(
     endpoint: string,
     capabilities: WmsCapabilities,
     layer: WmsCapabilitiesLayer
-): UserWmsLayerInput {
+): UserLayerInput<WmsDataLayerConfig> {
     const format = layer.queryable ? chooseFeatureInfoFormat(capabilities.featureInfoFormats) : undefined;
     return {
         name: layer.title,
@@ -65,6 +65,21 @@ export function userWmsLayerInput(
             layers: [layer.name],
             featureInfo: format ? { format } : { enabled: false }
         }
+    };
+}
+
+/** Builds the configuration of a user WFS layer from the capabilities of its service. */
+export function userWfsLayerInput(
+    endpoint: string,
+    capabilities: WfsCapabilities,
+    featureType: WfsFeatureType,
+    color: string
+): UserLayerInput<WfsDataLayerConfig> {
+    return {
+        name: featureType.title,
+        description: describe(capabilities, featureType),
+        endpoint,
+        wfs: { featureType: featureType.name, color }
     };
 }
 
@@ -79,15 +94,19 @@ export function withLayerState<C extends DataLayerConfig>(
     return { ...config, visible: layer.visible, opacity: layer.olLayer?.getOpacity() ?? config.opacity };
 }
 
-/** The top-level layers of the map that are or contain a configured layer of the given type, bottommost first. */
-function configuredLayersOfType(map: MapModel, type: DataLayerConfig["type"], excludeId: string): Layer[] {
+/** The top-level layers of the map (except `excludeId`) that are or contain a matching layer, bottommost first. */
+function topLevelLayersContaining(
+    map: MapModel,
+    matches: (config: DataLayerNode) => boolean,
+    excludeId: string
+): Layer[] {
     return map.layers
         .getOperationalLayers({ sortByDisplayOrder: true })
         .filter((layer): layer is Layer => isLayer(layer) && layer.id !== excludeId)
         .filter((layer) =>
             [layer, ...(layer.layers?.getRecursiveLayers() ?? [])].some((candidate) => {
                 const config = getDataLayerConfig(candidate);
-                return config?.type === type && !config.temporary;
+                return !!config && matches(config);
             })
         );
 }
@@ -111,10 +130,26 @@ const WMS_GROUP: UserLayerGroup<WmsDataLayerConfig> = {
     name: { de: "Eigene WMS", en: "Own WMS" },
     type: "wms",
     placement(map) {
-        const [reference] = configuredLayersOfType(map, "wms", this.id);
+        const isConfiguredWms = (config: DataLayerNode) => config.type === "wms" && !config.temporary;
+        const [reference] = topLevelLayersContaining(map, isConfiguredWms, this.id);
         return reference ? { at: "below", reference } : { at: "bottom" };
     },
     shows: (config, layerName) => config.wms.layers.includes(layerName)
+};
+
+/**
+ * The user's WFS layers are inserted directly above the topmost layer with WMS layers (configured or the user's):
+ * features above the map images, which would cover them otherwise.
+ */
+const WFS_GROUP: UserLayerGroup<WfsDataLayerConfig> = {
+    id: "user-wfs",
+    name: { de: "Eigene WFS", en: "Own WFS" },
+    type: "wfs",
+    placement(map) {
+        const reference = topLevelLayersContaining(map, (config) => config.type === "wms", this.id).at(-1);
+        return reference ? { at: "above", reference } : { at: "top" };
+    },
+    shows: (config, featureType) => config.wfs.featureType === featureType
 };
 
 /**
@@ -195,7 +230,7 @@ const instances = new WeakMap<MapModel, UserLayersOfMap>();
 export function getUserLayers<K extends UserLayerKind>(map: MapModel, kind: K): UserLayers<UserLayerConfigs[K]> {
     let instance = instances.get(map);
     if (!instance) {
-        instance = { wms: new UserLayers(map, WMS_GROUP) };
+        instance = { wms: new UserLayers(map, WMS_GROUP), wfs: new UserLayers(map, WFS_GROUP) };
         instances.set(map, instance);
     }
     return instance[kind];
