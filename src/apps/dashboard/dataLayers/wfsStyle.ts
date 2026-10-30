@@ -1,6 +1,7 @@
 import { asArray } from "ol/color";
 import { FeatureLike } from "ol/Feature";
 import { Circle, Fill, Stroke, Style } from "ol/style";
+import { WfsDataLayerConfig } from "./types";
 
 /**
  * Colours of WFS layers, distinguishable from each other and from the orange sensor points (`#dd6b20`)
@@ -30,6 +31,11 @@ export function colorForId(id: string): string {
         hash = (hash * 31 + char.charCodeAt(0)) | 0;
     }
     return paletteColor(Math.abs(hash));
+}
+
+/** The colour of a WFS layer: configured, otherwise derived from its id. */
+export function wfsLayerColor(config: WfsDataLayerConfig): string {
+    return config.wfs.color ?? colorForId(config.id);
 }
 
 /** The colour with the given opacity, as `rgba(…)`. */

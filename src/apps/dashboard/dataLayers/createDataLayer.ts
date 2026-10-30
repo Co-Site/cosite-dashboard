@@ -16,7 +16,7 @@ import {
 } from "./types";
 import { fetchWfsCapabilities, findFeatureType } from "./wfsCapabilities";
 import { createWfsSource } from "./wfsLayer";
-import { colorForId, createWfsStyle } from "./wfsStyle";
+import { createWfsStyle, wfsLayerColor } from "./wfsStyle";
 import { fetchWmsCapabilities } from "./wmsCapabilities";
 
 const LOG = createLogger("dashboard:createDataLayer");
@@ -201,7 +201,7 @@ function createWfsLayer(config: WfsDataLayerConfig, context: DataLayerContext): 
         ...commonOptions(config, context),
         olLayer: new VectorLayer({
             source: createWfsSource(config),
-            style: createWfsStyle(config.wfs.color ?? colorForId(config.id))
+            style: createWfsStyle(wfsLayerColor(config))
         })
     });
     if (config.name == null) {

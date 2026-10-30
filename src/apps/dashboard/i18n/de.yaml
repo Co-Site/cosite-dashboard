@@ -7,6 +7,8 @@ messages:
     collapse: "Ebenen ausblenden"
     expand: "Ebenen einblenden"
     loadError: "Kartenbild konnte nicht geladen werden."
+    featuresLoadError: "Features konnten nicht geladen werden."
+    featureLimit: "Nicht alle Features geladen. Zum Laden der übrigen näher heranzoomen."
     transparency: "Transparenz"
   language:
     label: "Sprache"

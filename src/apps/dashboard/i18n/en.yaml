@@ -7,6 +7,8 @@ messages:
     collapse: "Hide layers"
     expand: "Show layers"
     loadError: "Map image could not be loaded."
+    featuresLoadError: "Features could not be loaded."
+    featureLimit: "Not all features loaded. Zoom in to load the others."
     transparency: "Transparency"
   language:
     label: "Language"
