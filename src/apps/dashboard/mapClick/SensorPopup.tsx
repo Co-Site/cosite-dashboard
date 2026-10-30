@@ -2,7 +2,7 @@ import { Box, Button, Stack, Text } from "@chakra-ui/react";
 import { MapModel } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { LuChartLine } from "react-icons/lu";
-import { StaDatastreamProperties } from "../dataLayers/sta";
+import { StaDatastreamProperties } from "../dataLayers/sta/sta";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { PopupFrame } from "./PopupFrame";
 

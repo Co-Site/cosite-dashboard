@@ -3,7 +3,7 @@ import { createLogger, isAbortError } from "@open-pioneer/core";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useMemo, useState } from "react";
-import { fetchObservations, Observation, StaDatastreamProperties } from "../dataLayers/sta";
+import { fetchObservations, Observation, StaDatastreamProperties } from "../dataLayers/sta/sta";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { BarChart } from "./BarChart";
 import { BoxPlotChart } from "./BoxPlotChart";

@@ -1,6 +1,6 @@
 import { createLogger } from "@open-pioneer/core";
 import { isLocalizedText } from "./localizedText";
-import { DataLayerNode, DataLayerType } from "./types";
+import { DataLayerNode, DataLayerType, WFS_VERSIONS } from "./types";
 
 const LOG = createLogger("dashboard:dataLayers");
 
@@ -11,18 +11,20 @@ function isObject(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function validateFeatureInfo(featureInfo: unknown): string | undefined {
+function isNonEmptyString(value: unknown): value is string {
+    return typeof value === "string" && value !== "";
+}
+
+/** Checks `enabled` and `fields` of a feature info configuration at `path` (e.g. `wms.featureInfo`). */
+function validateFeatureInfo(featureInfo: unknown, path: string): string | undefined {
     if (featureInfo == null) {
         return undefined;
     }
     if (!isObject(featureInfo)) {
-        return "'wms.featureInfo' must be an object.";
+        return `'${path}' must be an object.`;
     }
     if (featureInfo.enabled != null && typeof featureInfo.enabled !== "boolean") {
-        return "'wms.featureInfo.enabled' must be a boolean.";
-    }
-    if (featureInfo.format != null && (typeof featureInfo.format !== "string" || featureInfo.format === "")) {
-        return "'wms.featureInfo.format' must be a format name, e.g. 'application/json'.";
+        return `'${path}.enabled' must be a boolean.`;
     }
     const fields = featureInfo.fields;
     if (fields == null) {
@@ -37,7 +39,18 @@ function validateFeatureInfo(featureInfo: unknown): string | undefined {
                 (field.label == null || isLocalizedText(field.label)) &&
                 (field.unit == null || typeof field.unit === "string")
         );
-    return validFields ? undefined : "'wms.featureInfo.fields' must be a list of { property, label?, unit? }.";
+    return validFields ? undefined : `'${path}.fields' must be a list of { property, label?, unit? }.`;
+}
+
+function validateWmsFeatureInfo(featureInfo: unknown): string | undefined {
+    const problem = validateFeatureInfo(featureInfo, "wms.featureInfo");
+    if (problem || !isObject(featureInfo)) {
+        return problem;
+    }
+    if (featureInfo.format != null && !isNonEmptyString(featureInfo.format)) {
+        return "'wms.featureInfo.format' must be a format name, e.g. 'application/json'.";
+    }
+    return undefined;
 }
 
 function validateLegend(legend: unknown): string | undefined {
@@ -60,17 +73,37 @@ function validateLegend(legend: unknown): string | undefined {
     return undefined;
 }
 
+function validateWfs(wfs: unknown): string | undefined {
+    if (!isObject(wfs) || !isNonEmptyString(wfs.featureType)) {
+        return "wfs layers require 'wfs.featureType' (name of the feature type).";
+    }
+    if (wfs.version != null && !WFS_VERSIONS.some((version) => version === wfs.version)) {
+        return `'wfs.version' must be one of ${WFS_VERSIONS.map((version) => `'${version}'`).join(", ")}.`;
+    }
+    if (wfs.outputFormat != null && !isNonEmptyString(wfs.outputFormat)) {
+        return "'wfs.outputFormat' must be a format name, e.g. 'application/json'.";
+    }
+    if (wfs.maxFeatures != null && !(Number.isInteger(wfs.maxFeatures) && (wfs.maxFeatures as number) > 0)) {
+        return "'wfs.maxFeatures' must be a positive integer.";
+    }
+    if (wfs.color != null && !isNonEmptyString(wfs.color)) {
+        return "'wfs.color' must be a CSS colour, e.g. '#2b6cb0'.";
+    }
+    return validateFeatureInfo(wfs.featureInfo, "wfs.featureInfo");
+}
+
 function validateEntry(entry: unknown): string | undefined {
     if (!isObject(entry)) {
         return "entry is not an object.";
     }
     for (const key of ["id", "type"]) {
-        if (typeof entry[key] !== "string" || entry[key] === "") {
+        if (!isNonEmptyString(entry[key])) {
             return `missing or invalid property '${key}'.`;
         }
     }
-    // WMS layers may omit the name (the title from the capabilities is used instead).
-    if ((entry.name != null || entry.type !== "wms") && (!isLocalizedText(entry.name) || entry.name === "")) {
+    // WMS and WFS layers may omit the name (the title from the capabilities is used instead).
+    const titleFromCapabilities = entry.type === "wms" || entry.type === "wfs";
+    if ((entry.name != null || !titleFromCapabilities) && (!isLocalizedText(entry.name) || entry.name === "")) {
         return "missing or invalid property 'name' (string or object with one string per language).";
     }
     if (entry.description != null && !isLocalizedText(entry.description)) {
@@ -91,7 +124,7 @@ function validateEntry(entry: unknown): string | undefined {
         return Array.isArray(entry.layers) ? undefined : "groups require 'layers' (list of layers or groups).";
     }
 
-    if (typeof entry.endpoint !== "string" || entry.endpoint === "") {
+    if (!isNonEmptyString(entry.endpoint)) {
         return "missing or invalid property 'endpoint'.";
     }
     switch (type) {
@@ -105,8 +138,10 @@ function validateEntry(entry: unknown): string | undefined {
             ) {
                 return "wms layers require 'wms.layers' (non-empty list of layer names).";
             }
-            return validateFeatureInfo(wms.featureInfo) ?? validateLegend(wms.legend);
+            return validateWmsFeatureInfo(wms.featureInfo) ?? validateLegend(wms.legend);
         }
+        case "wfs":
+            return validateWfs(entry.wfs);
         case "sta-datastream":
             return undefined;
         default:

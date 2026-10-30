@@ -11,7 +11,7 @@ import {
 } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback } from "react";
-import { Observation } from "../dataLayers/sta";
+import { Observation } from "../dataLayers/sta/sta";
 import { createValueFormatter, SERIES_COLOR, timeScale, valueScale } from "./chartStyle";
 import { TimeRange } from "./timeRange";
 import { useChart } from "./useChart";

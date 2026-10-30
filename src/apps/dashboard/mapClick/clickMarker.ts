@@ -1,6 +1,6 @@
 import { Highlight, MapModel } from "@open-pioneer/map";
 import { Coordinate } from "ol/coordinate";
-import { Point } from "ol/geom";
+import { Geometry, Point } from "ol/geom";
 import { Circle, Icon, Stroke, Style } from "ol/style";
 
 /** Color of the click marker and of the sensor selection ring. */
@@ -27,15 +27,16 @@ export function addClickMarker(map: MapModel, coordinate: Coordinate): Highlight
     });
 }
 
+/** Ring of the given radius in the marker colour with a white halo, around a selected point. */
+function selectionRing(radius: number): Style[] {
+    return [
+        new Style({ image: new Circle({ radius, stroke: new Stroke({ color: "#ffffff", width: 5 }) }) }),
+        new Style({ image: new Circle({ radius, stroke: new Stroke({ color: MARKER_COLOR, width: 3 }) }) })
+    ];
+}
+
 /** Ring around a selected sensor point (the sensor point itself has a radius of 8px). */
-const SENSOR_SELECTION_STYLE = [
-    new Style({
-        image: new Circle({ radius: 13, stroke: new Stroke({ color: "#ffffff", width: 5 }) })
-    }),
-    new Style({
-        image: new Circle({ radius: 13, stroke: new Stroke({ color: MARKER_COLOR, width: 3 }) })
-    })
-];
+const SENSOR_SELECTION_STYLE = selectionRing(13);
 
 /**
  * Marks a selected sensor point with a ring. Call `destroy()` on the result to remove it.
@@ -44,4 +45,27 @@ export function addSensorSelection(map: MapModel, coordinate: Coordinate): Highl
     return map.highlights.add([new Point(coordinate)], {
         highlightStyle: { Point: SENSOR_SELECTION_STYLE }
     });
+}
+
+/** Outline in the marker colour with a white halo; the feature's own fill stays visible below. */
+const OUTLINE_STYLE = [
+    new Style({ stroke: new Stroke({ color: "#ffffff", width: 6 }) }),
+    new Style({ stroke: new Stroke({ color: MARKER_COLOR, width: 3 }) })
+];
+
+/** Ring around WFS points (radius 6px), outline of lines and polygons. */
+const FEATURE_SELECTION_STYLE = {
+    Point: selectionRing(10),
+    MultiPoint: selectionRing(10),
+    LineString: OUTLINE_STYLE,
+    MultiLineString: OUTLINE_STYLE,
+    Polygon: OUTLINE_STYLE,
+    MultiPolygon: OUTLINE_STYLE
+};
+
+/**
+ * Marks the clicked features (of WFS layers). Call `destroy()` on the result to remove it.
+ */
+export function addFeatureSelection(map: MapModel, geometries: Geometry[]): Highlight {
+    return map.highlights.add(geometries, { highlightStyle: FEATURE_SELECTION_STYLE });
 }
