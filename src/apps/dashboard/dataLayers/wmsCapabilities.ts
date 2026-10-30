@@ -10,10 +10,13 @@ import {
     CapabilitiesError,
     createCapabilitiesCache,
     describeUnexpectedDocument,
+    errorMessage,
     exceptionMessage,
     fetchCapabilitiesText,
     LayerProbe,
-    serviceUrl
+    meaningful,
+    serviceUrl,
+    text
 } from "./ogcService";
 
 export interface WmsCapabilitiesLayer {
@@ -78,17 +81,6 @@ interface RawCapabilities {
         Request?: { GetFeatureInfo?: { Format?: string[] } };
         Layer?: RawLayer;
     };
-}
-
-function text(value: string | undefined): string | undefined {
-    const trimmed = value?.trim();
-    return trimmed ? trimmed : undefined;
-}
-
-/** `none` is a common value for fees and access constraints, it carries no information. */
-function meaningful(value: string | undefined): string | undefined {
-    const trimmed = text(value);
-    return trimmed && trimmed.toLowerCase() !== "none" ? trimmed : undefined;
 }
 
 function collectLayers(
@@ -202,7 +194,7 @@ export async function probeWmsLayer(
         }
         return { ok: false, message: exceptionMessage(await response.text()) ?? `HTTP ${response.status}` };
     } catch (error) {
-        return { ok: false, message: error instanceof Error ? error.message : String(error) };
+        return { ok: false, message: errorMessage(error) };
     }
 }
 

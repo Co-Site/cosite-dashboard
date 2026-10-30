@@ -29,6 +29,23 @@ export interface LayerProbe {
     message?: string;
 }
 
+/** The trimmed text, or `undefined` if it is empty. */
+export function text(value: string | undefined | null): string | undefined {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : undefined;
+}
+
+/** `none` is a common value for fees and access constraints, it carries no information. */
+export function meaningful(value: string | undefined | null): string | undefined {
+    const trimmed = text(value);
+    return trimmed && trimmed.toLowerCase() !== "none" ? trimmed : undefined;
+}
+
+/** Message of a failed request for the user (network errors have no HTTP status). */
+export function errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
 /** Parameters of a GetCapabilities or GetFeature request; removed from user input to get the service endpoint. */
 const REQUEST_PARAMS = ["service", "request", "version", "language", "typename", "typenames"];
 
