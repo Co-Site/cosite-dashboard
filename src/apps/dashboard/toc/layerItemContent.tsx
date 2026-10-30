@@ -7,17 +7,18 @@ import { ReactNode } from "react";
 import { LuTrash2 } from "react-icons/lu";
 import { getDataLayerConfig } from "../dataLayers/createDataLayer";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
+import { UserLayerKind } from "../dataLayers/userLayers";
 import { wfsLayerColor } from "../dataLayers/wfsStyle";
 import { LayerLoadWarning, WatchedSource } from "./LayerLoadWarning";
 import { LayerOpacitySlider } from "./LayerOpacitySlider";
-import { useUserWmsLayers } from "./useUserWmsLayers";
+import { useUserLayers } from "./useUserLayers";
 
-function RemoveUserLayerButton({ layerId }: { layerId: string }) {
+function RemoveUserLayerButton({ layerId, kind }: { layerId: string; kind: UserLayerKind }) {
     const intl = useIntl();
     const map = useMapModelValue();
-    const userLayers = useUserWmsLayers();
+    const userLayers = useUserLayers(kind);
     const title = useLayerTitle(map, layerId) ?? layerId;
-    const label = intl.formatMessage({ id: "addWms.remove" }, { title });
+    const label = intl.formatMessage({ id: "addService.remove" }, { title });
 
     const remove = () => userLayers.remove(layerId);
 
@@ -53,12 +54,12 @@ interface LayerControlsProps {
     /** Colour of the features (WFS layers). */
     color?: string;
 
-    /** Whether the user added the layer in this session (it can be removed). */
-    temporary: boolean;
+    /** For layers the user added in this session: the kind of their service (they can be removed). */
+    userKind?: UserLayerKind;
 }
 
 /** Load warning, transparency slider and, for the user's layers, a remove button. */
-function LayerControls({ layer, olLayer, source, color, temporary }: LayerControlsProps) {
+function LayerControls({ layer, olLayer, source, color, userKind }: LayerControlsProps) {
     return (
         <>
             <LayerLoadWarning layer={layer} source={source} />
@@ -67,7 +68,7 @@ function LayerControls({ layer, olLayer, source, color, temporary }: LayerContro
                 <Box flex="1">
                     <LayerOpacitySlider olLayer={olLayer} />
                 </Box>
-                {temporary && <RemoveUserLayerButton layerId={layer.id} />}
+                {userKind && <RemoveUserLayerButton layerId={layer.id} kind={userKind} />}
             </Flex>
         </>
     );
@@ -85,7 +86,7 @@ export function layerItemContent(layer: AnyLayer): ReactNode {
                 layer={layer}
                 olLayer={layer.olLayer}
                 source={layer.olSource}
-                temporary={!!config.temporary}
+                userKind={config.temporary ? "wms" : undefined}
             />
         );
     }
@@ -96,7 +97,6 @@ export function layerItemContent(layer: AnyLayer): ReactNode {
                 olLayer={layer.olLayer}
                 source={layer.olLayer.getSource() ?? undefined}
                 color={wfsLayerColor(config)}
-                temporary={!!config.temporary}
             />
         );
     }

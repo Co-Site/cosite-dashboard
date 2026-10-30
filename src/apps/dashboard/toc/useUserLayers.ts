@@ -3,18 +3,18 @@ import { LocaleService } from "@open-pioneer/runtime";
 import { useService } from "open-pioneer:react-hooks";
 import { useMemo } from "react";
 import { DataLayerContext } from "../dataLayers/createDataLayer";
-import { getUserWmsLayers, UserWmsLayerInput } from "../dataLayers/userWmsLayers";
+import { getUserLayers, UserLayerConfigs, UserLayerInput, UserLayerKind } from "../dataLayers/userLayers";
 import { PROJECTION } from "../services";
 
 /**
- * Adds and removes the WMS layers of the user (session only), see {@link getUserWmsLayers}.
+ * Adds and removes the user's layers of one kind of service (session only), see {@link getUserLayers}.
  */
-export function useUserWmsLayers() {
+export function useUserLayers<K extends UserLayerKind>(kind: K) {
     const map = useMapModelValue();
     const layerFactory = useService<LayerFactory>("map.LayerFactory");
     const localeService = useService<LocaleService>("runtime.LocaleService");
     return useMemo(() => {
-        const layers = getUserWmsLayers(map);
+        const layers = getUserLayers(map, kind);
         // Read the language when the layers are created, it may have changed since.
         const context = (): DataLayerContext => ({
             layerFactory,
@@ -23,8 +23,8 @@ export function useUserWmsLayers() {
         });
         return {
             has: (endpoint: string, layerName: string) => layers.has(endpoint, layerName),
-            add: (input: UserWmsLayerInput) => layers.add(input, context()),
+            add: (input: UserLayerInput<UserLayerConfigs[K]>) => layers.add(input, context()),
             remove: (id: string) => layers.remove(id, context())
         };
-    }, [map, layerFactory, localeService]);
+    }, [map, kind, layerFactory, localeService]);
 }

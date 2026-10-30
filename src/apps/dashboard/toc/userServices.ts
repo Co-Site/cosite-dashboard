@@ -1,0 +1,62 @@
+import { createLogger } from "@open-pioneer/core";
+import { MapModel } from "@open-pioneer/map";
+import { UserLayerConfigs, UserLayerInput, UserLayerKind, userWmsLayerInput } from "../dataLayers/userLayers";
+import {
+    fetchWmsCapabilities,
+    probeWmsLayer,
+    WmsCapabilities,
+    WmsCapabilitiesLayer
+} from "../dataLayers/wmsCapabilities";
+import { SearchOption } from "./LayerSearch";
+
+const LOG = createLogger("dashboard:userServices");
+
+/** Why a layer cannot be added: a text below the service's message prefix, with its values. */
+export interface CheckFailure {
+    messageId: string;
+    values?: Record<string, string>;
+}
+
+/**
+ * What differs between the kinds of services the user can add layers from (see `AddServiceLayer.tsx`):
+ * how the capabilities are loaded, which entries can be added, how an entry is checked and turned into a layer.
+ */
+export interface UserService<K extends UserLayerKind, Capabilities, Entry extends SearchOption> {
+    kind: K;
+
+    /** Prefix of the texts specific to the kind (shared texts are below `addService`). */
+    messages: string;
+
+    fetchCapabilities(endpoint: string): Promise<Capabilities>;
+
+    /** The entries the user can choose from, in document order. */
+    entries(capabilities: Capabilities): Entry[];
+
+    /** Checks an entry before it is added; resolves to the reason if it cannot be added. */
+    check(endpoint: string, capabilities: Capabilities, entry: Entry, map: MapModel): Promise<CheckFailure | undefined>;
+
+    /** The configuration of the new layer. */
+    input(endpoint: string, capabilities: Capabilities, entry: Entry): UserLayerInput<UserLayerConfigs[K]>;
+}
+
+/** Layers of a Web Map Service. */
+export const WMS_SERVICE: UserService<"wms", WmsCapabilities, WmsCapabilitiesLayer> = {
+    kind: "wms",
+    messages: "addWms",
+    fetchCapabilities: fetchWmsCapabilities,
+    entries: (capabilities) => capabilities.layers,
+    async check(endpoint, _capabilities, layer, map) {
+        if (!layer.supportsMapProjection) {
+            return { messageId: "error.projection" };
+        }
+        // Some services list layers that cannot be requested (e.g. folders with a name).
+        const center = (map.olMap.getView().getCenter() ?? [0, 0]) as [number, number];
+        const probe = await probeWmsLayer(endpoint, layer.name, center);
+        if (probe.ok) {
+            return undefined;
+        }
+        LOG.warn(`Layer '${layer.name}' of ${endpoint} cannot be requested: ${probe.message}`);
+        return { messageId: "error.notRequestable", values: { message: probe.message ?? "" } };
+    },
+    input: userWmsLayerInput
+};

@@ -34,7 +34,7 @@ export interface DataLayerConfigBase extends DataLayerNodeBase {
 
     /**
      * Set at runtime for layers the user added in this session (not part of the configuration file).
-     * Their capabilities are loaded by the dashboard, see `dataLayers/userWmsLayers.ts`.
+     * Their capabilities are loaded by the dashboard, see `dataLayers/userLayers.ts`.
      */
     temporary?: boolean;
 }

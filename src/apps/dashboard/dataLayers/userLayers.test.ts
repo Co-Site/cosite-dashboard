@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WmsDataLayerConfig } from "./types";
-import { userWmsLayerInput, withLayerState } from "./userWmsLayers";
+import { userWmsLayerInput, withLayerState } from "./userLayers";
 import { WmsCapabilities, WmsCapabilitiesLayer } from "./wmsCapabilities";
 
 describe("withLayerState", () => {

@@ -5,10 +5,11 @@ import { useIntl } from "open-pioneer:react-hooks";
 import { useId, useState } from "react";
 import { LuLayers, LuPanelLeftClose } from "react-icons/lu";
 import { usePanelToggle } from "../usePanelToggle";
-import { AddWmsLayer } from "./AddWmsLayer";
+import { AddServiceLayer } from "./AddServiceLayer";
 import { LanguageSelector } from "./LanguageSelector";
 import { layerItemContent } from "./layerItemContent";
 import { TocItemExtensions } from "./TocItemExtensions";
+import { WMS_SERVICE } from "./userServices";
 
 /** Lucide "info" icon (circle with an i), as used by `react-icons/lu`. */
 const INFO_ICON_SVG =
@@ -95,7 +96,7 @@ export function TocPanel() {
                         </Flex>
                     }
                 >
-                    <AddWmsLayer />
+                    <AddServiceLayer service={WMS_SERVICE} />
                     <Box css={INFO_ICON_CSS}>
                         <Toc collapsibleGroups initiallyCollapsed onReady={connectToc} onDisposed={disconnectToc} />
                     </Box>

@@ -1,37 +1,45 @@
 import { Box, Button, chakra, Flex, Input, Spinner, Stack, Text } from "@chakra-ui/react";
-import { createLogger } from "@open-pioneer/core";
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { ChangeEvent, KeyboardEvent, RefObject, useEffect, useId, useRef, useState } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
-import { userWmsLayerInput } from "../dataLayers/userWmsLayers";
-import { probeWmsLayer, WmsCapabilitiesLayer } from "../dataLayers/wmsCapabilities";
-import { useUserWmsLayers } from "./useUserWmsLayers";
-import { useWmsService } from "./useWmsService";
-import { useWmsLayerSearch, WmsLayerList } from "./WmsLayerSearch";
-
-const LOG = createLogger("dashboard:AddWmsLayer");
+import { UserLayerKind } from "../dataLayers/userLayers";
+import { LayerList, SearchOption, useLayerSearch } from "./LayerSearch";
+import { UserService } from "./userServices";
+import { useServiceCapabilities } from "./useServiceCapabilities";
+import { useUserLayers } from "./useUserLayers";
 
 /** How long the confirmation of an added layer is shown (ms). */
 const STATUS_DURATION = 8000;
 
-function AddWmsForm(props: {
+interface AddServiceFormProps<K extends UserLayerKind, Capabilities, Entry extends SearchOption> {
     id: string;
+    service: UserService<K, Capabilities, Entry>;
     urlRef: RefObject<HTMLInputElement | null>;
     onAdded(title: string): void;
     onClose(): void;
-}) {
-    const { id, urlRef, onAdded, onClose } = props;
+}
+
+function AddServiceForm<K extends UserLayerKind, Capabilities, Entry extends SearchOption>(
+    props: AddServiceFormProps<K, Capabilities, Entry>
+) {
+    const { id, service, urlRef, onAdded, onClose } = props;
     const intl = useIntl();
-    const userLayers = useUserWmsLayers();
+    const userLayers = useUserLayers(service.kind);
     const map = useMapModelValue();
     const [checking, setChecking] = useState(false);
     const urlInputId = useId();
     const layerInputId = useId();
-    const { url, setUrl, service, load } = useWmsService();
-    const search = useWmsLayerSearch(service.kind === "loaded" ? service.capabilities.layers : undefined);
+    const { url, setUrl, state, load } = useServiceCapabilities(service);
+    const search = useLayerSearch(state.kind === "loaded" ? service.entries(state.capabilities) : undefined);
     const [error, setError] = useState<string>();
     const layerRef = useRef<HTMLInputElement>(null);
+
+    // Shared texts are below `addService`, the others below the prefix of the service kind.
+    const shared = (key: string, values?: Record<string, string | number>) =>
+        intl.formatMessage({ id: `addService.${key}` }, values);
+    const specific = (key: string, values?: Record<string, string | number>) =>
+        intl.formatMessage({ id: `${service.messages}.${key}` }, values);
 
     const loadService = () => {
         setError(undefined);
@@ -40,38 +48,31 @@ function AddWmsForm(props: {
     };
 
     // Continue with the layer search once the service has been loaded.
-    const loaded = service.kind === "loaded";
+    const loaded = state.kind === "loaded";
     useEffect(() => {
         if (loaded) {
             layerRef.current?.focus();
         }
     }, [loaded]);
 
-    const add = async (layer: WmsCapabilitiesLayer | undefined) => {
-        if (service.kind !== "loaded" || !layer || checking) {
+    const add = async (entry: Entry | undefined) => {
+        if (state.kind !== "loaded" || !entry || checking) {
             return;
         }
-        if (!layer.supportsMapProjection) {
-            setError(intl.formatMessage({ id: "addWms.error.projection" }));
+        if (userLayers.has(state.endpoint, entry.name)) {
+            setError(shared("error.duplicate"));
             return;
         }
-        if (userLayers.has(service.endpoint, layer.name)) {
-            setError(intl.formatMessage({ id: "addWms.error.duplicate" }));
-            return;
-        }
-        // Some services list layers that cannot be requested (e.g. folders with a name), check before adding.
         setChecking(true);
         setError(undefined);
-        const center = (map.olMap.getView().getCenter() ?? [0, 0]) as [number, number];
-        const probe = await probeWmsLayer(service.endpoint, layer.name, center);
+        const failure = await service.check(state.endpoint, state.capabilities, entry, map);
         setChecking(false);
-        if (!probe.ok) {
-            LOG.warn(`Layer '${layer.name}' of ${service.endpoint} cannot be requested: ${probe.message}`);
-            setError(intl.formatMessage({ id: "addWms.error.notRequestable" }, { message: probe.message ?? "" }));
+        if (failure) {
+            setError(specific(failure.messageId, failure.values));
             return;
         }
-        userLayers.add(userWmsLayerInput(service.endpoint, service.capabilities, layer));
-        onAdded(layer.title);
+        userLayers.add(service.input(state.endpoint, state.capabilities, entry));
+        onAdded(entry.title);
     };
 
     const onLayerKeyDown = (event: KeyboardEvent) => {
@@ -80,11 +81,11 @@ function AddWmsForm(props: {
             search.move(event.key === "ArrowDown" ? 1 : -1);
         } else if (event.key === "Enter") {
             event.preventDefault();
-            add(search.activeLayer);
+            add(search.activeOption);
         }
     };
 
-    const addActiveLayer = () => add(search.activeLayer);
+    const addActiveLayer = () => add(search.activeOption);
     const changeUrl = (event: ChangeEvent<HTMLInputElement>) => setUrl(event.currentTarget.value);
     const onUrlKeyDown = (event: KeyboardEvent) => {
         if (event.key === "Enter") {
@@ -101,7 +102,7 @@ function AddWmsForm(props: {
         <Stack id={id} gap={2} borderWidth="1px" borderRadius="md" padding={2} mt={1}>
             <Stack gap={1}>
                 <chakra.label htmlFor={urlInputId} fontSize="xs" fontWeight="semibold">
-                    {intl.formatMessage({ id: "addWms.url" })}
+                    {shared("url")}
                 </chakra.label>
                 <Flex gap={1}>
                     <Input
@@ -109,32 +110,32 @@ function AddWmsForm(props: {
                         id={urlInputId}
                         size="xs"
                         type="url"
-                        placeholder="https://…/wms"
+                        placeholder={specific("urlPlaceholder")}
                         value={url}
                         onChange={changeUrl}
                         onKeyDown={onUrlKeyDown}
                     />
                     <Button size="xs" variant="outline" onClick={loadService} disabled={!url.trim()}>
-                        {intl.formatMessage({ id: "addWms.load" })}
+                        {shared("load")}
                     </Button>
                 </Flex>
-                {service.kind === "loading" && (
+                {state.kind === "loading" && (
                     <Flex gap={2} alignItems="center" fontSize="xs">
                         <Spinner size="xs" />
-                        {intl.formatMessage({ id: "addWms.loading" })}
+                        {shared("loading")}
                     </Flex>
                 )}
-                {service.kind === "error" && (
+                {state.kind === "error" && (
                     <Text fontSize="xs" color="fg.error" role="alert">
-                        {service.message}
+                        {state.message}
                     </Text>
                 )}
             </Stack>
 
-            {service.kind === "loaded" && (
+            {state.kind === "loaded" && (
                 <Stack gap={1}>
                     <chakra.label htmlFor={layerInputId} fontSize="xs" fontWeight="semibold">
-                        {intl.formatMessage({ id: "addWms.layer" })}
+                        {specific("layer")}
                     </chakra.label>
                     <Input
                         ref={layerRef}
@@ -144,8 +145,8 @@ function AddWmsForm(props: {
                         aria-autocomplete="list"
                         aria-expanded={search.results.length > 0}
                         aria-controls={search.listId}
-                        aria-activedescendant={search.activeLayer ? search.optionId(search.activeIndex) : undefined}
-                        placeholder={intl.formatMessage({ id: "addWms.layerPlaceholder" })}
+                        aria-activedescendant={search.activeOption ? search.optionId(search.activeIndex) : undefined}
+                        placeholder={shared("layerPlaceholder")}
                         value={search.query}
                         onChange={changeLayerQuery}
                         onKeyDown={onLayerKeyDown}
@@ -154,7 +155,7 @@ function AddWmsForm(props: {
                     {checking && (
                         <Flex gap={2} alignItems="center" fontSize="xs">
                             <Spinner size="xs" />
-                            {intl.formatMessage({ id: "addWms.checking" })}
+                            {specific("checking")}
                         </Flex>
                     )}
                     {error && (
@@ -164,23 +165,28 @@ function AddWmsForm(props: {
                     )}
                     <Text fontSize="xs" color="fg.muted">
                         {search.query.trim() === ""
-                            ? intl.formatMessage({ id: "addWms.hint" }, { count: search.results.length })
+                            ? specific("hint", { count: search.results.length })
                             : search.results.length === 0
-                              ? intl.formatMessage({ id: "addWms.noResults" })
-                              : intl.formatMessage({ id: "addWms.matches" }, { count: search.results.length })}
+                              ? specific("noResults")
+                              : shared("matches", { count: search.results.length })}
                     </Text>
-                    <WmsLayerList search={search} onPick={add} />
+                    <LayerList<Entry>
+                        search={search}
+                        label={specific("layer")}
+                        groupLabel={shared("group")}
+                        onPick={add}
+                    />
                 </Stack>
             )}
 
             <Flex gap={1} justifyContent="flex-end">
                 <Button size="xs" variant="ghost" onClick={onClose}>
                     <LuX />
-                    {intl.formatMessage({ id: "addWms.close" })}
+                    {shared("close")}
                 </Button>
-                {service.kind === "loaded" && (
-                    <Button size="xs" onClick={addActiveLayer} disabled={!search.activeLayer || checking}>
-                        {intl.formatMessage({ id: "addWms.add" })}
+                {state.kind === "loaded" && (
+                    <Button size="xs" onClick={addActiveLayer} disabled={!search.activeOption || checking}>
+                        {shared("add")}
                     </Button>
                 )}
             </Flex>
@@ -189,10 +195,14 @@ function AddWmsForm(props: {
 }
 
 /**
- * Row below the TOC title to add a WMS layer for this session:
+ * Row below the TOC title to add a layer of a service for this session (e.g. a WMS layer):
  * enter the service URL, then find the layer by name or title.
  */
-export function AddWmsLayer() {
+export function AddServiceLayer<K extends UserLayerKind, Capabilities, Entry extends SearchOption>({
+    service
+}: {
+    service: UserService<K, Capabilities, Entry>;
+}) {
     const intl = useIntl();
     const formId = useId();
     const [open, setOpen] = useState(false);
@@ -215,7 +225,7 @@ export function AddWmsLayer() {
     const toggleForm = () => setOpen(!open);
     const closeForm = () => setOpen(false);
     const showAdded = (title: string) => {
-        setStatus(intl.formatMessage({ id: "addWms.added" }, { title }));
+        setStatus(intl.formatMessage({ id: "addService.added" }, { title }));
         setOpen(false);
     };
 
@@ -232,14 +242,16 @@ export function AddWmsLayer() {
                     onClick={toggleForm}
                 >
                     <LuPlus />
-                    {intl.formatMessage({ id: "addWms.toggle" })}
+                    {intl.formatMessage({ id: `${service.messages}.toggle` })}
                 </Button>
             </Flex>
             {/* Announces added layers, also while the form is closed. */}
             <Text role="status" fontSize="xs" color="fg.muted" px={2}>
                 {status}
             </Text>
-            {open && <AddWmsForm id={formId} urlRef={urlRef} onAdded={showAdded} onClose={closeForm} />}
+            {open && (
+                <AddServiceForm id={formId} service={service} urlRef={urlRef} onAdded={showAdded} onClose={closeForm} />
+            )}
         </Box>
     );
 }
