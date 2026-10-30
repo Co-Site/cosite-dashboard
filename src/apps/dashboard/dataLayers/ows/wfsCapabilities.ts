@@ -12,7 +12,6 @@ import {
     meaningful,
     parseCapabilitiesRoot,
     serviceUrl,
-    ServiceUnreachableError,
     text
 } from "./owsService";
 
@@ -154,26 +153,10 @@ export function parseWfsCapabilities(xml: string): WfsCapabilities {
     };
 }
 
-/**
- * Asks for the newest supported version; a service that cannot answer it (exception or another version) is asked for
- * the next one. Network errors are not retried.
- */
+/** Asks for all supported versions at once; the service answers with the newest one it supports. */
 async function loadCapabilities(endpoint: string): Promise<WfsCapabilities> {
-    let lastError: unknown;
-    // Versions are asked one after another: the next one only if the previous one failed.
-    /* oxlint-disable no-await-in-loop */
-    for (const version of WFS_VERSIONS) {
-        try {
-            return parseWfsCapabilities(await fetchCapabilitiesText(endpoint, { SERVICE: "WFS", VERSION: version }));
-        } catch (error) {
-            if (error instanceof ServiceUnreachableError) {
-                throw error;
-            }
-            lastError = error;
-        }
-    }
-    /* oxlint-enable no-await-in-loop */
-    throw lastError;
+    const xml = await fetchCapabilitiesText(endpoint, { SERVICE: "WFS", ACCEPTVERSIONS: WFS_VERSIONS.join(",") });
+    return parseWfsCapabilities(xml);
 }
 
 const capabilitiesCache = createCapabilitiesCache(loadCapabilities);

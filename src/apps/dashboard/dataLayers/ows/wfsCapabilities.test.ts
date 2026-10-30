@@ -134,29 +134,15 @@ describe("fetchWfsCapabilities", () => {
         vi.unstubAllGlobals();
     });
 
-    it("asks for the next version if the service cannot answer the newest one", async () => {
+    it("asks for all supported versions at once and takes the one the service answers with", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async (url: URL) =>
-                url.searchParams.get("VERSION") === "2.0.0"
-                    ? new Response(`<ows:ExceptionReport xmlns:ows="http://www.opengis.net/ows"/>`)
-                    : new Response(DWD_1_1)
-            )
+            vi.fn(async () => new Response(DWD_1_1))
         );
         const capabilities = await fetchWfsCapabilities("https://example.org/old-wfs");
         expect(capabilities.version).toBe("1.1.0");
-        expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
-    });
-
-    it("does not retry network errors", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => {
-                throw new TypeError("Failed to fetch");
-            })
-        );
-        await expect(fetchWfsCapabilities("https://example.org/unreachable")).rejects.toThrow("Failed to load");
-        expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+        const url = new URL(vi.mocked(fetch).mock.calls[0]![0] as URL);
+        expect(url.searchParams.get("ACCEPTVERSIONS")).toBe("2.0.0,1.1.0");
     });
 });
 
