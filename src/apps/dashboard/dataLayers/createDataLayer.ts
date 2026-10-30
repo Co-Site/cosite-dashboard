@@ -6,7 +6,13 @@ import VectorSource from "ol/source/Vector";
 import { Circle, Fill, Stroke, Style } from "ol/style";
 import { localize } from "./localizedText";
 import { createDatastreamFeature, fetchDatastream } from "./sta";
-import { DataLayerGroupConfig, DataLayerNode, StaDatastreamLayerConfig, WmsDataLayerConfig } from "./types";
+import {
+    DataLayerGroupConfig,
+    DataLayerNode,
+    StaDatastreamLayerConfig,
+    WfsDataLayerConfig,
+    WmsDataLayerConfig
+} from "./types";
 import { fetchWmsCapabilities } from "./wmsCapabilities";
 
 const LOG = createLogger("dashboard:createDataLayer");
@@ -28,9 +34,16 @@ export interface DataLayerContext {
     language: string;
 }
 
-/** Title until the capabilities have been loaded (WMS layers may have no configured name). */
+/** Title until the capabilities have been loaded (WMS and WFS layers may have no configured name). */
 function defaultTitle(config: DataLayerNode): string {
-    return config.type === "wms" ? config.wms.layers.join(", ") : config.id;
+    switch (config.type) {
+        case "wms":
+            return config.wms.layers.join(", ");
+        case "wfs":
+            return config.wfs.featureType;
+        default:
+            return config.id;
+    }
 }
 
 function localizedTitle(config: DataLayerNode, language: string): string {
@@ -163,6 +176,14 @@ function createStaDatastreamLayer(
     });
 }
 
+function createWfsLayer(config: WfsDataLayerConfig, context: DataLayerContext): Layer {
+    return context.layerFactory.create({
+        type: SimpleLayer,
+        ...commonOptions(config, context),
+        olLayer: new VectorLayer({ source: new VectorSource({ attributions: config.attribution }) })
+    });
+}
+
 function createGroupLayer(config: DataLayerGroupConfig, context: DataLayerContext): Layer {
     return context.layerFactory.create({
         type: GroupLayer,
@@ -177,6 +198,8 @@ function createLayer(config: DataLayerNode, context: DataLayerContext): Layer {
             return createGroupLayer(config, context);
         case "wms":
             return createWmsLayer(config, context);
+        case "wfs":
+            return createWfsLayer(config, context);
         case "sta-datastream":
             return createStaDatastreamLayer(config, context);
     }

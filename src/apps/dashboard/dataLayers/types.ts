@@ -7,7 +7,7 @@ export interface DataLayerNodeBase {
 
     /**
      * Human-readable name, shown in the TOC.
-     * Required except for WMS layers, which fall back to the title from the service's capabilities.
+     * Required except for WMS and WFS layers, which fall back to the title from the service's capabilities.
      */
     name?: LocalizedText;
 
@@ -31,10 +31,16 @@ export interface DataLayerConfigBase extends DataLayerNodeBase {
 
     /** Attribution text shown on the map. */
     attribution?: string;
+
+    /**
+     * Set at runtime for layers the user added in this session (not part of the configuration file).
+     * Their capabilities are loaded by the dashboard, see `dataLayers/userWmsLayers.ts`.
+     */
+    temporary?: boolean;
 }
 
 export interface FeatureInfoField {
-    /** Name of the property in the GetFeatureInfo response. */
+    /** Name of the feature property (in the GetFeatureInfo response or of the WFS feature). */
     property: string;
 
     /** Label shown in the popup (default: the property name). */
@@ -44,18 +50,21 @@ export interface FeatureInfoField {
     unit?: string;
 }
 
-export interface WmsFeatureInfoConfig {
-    /** Whether GetFeatureInfo is requested on map click (default: `true`). */
+/** Attributes of the clicked features, shown in the popup. */
+export interface FeatureInfoConfig {
+    /** Whether the features are shown on map click (default: `true`). */
     enabled?: boolean;
 
+    /** Properties to show in the popup (default: all properties of the feature). */
+    fields?: FeatureInfoField[];
+}
+
+export interface WmsFeatureInfoConfig extends FeatureInfoConfig {
     /**
      * Response format (GeoJSON), e.g. `application/json` or `application/geo+json`.
      * Default: chosen from the formats in the service's capabilities (no feature info if none fits).
      */
     format?: string;
-
-    /** Properties to show in the popup (default: all properties of the response). */
-    fields?: FeatureInfoField[];
 }
 
 export interface WmsLegendConfig {
@@ -75,12 +84,6 @@ export interface WmsLegendConfig {
 /** An OGC Web Map Service. */
 export interface WmsDataLayerConfig extends DataLayerConfigBase {
     type: "wms";
-
-    /**
-     * Set at runtime for layers the user added in this session (not part of the configuration file).
-     * Their capabilities are loaded by the dashboard, see `dataLayers/userWmsLayers.ts`.
-     */
-    temporary?: boolean;
     wms: {
         /** Names of the WMS layers to request. */
         layers: string[];
@@ -90,6 +93,38 @@ export interface WmsDataLayerConfig extends DataLayerConfigBase {
 
         /** Legend shown in the feature info popup (enabled by default). */
         legend?: WmsLegendConfig;
+    };
+}
+
+/** WFS versions the dashboard can request, in order of preference. */
+export const WFS_VERSIONS = ["2.0.0", "1.1.0"] as const;
+
+export type WfsVersion = (typeof WFS_VERSIONS)[number];
+
+/** A feature type of an OGC Web Feature Service, drawn as vector layer. */
+export interface WfsDataLayerConfig extends DataLayerConfigBase {
+    type: "wfs";
+    wfs: {
+        /** Name of the feature type, e.g. `de.hh.up:verwaltungsgrenzen`. */
+        featureType: string;
+
+        /** WFS version (default: the newest one the service offers). */
+        version?: WfsVersion;
+
+        /**
+         * Output format of GetFeature, e.g. `application/json` or `application/gml+xml; version=3.2`.
+         * Default: chosen from the service's capabilities (GeoJSON before GML).
+         */
+        outputFormat?: string;
+
+        /** Maximum number of features per request (default: 1000). */
+        maxFeatures?: number;
+
+        /** Colour of the features as CSS colour (default: derived from the layer id). */
+        color?: string;
+
+        /** Attributes of the clicked features (enabled by default). */
+        featureInfo?: FeatureInfoConfig;
     };
 }
 
@@ -106,7 +141,7 @@ export interface DataLayerGroupConfig extends DataLayerNodeBase {
     layers: DataLayerNode[];
 }
 
-export type DataLayerConfig = WmsDataLayerConfig | StaDatastreamLayerConfig;
+export type DataLayerConfig = WmsDataLayerConfig | WfsDataLayerConfig | StaDatastreamLayerConfig;
 
 export type DataLayerNode = DataLayerConfig | DataLayerGroupConfig;
 

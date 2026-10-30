@@ -101,10 +101,13 @@ describe("parseDataLayers", () => {
         expect(parseDataLayers({ layers: [{ ...entry, description: { de: 1 } }] })).toHaveLength(0);
     });
 
-    it("requires names except for WMS layers", () => {
+    it("requires names except for WMS and WFS layers", () => {
         const wms = { id: "wms", type: "wms", endpoint: "https://example.com", wms: { layers: ["a"] } };
+        const wfs = { id: "wfs", type: "wfs", endpoint: "https://example.com", wfs: { featureType: "a" } };
         expect(parseDataLayers({ layers: [wms] })).toHaveLength(1);
         expect(parseDataLayers({ layers: [{ ...wms, name: "" }] })).toHaveLength(0);
+        expect(parseDataLayers({ layers: [wfs] })).toHaveLength(1);
+        expect(parseDataLayers({ layers: [{ ...wfs, name: "" }] })).toHaveLength(0);
         expect(parseDataLayers({ layers: [{ id: "g", type: "group", layers: [] }] })).toHaveLength(0);
         expect(parseDataLayers({ layers: [{ id: "s", type: "sta-datastream", endpoint: "https://x" }] })).toHaveLength(
             0
@@ -125,6 +128,36 @@ describe("parseDataLayers", () => {
         expect(parseDataLayers({ layers: [wms({ enabled: "no" })] })).toHaveLength(0);
         expect(parseDataLayers({ layers: [wms({ format: "" })] })).toHaveLength(0);
         expect(parseDataLayers({ layers: [wms({ fields: [{ label: "x" }] })] })).toHaveLength(0);
+    });
+
+    it("validates WFS layers", () => {
+        const wfs = (options: Record<string, unknown>) => ({
+            id: "wfs",
+            type: "wfs",
+            endpoint: "https://example.com",
+            wfs: { featureType: "ns:type", ...options }
+        });
+        const valid = (entry: unknown) => parseDataLayers({ layers: [entry] }).length === 1;
+        expect(valid(wfs({}))).toBe(true);
+        expect(
+            valid(
+                wfs({
+                    version: "1.1.0",
+                    outputFormat: "application/json",
+                    maxFeatures: 500,
+                    color: "#2b6cb0",
+                    featureInfo: { fields: [{ property: "name" }] }
+                })
+            )
+        ).toBe(true);
+        expect(valid({ id: "wfs", type: "wfs", endpoint: "https://example.com" })).toBe(false);
+        expect(valid(wfs({ featureType: "" }))).toBe(false);
+        expect(valid(wfs({ version: "1.0.0" }))).toBe(false);
+        expect(valid(wfs({ outputFormat: "" }))).toBe(false);
+        expect(valid(wfs({ maxFeatures: 0 }))).toBe(false);
+        expect(valid(wfs({ maxFeatures: 2.5 }))).toBe(false);
+        expect(valid(wfs({ color: 1 }))).toBe(false);
+        expect(valid(wfs({ featureInfo: { enabled: "no" } }))).toBe(false);
     });
 
     it("validates the optional legend configuration", () => {
