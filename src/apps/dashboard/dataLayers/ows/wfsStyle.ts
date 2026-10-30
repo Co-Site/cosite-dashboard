@@ -25,7 +25,7 @@ export function paletteColor(index: number): string {
 }
 
 /** A palette colour derived from the layer id, so that it stays the same across reloads. */
-export function colorForId(id: string): string {
+function colorForId(id: string): string {
     let hash = 0;
     for (const char of id) {
         hash = (hash * 31 + char.charCodeAt(0)) | 0;
