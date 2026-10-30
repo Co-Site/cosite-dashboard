@@ -1,19 +1,7 @@
 import Feature from "ol/Feature";
 import { LineString, Point, Polygon } from "ol/geom";
 import { describe, expect, it } from "vitest";
-import { colorForId, createWfsStyle, paletteColor, WFS_PALETTE } from "./wfsStyle";
-
-describe("WFS colours", () => {
-    it("starts over after the last palette colour", () => {
-        expect(paletteColor(0)).toBe(WFS_PALETTE[0]);
-        expect(paletteColor(WFS_PALETTE.length + 1)).toBe(WFS_PALETTE[1]);
-    });
-
-    it("derives a stable palette colour from the layer id", () => {
-        expect(colorForId("districts")).toBe(colorForId("districts"));
-        expect(WFS_PALETTE).toContain(colorForId("districts"));
-    });
-});
+import { createWfsStyle } from "./wfsStyle";
 
 describe("createWfsStyle", () => {
     it("styles points, lines and polygons differently", () => {

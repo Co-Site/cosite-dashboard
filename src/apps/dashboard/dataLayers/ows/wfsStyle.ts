@@ -7,7 +7,7 @@ import { WfsDataLayerConfig } from "../config/types";
  * Colours of WFS layers, distinguishable from each other and from the orange sensor points (`#dd6b20`)
  * on the usual base maps.
  */
-export const WFS_PALETTE: [string, ...string[]] = [
+const WFS_PALETTE: [string, ...string[]] = [
     "#2b6cb0",
     "#2f855a",
     "#6b46c1",

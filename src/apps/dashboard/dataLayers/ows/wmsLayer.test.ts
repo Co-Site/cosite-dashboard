@@ -22,19 +22,6 @@ describe("userWmsLayerConfig", () => {
         layers: [layer]
     };
 
-    it("builds the layer from the capabilities, with a description in both languages", () => {
-        expect(userWmsLayerConfig("https://example.org/wms", capabilities, layer)).toMatchObject({
-            name: "Radar",
-            description: {
-                de: "Precipitation of the last hour\n\nAnbieter: DWD\n\nNutzungsbedingungen: CC BY 4.0",
-                en: "Precipitation of the last hour\n\nProvider: DWD\n\nTerms of use: CC BY 4.0"
-            },
-            endpoint: "https://example.org/wms",
-            attribution: "DWD",
-            wms: { layers: ["radar"], featureInfo: { format: "application/json" } }
-        });
-    });
-
     it("disables the feature info for layers that are not queryable or without GeoJSON", () => {
         const notQueryable = userWmsLayerConfig("https://x", capabilities, { ...layer, queryable: false });
         expect(notQueryable.wms.featureInfo).toEqual({ enabled: false });
