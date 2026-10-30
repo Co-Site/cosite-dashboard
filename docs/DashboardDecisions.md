@@ -40,6 +40,9 @@ Jedes Element folgt demselben Schema: **Was** · **Entscheidung** · **Warum** �
 | 14  | [Testen](#14-testen)                                                                | 🟢            |
 | 15  | [Offene Punkte](#15-offene-punkte-und-ideen)                                        |               |
 | 16  | [Branches und Arbeitsweise](#16-branches-und-arbeitsweise)                          |               |
+| 17  | [Eigene WMS-Layer (temporär)](#17-eigene-wms-layer-temporär)                        | 🔴            |
+| 18  | [Geoportal Leverkusen (Proxy)](#18-geoportal-leverkusen-proxy)                      | 🟡            |
+| 19  | [Eigene WFS-Layer](#19-eigene-wfs-layer)                                            | 🟡            |
 
 Alle Commits auf `dashboard` (2026-10-09, älteste zuerst):
 
@@ -614,3 +617,48 @@ standardmäßig sichtbar: Stadtklimaprojektionen, Hochwasser, Starkregen, Grundw
     - Die drei Zeiträume eines Indikators decken jeweils die ganze Stadt ab. Sind alle sichtbar, sieht man nur den
       obersten (2071–2100). Noch offen.
 - **Commits:** `a32bf8e`, `2e4777f`, `2bf530b`, `1d735c6`
+
+## 19. Eigene WFS-Layer
+
+🟡 **Was:** Wie bei WMS (Abschnitt 17) sollen WFS-Dienste für die Sitzung hinzugefügt und dauerhaft in
+`dataLayers.json` eingetragen werden können (`TODO.md`, besprochen am 2026-10-30).
+
+- **Entscheidung:** Eigene Zeile „WFS hinzufügen“ unter „WMS hinzufügen“ mit demselben Ablauf (URL laden, Feature-Typ
+  suchen, hinzufügen). WFS 2.0.0 und 1.1.0, GeoJSON und GML (3.2, 3.1, 2) gleich von Anfang an. Gruppe „Eigene WFS“
+  (`user-wfs`) über dem obersten Layer mit WMS, also über den Kartenbildern und unter den Sensoren. Eine Farbe pro
+  Layer aus einer festen Palette (`dataLayers/wfsStyle.ts`), kein Style-Picker. Beim Kartenklick stehen die Attribute
+  im vorhandenen Popup vor den WMS-Ergebnissen, das Feature wird hervorgehoben. Kein allgemeiner Proxy.
+- **Gemeinsam mit WMS statt kopiert:** Session-Gruppe (`dataLayers/userLayers.ts`), Laden der Capabilities
+  (`toc/useServiceCapabilities.ts`), Suche (`toc/LayerSearch.tsx`, `dataLayers/layerSearch.ts`) und Formular
+  (`toc/AddServiceLayer.tsx`) sind generisch. Was je Diensttyp anders ist, beschreibt `toc/userServices.ts`
+  (Capabilities, Einträge, Prüfung, Config). URL-Normalisierung, Fehlerarten, Session-Cache und Exception-Meldungen
+  liegen in `dataLayers/ogcService.ts`. Texte: gemeinsame unter `addService.*`, typspezifische unter `addWms.*` und
+  `addWfs.*`. Der Titel aus den Capabilities (`applyCapabilitiesTitle`) und `FeatureInfoConfig` gelten für beide.
+- **Capabilities:** OpenLayers hat keinen Parser für WFS-Capabilities (`ol/format/WFS` liest nur GetFeature-Antworten).
+  Eigener Parser in `dataLayers/wfsCapabilities.ts`, der Elemente nur über den lokalen Namen liest, weil sich die
+  Präfixe je Server unterscheiden. Ausgabeformate stehen je Feature-Typ (deegree) oder nur an `GetFeature` in
+  `OperationsMetadata` (GeoServer). Gefragt wird erst nach 2.0.0, bei Fehler nach 1.1.0.
+- **KBS (Abweichung vom Plan):** Geplant war EPSG:3857, dann 4326, dann 25832/25833. Gewählt werden jetzt nur
+  projizierte Systeme: 3857, 25832, 25833. Listet ein Feature-Typ keins davon, wird trotzdem 3857 angefragt.
+    - Warum: Bei EPSG:4326 hängt die Achsenreihenfolge (Lat/Lon oder Lon/Lat) von Server, Version und Schreibweise ab.
+      Ein Fehler legt die Features ohne jede Meldung an die falsche Stelle. Projizierte Systeme sind immer Rechts-/Hochwert.
+    - DWD listet nur EPSG:4258, liefert auf Anfrage aber 3857. Dienste, die das nicht können, fängt die Prüfung vor
+      dem Hinzufügen ab.
+- **Laden:** `bbox`-Strategie (nur der Kartenausschnitt), höchstens `maxFeatures` (Standard 1000) pro Anfrage. Liefert
+  eine Anfrage genau so viele Features, zeigt das TOC „Nicht alle Features geladen“. Ein Exception-Report mit HTTP 200
+  zählt als Fehler, das TOC warnt dann wie beim WMS (`featuresloaderror`, `toc/LayerLoadWarning.tsx`).
+- **Prüfung vor dem Hinzufügen:** GetFeature mit einem Feature im gewählten Format und KBS (`probeWfsFeatureType`).
+  Nur eine FeatureCollection zählt. Feature-Typen ohne GeoJSON- und GML-Ausgabe werden mit Meldung abgelehnt.
+- **Stolpersteine:**
+    - deegree (Hamburg) lässt bei leerem Ergebnis `features` im GeoJSON weg (`{"type":"FeatureCollection"}`), daran
+      bricht `ol/format/GeoJSON` ab. Die App liest das JSON vorher selbst.
+    - Nach einem Fehler ließ `removeLoadedExtent` den Ausschnitt sofort neu laden: eine Anfrage-Schleife. Ein
+      fehlgeschlagener Ausschnitt gilt jetzt als geladen und wird erst bei einem neuen Ausschnitt wieder angefragt.
+    - happy-dom (Tests) kennt `lookupNamespaceURI` nicht und keine XML-Deklaration mit einfachen Anführungszeichen. Der
+      Namespace des Feature-Typs (für GML) wird deshalb über die `xmlns:`-Attribute selbst gesucht.
+- **Im Browser geprüft:** Hamburg Verwaltungsgrenzen (deegree; 2.0 mit GeoJSON und 1.1 mit GML 3.1.1 deckungsgleich),
+  DWD GeoServer (61 Feature-Typen, Hinzufügen und Entfernen, Obergrenze), Leverkusen direkt (ohne CORS:
+  Fehlermeldung), ein falscher Feature-Typ (Ladewarnung). „WMS hinzufügen“ nach dem Umbau unverändert.
+- **Offen:** Paging statt fester Obergrenze, Style-Picker, Legende. Ein dauerhafter WFS-Layer ist in
+  `dataLayers.json` noch nicht eingetragen.
+- **Commits:** `96b332d`, `e83aab9`, `9e60605`, `abad3d4`, `cd69e8e`, `c532ca8`, `c3a701b`, `ca342b2`
