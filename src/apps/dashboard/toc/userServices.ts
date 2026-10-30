@@ -1,6 +1,20 @@
 import { createLogger } from "@open-pioneer/core";
 import { MapModel } from "@open-pioneer/map";
-import { errorMessage } from "../dataLayers/ogcService";
+import { errorMessage } from "../dataLayers/ows/owsService";
+import {
+    fetchWfsCapabilities,
+    probeWfsFeatureType,
+    WfsCapabilities,
+    WfsFeatureType
+} from "../dataLayers/ows/wfsCapabilities";
+import { resolveWfsRequest, WfsRequestSettings } from "../dataLayers/ows/wfsLayer";
+import { paletteColor } from "../dataLayers/ows/wfsStyle";
+import {
+    fetchWmsCapabilities,
+    probeWmsLayer,
+    WmsCapabilities,
+    WmsCapabilitiesLayer
+} from "../dataLayers/ows/wmsCapabilities";
 import {
     UserLayerConfigs,
     UserLayerInput,
@@ -8,20 +22,6 @@ import {
     userWfsLayerInput,
     userWmsLayerInput
 } from "../dataLayers/userLayers";
-import {
-    fetchWfsCapabilities,
-    probeWfsFeatureType,
-    WfsCapabilities,
-    WfsFeatureType
-} from "../dataLayers/wfsCapabilities";
-import { resolveWfsRequest, WfsRequestSettings } from "../dataLayers/wfsLayer";
-import { paletteColor } from "../dataLayers/wfsStyle";
-import {
-    fetchWmsCapabilities,
-    probeWmsLayer,
-    WmsCapabilities,
-    WmsCapabilitiesLayer
-} from "../dataLayers/wmsCapabilities";
 import { SearchOption } from "./LayerSearch";
 
 const LOG = createLogger("dashboard:userServices");

@@ -3,7 +3,7 @@ import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { Ref } from "react";
 import { LuPanelBottomClose } from "react-icons/lu";
-import { useStaSensors } from "../dataLayers/useStaSensors";
+import { useStaSensors } from "../dataLayers/sta/useStaSensors";
 import {
     AnalysisSelection,
     AnalysisTab,

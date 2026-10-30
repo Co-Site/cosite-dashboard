@@ -8,7 +8,7 @@ import VectorSource from "ol/source/Vector";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { TRUNCATED_PROPERTY } from "../dataLayers/wfsLayer";
+import { TRUNCATED_PROPERTY } from "../dataLayers/ows/wfsLayer";
 
 /** Source of a layer whose loading the TOC watches: map images of a WMS or features of a WFS. */
 export type WatchedSource = ImageWMS | VectorSource;

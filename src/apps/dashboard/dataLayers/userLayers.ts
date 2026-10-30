@@ -1,9 +1,9 @@
 import { AddLayerOptions, AnyLayer, isLayer, Layer, MapModel } from "@open-pioneer/map";
+import { LocalizedText } from "./config/localizedText";
+import { DataLayerConfig, DataLayerNode, WfsDataLayerConfig, WmsDataLayerConfig } from "./config/types";
 import { createDataLayer, DataLayerContext, getDataLayerConfig } from "./createDataLayer";
-import { LocalizedText } from "./localizedText";
-import { DataLayerConfig, DataLayerNode, WfsDataLayerConfig, WmsDataLayerConfig } from "./types";
-import { WfsCapabilities, WfsFeatureType } from "./wfsCapabilities";
-import { chooseFeatureInfoFormat, WmsCapabilities, WmsCapabilitiesLayer } from "./wmsCapabilities";
+import { WfsCapabilities, WfsFeatureType } from "./ows/wfsCapabilities";
+import { chooseFeatureInfoFormat, WmsCapabilities, WmsCapabilitiesLayer } from "./ows/wmsCapabilities";
 
 /** The configuration type of the user's layers per kind of service. */
 export interface UserLayerConfigs {

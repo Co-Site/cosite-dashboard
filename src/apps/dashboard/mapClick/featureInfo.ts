@@ -4,10 +4,10 @@ import Feature from "ol/Feature";
 import { Geometry } from "ol/geom";
 import BaseLayer from "ol/layer/Base";
 import { Pixel } from "ol/pixel";
+import { LocalizedText } from "../dataLayers/config/localizedText";
+import { DataLayerNode, FeatureInfoConfig, FeatureInfoField, WmsDataLayerConfig } from "../dataLayers/config/types";
 import { getDataLayerConfig } from "../dataLayers/createDataLayer";
-import { LocalizedText } from "../dataLayers/localizedText";
-import { DataLayerNode, FeatureInfoConfig, FeatureInfoField, WmsDataLayerConfig } from "../dataLayers/types";
-import { chooseFeatureInfoFormat, fetchWmsCapabilities } from "../dataLayers/wmsCapabilities";
+import { chooseFeatureInfoFormat, fetchWmsCapabilities } from "../dataLayers/ows/wmsCapabilities";
 
 export interface FeatureInfoValue {
     /** Name of the property in the response. */

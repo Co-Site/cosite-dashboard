@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { WfsDataLayerConfig } from "./types";
+import { WfsDataLayerConfig } from "../config/types";
 import { WfsCapabilities } from "./wfsCapabilities";
 import { readFeatures, resolveWfsRequest } from "./wfsLayer";
 

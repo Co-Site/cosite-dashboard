@@ -3,7 +3,7 @@
  *
  * WMS client helpers: loads and parses GetCapabilities (WMS 1.3.0) and makes the layers available to the TOC,
  * the legend and the feature info. Besides that it checks single layers with a 1 × 1 pixel GetMap request and picks
- * the GetFeatureInfo format. Shared service helpers are in `ogcService.ts`.
+ * the GetFeatureInfo format. Shared service helpers are in `owsService.ts`.
  */
 import WMSCapabilities from "ol/format/WMSCapabilities";
 import {
@@ -17,7 +17,7 @@ import {
     meaningful,
     serviceUrl,
     text
-} from "./ogcService";
+} from "./owsService";
 
 export interface WmsCapabilitiesLayer {
     name: string;

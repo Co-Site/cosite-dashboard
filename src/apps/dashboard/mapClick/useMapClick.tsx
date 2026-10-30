@@ -6,7 +6,7 @@ import OlMap from "ol/Map";
 import { unByKey } from "ol/Observable";
 import { Pixel } from "ol/pixel";
 import { useEffect, useRef } from "react";
-import { getDatastreamProperties, StaDatastreamProperties } from "../dataLayers/sta";
+import { getDatastreamProperties, StaDatastreamProperties } from "../dataLayers/sta/sta";
 import { addClickMarker, addFeatureSelection, addSensorSelection } from "./clickMarker";
 import {
     FeatureInfoResult,

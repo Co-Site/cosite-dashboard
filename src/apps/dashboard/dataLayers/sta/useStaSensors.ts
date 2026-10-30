@@ -5,8 +5,8 @@ import VectorLayer from "ol/layer/Vector";
 import { unByKey } from "ol/Observable";
 import VectorSource from "ol/source/Vector";
 import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
+import { getDataLayerConfig } from "../createDataLayer";
 import { colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
-import { getDataLayerConfig } from "./createDataLayer";
 import { getDatastreamProperties, StaDatastreamProperties } from "./sta";
 
 /** A SensorThings datastream layer of the map. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import shippedConfig from "../../../public/config/dataLayers.json?raw";
+import shippedConfig from "../../../../public/config/dataLayers.json?raw";
 import { parseDataLayers } from "./loadDataLayers";
 import { DataLayerNode } from "./types";
 

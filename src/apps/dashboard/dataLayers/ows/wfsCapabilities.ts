@@ -1,7 +1,8 @@
+import { WFS_VERSIONS, WfsVersion } from "../config/types";
 /*
  * WFS client helpers: loads and parses GetCapabilities (WFS 2.0.0 and 1.1.0), picks output format and coordinate
  * reference system of a feature type, builds GetFeature requests and checks single feature types before they are
- * added. Shared service helpers are in `ogcService.ts`.
+ * added. Shared service helpers are in `owsService.ts`.
  */
 import {
     CapabilitiesError,
@@ -14,8 +15,7 @@ import {
     meaningful,
     serviceUrl,
     text
-} from "./ogcService";
-import { WFS_VERSIONS, WfsVersion } from "./types";
+} from "./owsService";
 
 export interface WfsFeatureType {
     /** Qualified name, e.g. `app:landesgrenze`. */

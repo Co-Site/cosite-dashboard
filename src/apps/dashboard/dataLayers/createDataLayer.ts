@@ -4,8 +4,7 @@ import { LayerTocAttributes } from "@open-pioneer/toc";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { Circle, Fill, Stroke, Style } from "ol/style";
-import { localize } from "./localizedText";
-import { createDatastreamFeature, fetchDatastream } from "./sta";
+import { localize } from "./config/localizedText";
 import {
     DataLayerConfig,
     DataLayerGroupConfig,
@@ -13,11 +12,12 @@ import {
     StaDatastreamLayerConfig,
     WfsDataLayerConfig,
     WmsDataLayerConfig
-} from "./types";
-import { fetchWfsCapabilities, findFeatureType } from "./wfsCapabilities";
-import { createWfsSource } from "./wfsLayer";
-import { createWfsStyle, wfsLayerColor } from "./wfsStyle";
-import { fetchWmsCapabilities } from "./wmsCapabilities";
+} from "./config/types";
+import { fetchWfsCapabilities, findFeatureType } from "./ows/wfsCapabilities";
+import { createWfsSource } from "./ows/wfsLayer";
+import { createWfsStyle, wfsLayerColor } from "./ows/wfsStyle";
+import { fetchWmsCapabilities } from "./ows/wmsCapabilities";
+import { createDatastreamFeature, fetchDatastream } from "./sta/sta";
 
 const LOG = createLogger("dashboard:createDataLayer");
 

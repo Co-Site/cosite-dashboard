@@ -1,4 +1,4 @@
-import { Observation } from "../dataLayers/sta";
+import { Observation } from "../dataLayers/sta/sta";
 import { TimeRange } from "./timeRange";
 
 const DAY = 24 * 60 * 60 * 1000;

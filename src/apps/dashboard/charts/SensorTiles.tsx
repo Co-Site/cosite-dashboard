@@ -4,7 +4,7 @@ import { useMapModelValue } from "@open-pioneer/map";
 import { PackageIntl } from "@open-pioneer/runtime";
 import { useIntl } from "open-pioneer:react-hooks";
 import { RefObject, useEffect, useRef, useState } from "react";
-import { fetchLatestObservation, Observation, StaDatastreamProperties } from "../dataLayers/sta";
+import { fetchLatestObservation, Observation, StaDatastreamProperties } from "../dataLayers/sta/sta";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { createValueFormatter } from "./chartStyle";
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { WmsDataLayerConfig } from "./types";
+import { WmsDataLayerConfig } from "./config/types";
+import { WfsCapabilities } from "./ows/wfsCapabilities";
+import { WmsCapabilities, WmsCapabilitiesLayer } from "./ows/wmsCapabilities";
 import { userWfsLayerInput, userWmsLayerInput, withLayerState } from "./userLayers";
-import { WfsCapabilities } from "./wfsCapabilities";
-import { WmsCapabilities, WmsCapabilitiesLayer } from "./wmsCapabilities";
 
 describe("withLayerState", () => {
     const config: WmsDataLayerConfig = {

@@ -1,7 +1,7 @@
 import { asArray } from "ol/color";
 import { FeatureLike } from "ol/Feature";
 import { Circle, Fill, Stroke, Style } from "ol/style";
-import { WfsDataLayerConfig } from "./types";
+import { WfsDataLayerConfig } from "../config/types";
 
 /**
  * Colours of WFS layers, distinguishable from each other and from the orange sensor points (`#dd6b20`)

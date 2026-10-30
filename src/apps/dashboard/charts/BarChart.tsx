@@ -3,7 +3,7 @@ import { PackageIntl } from "@open-pioneer/runtime";
 import { BarController, BarElement, Chart, ChartConfiguration, LinearScale, Tooltip } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback, useMemo } from "react";
-import { Observation } from "../dataLayers/sta";
+import { Observation } from "../dataLayers/sta/sta";
 import { createValueFormatter, SERIES_COLOR, SERIES_FILL, timeScale, valueScale } from "./chartStyle";
 import { Bucket, BucketSize, bucketSize, meanPerBucket } from "./statistics";
 import { TimeRange } from "./timeRange";

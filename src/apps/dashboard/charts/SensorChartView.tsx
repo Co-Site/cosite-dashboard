@@ -8,7 +8,7 @@ import {
     useColocatedSensors,
     useDatastreamProperties,
     useSensorLoadFailed
-} from "../dataLayers/useStaSensors";
+} from "../dataLayers/sta/useStaSensors";
 import { CHART_TYPE_ICONS, CHART_TYPES, ChartType } from "./chartTypes";
 import { DatastreamChart } from "./DatastreamChart";
 import { SensorTiles } from "./SensorTiles";

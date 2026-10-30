@@ -5,7 +5,7 @@ import {
     exceptionMessage,
     fetchCapabilitiesText,
     normalizeServiceEndpoint
-} from "./ogcService";
+} from "./owsService";
 
 describe("normalizeServiceEndpoint", () => {
     it("removes the parameters of a pasted request URL and keeps others", () => {

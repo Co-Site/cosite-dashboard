@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CapabilitiesError } from "./ogcService";
+import { CapabilitiesError } from "./owsService";
 import { chooseFeatureInfoFormat, parseWmsCapabilities, probeWmsLayer } from "./wmsCapabilities";
 
 const CAPABILITIES = `<?xml version="1.0" encoding="UTF-8"?>

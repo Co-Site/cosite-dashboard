@@ -12,8 +12,8 @@ import WFS from "ol/format/WFS";
 import { bbox } from "ol/loadingstrategy";
 import { transformExtent } from "ol/proj";
 import VectorSource from "ol/source/Vector";
-import { exceptionMessage } from "./ogcService";
-import { WfsDataLayerConfig, WfsVersion } from "./types";
+import { WfsDataLayerConfig, WfsVersion } from "../config/types";
+import { exceptionMessage } from "./owsService";
 import {
     chooseCrs,
     chooseOutputFormat,

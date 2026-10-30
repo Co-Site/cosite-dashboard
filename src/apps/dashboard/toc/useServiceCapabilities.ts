@@ -1,7 +1,7 @@
 import { createLogger } from "@open-pioneer/core";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useRef, useState } from "react";
-import { CapabilitiesError, normalizeServiceEndpoint } from "../dataLayers/ogcService";
+import { CapabilitiesError, normalizeServiceEndpoint } from "../dataLayers/ows/owsService";
 import { UserLayerKind } from "../dataLayers/userLayers";
 import { SearchOption } from "./LayerSearch";
 import { UserService } from "./userServices";

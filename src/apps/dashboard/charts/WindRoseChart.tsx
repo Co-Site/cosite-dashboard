@@ -2,7 +2,7 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 import { ArcElement, Chart, ChartConfiguration, PolarAreaController, RadialLinearScale, Tooltip } from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback, useMemo } from "react";
-import { Observation } from "../dataLayers/sta";
+import { Observation } from "../dataLayers/sta/sta";
 import { GRID_COLOR, SERIES_COLOR, SERIES_FILL, TEXT_SECONDARY } from "./chartStyle";
 import { DIRECTION_SECTORS, directionFrequencies, isDirectionData } from "./statistics";
 import { useChart } from "./useChart";
