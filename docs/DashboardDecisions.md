@@ -17,6 +17,10 @@ Jedes Element folgt demselben Schema: **Was** · **Entscheidung** · **Warum** �
   [Abschnitt 16](#16-branches-und-arbeitsweise).
 - **Arbeitsweise:** Ein Commit pro abgeschlossenem Schritt, Push nur nach `origin` und nur auf Wunsch. Der Pre-Commit-Hook führt `tsc`, oxfmt und
   oxlint aus, jeder Schritt muss also für sich bauen.
+- **Grundsatz Config vor STA (2026-10-30):** Ein SensorThings-Server kann falsch oder uneinheitlich konfiguriert sein
+  (z. B. `temperature` und `Temperature` als zwei ObservedProperties, `°C` und `degC` als Einheit). Die Config rückt
+  das gerade: Wo sie etwas angibt, gilt sie vor den Angaben der STA. Was für ein Feature konfiguriert sein muss und es
+  nicht ist, wird im Zweifel nicht angezeigt, statt auf die STA-Angaben zurückzufallen.
 
 | #   | Element                                                                             | Schwierigkeit |
 | --- | ----------------------------------------------------------------------------------- | ------------- |
@@ -304,6 +308,11 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
       nicht transitiv: Liegen A–B und B–C je 0,8 m auseinander, zeigt A nur B, B zeigt A und C.
     - **Umschaltbar** über `VITE_SENSOR_GROUPING` (`location`, `thing`, `location-or-thing`,
       `dataLayers/colocation.ts`). Bei Datastream 14 und 15 liefern alle drei dasselbe (gleicher Ort, Thing 2).
+    - **Offen/Risiko (2026-10-30):** Die Gruppierung bleibt vorerst beim Radius von 1 m. In der Realität können die
+      Sensoren einer Station mehr als 1 m auseinanderstehen (sie werden dann getrennt), und nahe Sensoren können zu
+      verschiedenen Stationen gehören (sie werden dann zusammengelegt); STA-Modell und Praxis können auseinandergehen.
+      Bisher gibt es nur eine Station mit zwei Sensoren. Treten solche Fälle auf, wird neu entschieden. Zurückgestellt:
+      eine ausdrückliche Zuordnung von Sensoren zu Stationen in `dataLayers.json`.
     - **Neuester Wert:** eigene Abfrage `$orderby=phenomenonTime desc&$top=1`, unabhängig vom Zeitfilter. Der
       „letzte Wert“ in der Zeile über dem Diagramm ist dagegen der letzte im Zeitraum.
     - **Viele Sensoren:** Die Spalte ist so hoch wie das Diagramm und scrollt. Platz für die Scrollbar ist von Anfang
