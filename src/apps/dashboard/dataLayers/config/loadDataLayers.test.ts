@@ -63,7 +63,8 @@ describe("parseDataLayers", () => {
                 "group",
                 [
                     ["sta-ds-14", "sta-datastream"],
-                    ["sta-ds-15", "sta-datastream"]
+                    ["sta-ds-15", "sta-datastream"],
+                    ["sta-ds-16", "sta-datastream"]
                 ]
             ]
         ]);
