@@ -29,19 +29,10 @@ export interface SensorTilesProps {
     hidden?: string[];
 
     /** Border colours of the tiles by data layer id. */
-    colors?: Record<string, string>;
+    colors: Record<string, string>;
 
     /** Sensors (data layer ids) that could not be loaded; their tiles only say so. */
     unavailable?: string[];
-}
-
-interface SensorTileProps {
-    sensor: StaDatastreamProperties;
-    onSelect(sensorId: string): void;
-    color: string | undefined;
-
-    /** Whether the tile is a switch that is on or off; `undefined` for a plain button. */
-    on: boolean | undefined;
 }
 
 const TILE_STYLE = {
@@ -54,16 +45,12 @@ const TILE_STYLE = {
     alignItems: "flex-start",
     gap: 0,
     whiteSpace: "normal",
-    textAlign: "start"
+    textAlign: "start",
+    borderWidth: "2px"
 } as const;
 
-/** Border of a tile in the colour of its sensor (grey while switched off). */
-function tileBorder(color: string | undefined, on: boolean | undefined) {
-    if (!color) {
-        return {};
-    }
-    return { borderWidth: "2px", borderColor: on === false ? "border.emphasized" : color };
-}
+/** Border of a tile that is switched off or not available. */
+const BORDER_OFF = "border.emphasized";
 
 /** Time of the newest value: only the time of day for today, otherwise with the date. */
 function formatTime(intl: PackageIntl, time: number): string {
@@ -123,7 +110,13 @@ function useLatestObservation(observationsUrl: string): LatestState {
     return state;
 }
 
-function SensorTile(props: SensorTileProps) {
+/** A tile is a switch that is on or off (`on`), or a plain button (`on` is `undefined`). */
+function SensorTile(props: {
+    sensor: StaDatastreamProperties;
+    onSelect(sensorId: string): void;
+    color: string | undefined;
+    on: boolean | undefined;
+}) {
     const { sensor, onSelect, color, on } = props;
     const intl = useIntl();
     const map = useMapModelValue();
@@ -142,7 +135,7 @@ function SensorTile(props: SensorTileProps) {
     return (
         <Button
             {...TILE_STYLE}
-            {...tileBorder(color, on)}
+            borderColor={on === false ? BORDER_OFF : color}
             opacity={on === false ? 0.55 : 1}
             aria-pressed={on}
             aria-label={intl.formatMessage(
@@ -174,12 +167,12 @@ function SensorTile(props: SensorTileProps) {
 }
 
 /** Tile of a sensor whose datastream or observations could not be loaded. */
-function UnavailableTile({ sensorId, color }: { sensorId: string; color: string | undefined }) {
+function UnavailableTile({ sensorId }: { sensorId: string }) {
     const intl = useIntl();
     const map = useMapModelValue();
     const title = useLayerTitle(map, sensorId) ?? sensorId;
     return (
-        <Button {...TILE_STYLE} {...tileBorder(color, false)} disabled>
+        <Button {...TILE_STYLE} borderColor={BORDER_OFF} disabled>
             <Text fontSize="xs" fontWeight="semibold" lineClamp={2}>
                 {title}
             </Text>
@@ -220,12 +213,12 @@ export function SensorTiles(props: SensorTilesProps) {
                         key={sensor.dataLayerId}
                         sensor={sensor}
                         onSelect={onSelect}
-                        color={colors?.[sensor.dataLayerId]}
+                        color={colors[sensor.dataLayerId]}
                         on={hidden && !hidden.includes(sensor.dataLayerId)}
                     />
                 ))}
                 {unavailable.map((sensorId) => (
-                    <UnavailableTile key={sensorId} sensorId={sensorId} color={colors?.[sensorId]} />
+                    <UnavailableTile key={sensorId} sensorId={sensorId} />
                 ))}
             </Stack>
             {moreBelow && (
