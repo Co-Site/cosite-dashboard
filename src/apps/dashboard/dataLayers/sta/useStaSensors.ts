@@ -155,17 +155,22 @@ export function useLoadedDatastreams(map: MapModel, dataLayerIds: string[]): Sta
     );
 }
 
+/** Returns the datastream properties of all SensorThings layers of the map, in configuration order. */
+function useAllLoadedDatastreams(map: MapModel): StaDatastreamProperties[] {
+    const sensors = useStaSensors(map);
+    return useLoadedDatastreams(
+        map,
+        sensors.map((sensor) => sensor.id)
+    );
+}
+
 /**
  * Returns the other SensorThings sensors at the site of the given sensor
  * (see {@link SENSOR_GROUPING} and {@link SENSOR_GROUPING_RADIUS}),
  * in configuration order. Sensors appear once their datastream has been loaded.
  */
 export function useColocatedSensors(map: MapModel, dataLayerId: string | undefined): StaDatastreamProperties[] {
-    const sensors = useStaSensors(map);
-    const all = useLoadedDatastreams(
-        map,
-        sensors.map((sensor) => sensor.id)
-    );
+    const all = useAllLoadedDatastreams(map);
     return useMemo(() => {
         const selected = all.find((datastream) => datastream.dataLayerId === dataLayerId);
         return selected ? colocatedSensors(selected, all, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS) : [];
@@ -178,11 +183,7 @@ export function useColocatedSensors(map: MapModel, dataLayerId: string | undefin
  * A sensor gets its colour once its datastream has been loaded (only then its location is known).
  */
 export function useStationColors(map: MapModel): Record<string, string> {
-    const sensors = useStaSensors(map);
-    const all = useLoadedDatastreams(
-        map,
-        sensors.map((sensor) => sensor.id)
-    );
+    const all = useAllLoadedDatastreams(map);
     return useMemo(() => {
         const stations = assignStations(all, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS);
         return Object.fromEntries([...stations].map(([id, station]) => [id, stationColor(station)]));
