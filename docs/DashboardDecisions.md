@@ -713,6 +713,12 @@ standardmäßig sichtbar: Stadtklimaprojektionen, Hochwasser, Starkregen, Grundw
   Kachel („nicht verfügbar“). Geladen werden auch ausgeblendete Sensoren, damit das Einblenden sofort wirkt.
 - **Weggelassen:** die Zeile mit Anzahl, Min, Max und letztem Wert; der Hinweis auf abgeschnittene Daten bei mehr
   als 20.000 Werten.
+- **Vereinfacht (2026-11-13, Maßstab Einfachheit):** Messgrößen als `Record` (Key → Sensoren) statt eigenem Typ,
+  Messwerte je Sensor als Liste oder `"error"` statt Zustands-Union, keine Prüfung „gewählte Messgröße noch
+  vorhanden“ (die Konfiguration ändert sich zur Laufzeit nicht). Ein Liniendiagramm (`SeriesChart`) für alle Tabs;
+  sein Tooltip nennt immer die Reihe, auch im Einzel-Tab. Sind Reihen geladen, aber ohne Werte im Zeitraum, bleibt
+  das Diagramm leer (kein eigener Text). Bei „Gesamter Zeitraum“ beginnt die Achse beim ersten Wert der sichtbaren
+  Reihen. Bewusst behalten: die Formprüfung von `observedProperty` und `unit` und die Kachel „nicht verfügbar“.
 - **Nur Linie:** Balken und Boxplot für mehrere Reihen kommen später (`TODO.md`), die Windrose entfällt im Vergleich.
 - **Farben:** Linien und Kachelränder haben die Farbe der Station des Sensors (Abschnitt 21).
 - **Im Browser geprüft:** Datastream 14 und 16 als zwei Linien, Tooltip, Ausblenden über die Kachel, Tab-Wechsel,
