@@ -278,9 +278,9 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - **Ein Layer, ein Datastream:** Die Hooks lesen nur das erste Feature der Quelle (`datastreamFeature`). Wird
       künftig z. B. ein ganzes Thing mit mehreren Datastreams als _ein_ Layer importiert, zeigen Dropdown, Diagramm
       und Kacheln stillschweigend nur den ersten. Dann entweder pro Datastream einen eigenen Layer erzeugen
-      (`createStaDatastreamLayer`) oder `datastreamFeature`, `useDatastreamProperties` und `useColocatedSensors`
-      anpassen.
-    - **`useDatastreamProperties` sucht die Quelle nur einmal pro Layer-ID**, nicht reaktiv. Heute unkritisch,
+      (`createStaDatastreamLayer`) oder `datastreamFeature` und `useLoadedDatastreams` anpassen (darauf stützen
+      sich `useDatastreamProperties`, `useColocatedSensors` und `useStationColors`).
+    - **`useLoadedDatastreams` (und damit `useDatastreamProperties`) sucht die Quellen nur einmal pro Layer-ID**, nicht reaktiv. Heute unkritisch,
       weil die ID immer aus der Liste vorhandener Layer kommt (`useStaSensors`). Wird der Hook mit einer festen ID
       aufgerufen, solange die Konfiguration noch lädt, bleibt das Ergebnis `undefined`. `useColocatedSensors` ist
       über `useStaSensors` reaktiv und nicht betroffen.

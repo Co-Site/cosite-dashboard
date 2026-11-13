@@ -83,26 +83,6 @@ function datastreamFeature(source: VectorSource<FeatureLike> | undefined): Featu
 }
 
 /**
- * Returns the datastream properties of a SensorThings layer,
- * or `undefined` while the datastream is still loading, if it failed (see {@link useSensorLoadFailed})
- * or for unknown layers.
- */
-export function useDatastreamProperties(
-    map: MapModel,
-    dataLayerId: string | undefined
-): StaDatastreamProperties | undefined {
-    // Looked up once per id, not reactively: the layer must already be in the map
-    // (see `docs/DashboardDecisions.md`, section 8, "Annahmen der STA-Hooks").
-    const source = useMemo(() => getSensorSource(map, dataLayerId), [map, dataLayerId]);
-    const subscribe = useCallback(
-        (onChange: () => void) => subscribeSources(source ? [source] : [], onChange),
-        [source]
-    );
-    const feature = useSyncExternalStore(subscribe, () => datastreamFeature(source));
-    return useMemo(() => (feature ? getDatastreamProperties(feature) : undefined), [feature]);
-}
-
-/**
  * Whether a SensorThings layer is not available: its datastream could not be loaded (error or timeout),
  * has no location, or the endpoint fails the layer's health check.
  */
@@ -128,6 +108,8 @@ export function useFailedSensors(map: MapModel, dataLayerIds: string[]): string[
 export function useLoadedDatastreams(map: MapModel, dataLayerIds: string[]): StaDatastreamProperties[] {
     // The array is new on every render, the ids rarely change.
     const idList = dataLayerIds.join("\n");
+    // Looked up once per ids, not reactively: the layers must already be in the map
+    // (see `docs/DashboardDecisions.md`, section 8, "Annahmen der STA-Hooks").
     const sources = useMemo(
         () =>
             idList
@@ -153,6 +135,18 @@ export function useLoadedDatastreams(map: MapModel, dataLayerIds: string[]): Sta
         () => features.map(getDatastreamProperties).filter((datastream) => datastream !== undefined),
         [features]
     );
+}
+
+/**
+ * Returns the datastream properties of a SensorThings layer,
+ * or `undefined` while the datastream is still loading, if it failed (see {@link useSensorLoadFailed})
+ * or for unknown layers.
+ */
+export function useDatastreamProperties(
+    map: MapModel,
+    dataLayerId: string | undefined
+): StaDatastreamProperties | undefined {
+    return useLoadedDatastreams(map, dataLayerId ? [dataLayerId] : [])[0];
 }
 
 /** Returns the datastream properties of all SensorThings layers of the map, in configuration order. */
