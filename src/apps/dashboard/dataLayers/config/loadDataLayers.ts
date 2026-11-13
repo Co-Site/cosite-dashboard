@@ -143,6 +143,11 @@ function validateEntry(entry: unknown): string | undefined {
         case "wfs":
             return validateWfs(entry.wfs);
         case "sta-datastream":
+            for (const key of ["observedProperty", "unit"]) {
+                if (entry[key] != null && !isNonEmptyString(entry[key])) {
+                    return `property '${key}' must be a non-empty string.`;
+                }
+            }
             return undefined;
         default:
             return `unknown type '${String(entry.type)}'.`;
