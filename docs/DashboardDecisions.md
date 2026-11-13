@@ -21,6 +21,18 @@ Jedes Element folgt demselben Schema: **Was** · **Entscheidung** · **Warum** �
   (z. B. `temperature` und `Temperature` als zwei ObservedProperties, `°C` und `degC` als Einheit). Die Config rückt
   das gerade: Wo sie etwas angibt, gilt sie vor den Angaben der STA. Was für ein Feature konfiguriert sein muss und es
   nicht ist, wird im Zweifel nicht angezeigt, statt auf die STA-Angaben zurückzufallen.
+- **Grundsatz Die Konfiguration ist verantwortlich (2026-11-13):** Im Betrieb liegt die Korrektheit bei dem, der
+  `dataLayers.json` pflegt: Sensoren sorgfältig benennen, den richtigen Key für die Messgröße vergeben, die passende
+  Einheit eintragen. Das ist gewollt, kein Versäumnis. Das Dashboard prüft nur die Form der Angaben (Typen), nicht
+  ihren Inhalt: Es gleicht Keys nicht untereinander ab, vergleicht Einheiten nicht und rechnet nicht um.
+- **Messgröße und Einheit am Sensor (2026-11-13):** Jeder `sta-datastream` kann `observedProperty` (Key, z. B.
+  `soil_temperature`) und `unit` tragen. Die Einheit gilt vor `unitOfMeasurement` der STA.
+    - **Verworfen:** eine zentrale Liste der Messgrößen (Key, Name de/en, Einheit), auf die Sensoren verweisen. Sie
+      hätte eine einheitliche Einheit je Messgröße erzwungen und einen übersetzten Namen geliefert, die Konfiguration
+      aber um eine zweite Stelle erweitert. Alles am Sensor ist einfacher zu lesen und zu pflegen.
+    - **Folgen:** Der Name der Messgröße kommt weiter aus der STA (Detailzeile im Sensor-Popup, nicht übersetzt). Für
+      die Auswahl im Vergleich nach Messgröße gibt es noch keinen übersetzten Namen (offen, siehe `TODO.md`). Der Key
+      wird bisher nur geprüft; gelesen wird er erst vom Vergleich, über die Konfiguration am Layer.
 
 | #   | Element                                                                             | Schwierigkeit |
 | --- | ----------------------------------------------------------------------------------- | ------------- |
@@ -175,6 +187,9 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   ausgeblendet, damit er die Temperatur nicht verdeckt. Seit 20.10. sind auf Wunsch alle Layer beim Start sichtbar
   (RADOLAN mit 30 % Transparenz). Dazu Datastream 15 (SMT100 Bodenfeuchte in %, gleicher Knoten und Standort wie
   Datastream 14).
+- **Ergänzt (2026-11-13):** Datastream 16 (SMT100 Bodentemperatur, Thing „ESP32 Node Test“, liefert seit 30.10.2026).
+  Ein Demo-Aufbau, etwa 800 m westlich des Knotens in Kalk. Er dient als zweite Station, gegen die der Vergleich nach
+  Messgröße entwickelt wird.
 - **Commits:** `6a1d0da`
 
 ## 6. Kategorien (Untergruppen) im TOC
