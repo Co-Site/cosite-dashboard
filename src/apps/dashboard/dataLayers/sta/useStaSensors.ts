@@ -7,6 +7,7 @@ import VectorSource from "ol/source/Vector";
 import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import { getDataLayerConfig } from "../dataLayerBase";
 import { colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
+import { ObservedPropertyGroup, observedPropertyGroups } from "./observedProperties";
 import { getDatastreamProperties, StaDatastreamProperties } from "./sta";
 
 /** A SensorThings datastream layer of the map. */
@@ -33,6 +34,23 @@ export function useStaSensors(map: MapModel): StaSensor[] {
                 .getRecursiveLayers({ filter: "operational" })
                 .filter(isStaLayer)
                 .map((layer) => ({ id: layer.id, title: layer.title })),
+        [map]
+    );
+}
+
+/**
+ * Returns the observed properties that at least two sensors of the map measure (also hidden ones),
+ * in configuration order.
+ */
+export function useObservedProperties(map: MapModel): ObservedPropertyGroup[] {
+    return useReactiveSnapshot(
+        () =>
+            observedPropertyGroups(
+                map.layers.getRecursiveLayers({ filter: "operational" }).flatMap((layer) => {
+                    const config = getDataLayerConfig(layer);
+                    return config?.type === "sta-datastream" ? [config] : [];
+                })
+            ),
         [map]
     );
 }
