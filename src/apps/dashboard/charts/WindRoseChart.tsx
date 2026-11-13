@@ -3,7 +3,7 @@ import { ArcElement, Chart, ChartConfiguration, PolarAreaController, RadialLinea
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback, useMemo } from "react";
 import { Observation } from "../dataLayers/sta/sta";
-import { GRID_COLOR, SERIES_COLOR, SERIES_FILL, TEXT_SECONDARY } from "./chartStyle";
+import { GRID_COLOR, seriesFill, TEXT_SECONDARY } from "./chartStyle";
 import { DIRECTION_SECTORS, directionFrequencies, isDirectionData } from "./statistics";
 import { useChart } from "./useChart";
 
@@ -15,13 +15,16 @@ export interface WindRoseChartProps {
     /** Name of the series, used for the accessible label. */
     label: string;
     unit: string | undefined;
+
+    /** Colour of the series (the colour of the sensor's station). */
+    color: string;
 }
 
 /**
  * Wind rose (basic version): share of the observations per direction (16 sectors, in percent).
  * Requires directions in degrees; for other data, the rose stays empty and a hint is shown.
  */
-export function WindRoseChart({ observations, label, unit }: WindRoseChartProps) {
+export function WindRoseChart({ observations, label, unit, color }: WindRoseChartProps) {
     const intl = useIntl();
     const valid = isDirectionData(unit, observations);
     const frequencies = useMemo(
@@ -43,10 +46,10 @@ export function WindRoseChart({ observations, label, unit }: WindRoseChartProps)
                 animation: false,
                 datasets: {
                     polarArea: {
-                        backgroundColor: SERIES_FILL,
-                        borderColor: SERIES_COLOR,
+                        backgroundColor: seriesFill(color),
+                        borderColor: color,
                         borderWidth: 1,
-                        hoverBackgroundColor: SERIES_COLOR
+                        hoverBackgroundColor: color
                     }
                 },
                 scales: {
@@ -82,7 +85,7 @@ export function WindRoseChart({ observations, label, unit }: WindRoseChartProps)
                 }
             }
         };
-    }, [intl]);
+    }, [intl, color]);
 
     const applyData = useCallback(
         (chart: Chart<"polarArea">) => {

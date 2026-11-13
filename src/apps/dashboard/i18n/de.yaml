@@ -20,6 +20,7 @@ messages:
     tabs:
       single: "Einzelsensor"
       compare: "Sensorvergleich"
+      property: "Messgrößenvergleich"
     sensor:
       label: "Sensor"
       labelA: "Sensor A"
@@ -28,10 +29,19 @@ messages:
       none: "Keine Sensoren konfiguriert."
       loading: "Lade Sensor …"
       error: "Sensor nicht verfügbar: Der Datastream konnte nicht geladen werden oder hat keinen Standort."
+    property:
+      label: "Messgröße"
+      none: "Keine Messgröße wird von mindestens zwei Sensoren gemessen."
+      sensors: "Sensoren der Messgröße"
+      toggle: "{sensor} ein- oder ausblenden (letzter Wert: {value})"
+      unavailable: "nicht verfügbar"
     colocated:
       label: "Weitere Sensoren am Standort"
       noValue: "–"
       show: "{sensor} anzeigen (letzter Wert: {value})"
+  observedProperty:
+    soil_temperature: "Bodentemperatur"
+    soil_moisture: "Bodenfeuchte"
   addService:
     url: "URL des Dienstes"
     load: "Laden"

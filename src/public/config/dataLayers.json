@@ -474,6 +474,8 @@
                         "de": "Bodentemperatur des SMT100-Sensors am Testknoten in Köln-Kalk (SensorThings API).",
                         "en": "Soil temperature of the SMT100 sensor at the test node in Cologne-Kalk (SensorThings API)."
                     },
+                    "observedProperty": "soil_temperature",
+                    "unit": "°C",
                     "endpoint": "https://cosite.thk.52north.org/sensordata/v1.1/Datastreams(14)",
                     "visible": true
                 },
@@ -488,7 +490,25 @@
                         "de": "Bodenfeuchte (volumetrischer Wassergehalt) des SMT100-Sensors am Testknoten in Köln-Kalk (SensorThings API).",
                         "en": "Soil moisture (volumetric water content) of the SMT100 sensor at the test node in Cologne-Kalk (SensorThings API)."
                     },
+                    "observedProperty": "soil_moisture",
+                    "unit": "%",
                     "endpoint": "https://cosite.thk.52north.org/sensordata/v1.1/Datastreams(15)",
+                    "visible": true
+                },
+                {
+                    "id": "sta-ds-16",
+                    "type": "sta-datastream",
+                    "name": {
+                        "de": "Bodentemperatur SMT100 (Demo-Knoten)",
+                        "en": "Soil temperature SMT100 (demo node)"
+                    },
+                    "description": {
+                        "de": "Bodentemperatur des SMT100-Sensors am Demo-Knoten in Köln (SensorThings API).",
+                        "en": "Soil temperature of the SMT100 sensor at the demo node in Cologne (SensorThings API)."
+                    },
+                    "observedProperty": "soil_temperature",
+                    "unit": "°C",
+                    "endpoint": "https://cosite.thk.52north.org/sensordata/v1.1/Datastreams(16)",
                     "visible": true
                 }
             ]

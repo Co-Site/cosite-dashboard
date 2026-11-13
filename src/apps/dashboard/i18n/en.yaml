@@ -20,6 +20,7 @@ messages:
     tabs:
       single: "Single sensor"
       compare: "Sensor comparison"
+      property: "Observed property comparison"
     sensor:
       label: "Sensor"
       labelA: "Sensor A"
@@ -28,10 +29,19 @@ messages:
       none: "No sensors configured."
       loading: "Loading sensor …"
       error: "Sensor not available: the datastream could not be loaded or has no location."
+    property:
+      label: "Observed property"
+      none: "No observed property is measured by at least two sensors."
+      sensors: "Sensors of the observed property"
+      toggle: "Show or hide {sensor} (latest value: {value})"
+      unavailable: "not available"
     colocated:
       label: "Other sensors at this site"
       noValue: "–"
       show: "Show {sensor} (latest value: {value})"
+  observedProperty:
+    soil_temperature: "Soil temperature"
+    soil_moisture: "Soil moisture"
   addService:
     url: "Service URL"
     load: "Load"

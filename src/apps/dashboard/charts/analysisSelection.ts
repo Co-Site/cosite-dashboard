@@ -1,7 +1,7 @@
 import { ChartType } from "./chartTypes";
 
 /** Tabs of the analysis panel. */
-export type AnalysisTab = "single" | "compare";
+export type AnalysisTab = "single" | "compare" | "property";
 
 /** A view with its own chart type: the single view or a half (0, 1) of the compare view. */
 export type AnalysisView = "single" | 0 | 1;
@@ -18,12 +18,19 @@ export interface AnalysisSelection {
 
     /** Chart types of the single view and of the two halves of the compare view. */
     charts: { single: ChartType; compare: [ChartType, ChartType] };
+
+    /**
+     * Observed property comparison: key of the chosen observed property and the sensors that are switched off.
+     * The switched-off sensors are kept (not the shown ones) so that new sensors are shown by default.
+     */
+    property: { key?: string; hidden: string[] };
 }
 
 export const INITIAL_SELECTION: AnalysisSelection = {
     tab: "single",
     compare: [undefined, undefined],
-    charts: { single: "line", compare: ["line", "line"] }
+    charts: { single: "line", compare: ["line", "line"] },
+    property: { hidden: [] }
 };
 
 /**
@@ -63,4 +70,16 @@ export function withChartType(
                   compare: view === 0 ? [chartType, compare[1]] : [compare[0], chartType]
               };
     return { ...selection, charts };
+}
+
+/** Switches a sensor of the observed property comparison off, or on again. */
+export function withToggledSensor(selection: AnalysisSelection, sensorId: string): AnalysisSelection {
+    const { hidden } = selection.property;
+    return {
+        ...selection,
+        property: {
+            ...selection.property,
+            hidden: hidden.includes(sensorId) ? hidden.filter((id) => id !== sensorId) : [...hidden, sensorId]
+        }
+    };
 }

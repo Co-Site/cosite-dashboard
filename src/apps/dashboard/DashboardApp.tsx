@@ -7,6 +7,7 @@ import { LuChartLine } from "react-icons/lu";
 import { AnalysisPanel } from "./charts/AnalysisPanel";
 import { AnalysisSelection, INITIAL_SELECTION } from "./charts/analysisSelection";
 import { presetFilter, TimeFilter } from "./charts/timeRange";
+import { StationPointStyles } from "./dataLayers/sta/StationPointStyles";
 import { useMapClick } from "./mapClick/useMapClick";
 import { MAP_ID } from "./services";
 import { TocPanel } from "./toc/TocPanel";
@@ -41,6 +42,7 @@ export function DashboardApp() {
         <Flex height="100%" direction="column" overflow="hidden" containerType="size">
             {map && (
                 <DefaultMapProvider map={map}>
+                    <StationPointStyles />
                     <Flex flex="1" direction="column" position="relative" minHeight={0}>
                         <MapContainer aria-label={intl.formatMessage({ id: "ariaLabel.map" })}>
                             <MapAnchor position="bottom-right" horizontalGap={10} verticalGap={30}>

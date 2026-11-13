@@ -7,7 +7,8 @@ import {
     StaSensor,
     useColocatedSensors,
     useDatastreamProperties,
-    useSensorLoadFailed
+    useSensorLoadFailed,
+    useStationColors
 } from "../dataLayers/sta/useStaSensors";
 import { CHART_TYPE_ICONS, CHART_TYPES, ChartType } from "./chartTypes";
 import { DatastreamChart } from "./DatastreamChart";
@@ -84,6 +85,7 @@ export function SensorChartView(props: SensorChartViewProps) {
     const datastream = useDatastreamProperties(map, value);
     const loadFailed = useSensorLoadFailed(map, value);
     const colocated = useColocatedSensors(map, value);
+    const stationColors = useStationColors(map);
 
     const selectSensor = (event: ChangeEvent<HTMLSelectElement>) => onChange(event.currentTarget.value);
 
@@ -125,7 +127,14 @@ export function SensorChartView(props: SensorChartViewProps) {
                         <Text color="fg.muted">{intl.formatMessage({ id: "panel.sensor.placeholder" })}</Text>
                     )}
                 </Box>
-                {colocated.length > 0 && <SensorTiles sensors={colocated} onSelect={onChange} />}
+                {colocated.length > 0 && (
+                    <SensorTiles
+                        sensors={colocated}
+                        onSelect={onChange}
+                        label={intl.formatMessage({ id: "panel.colocated.label" })}
+                        colors={stationColors}
+                    />
+                )}
             </Flex>
         </Flex>
     );

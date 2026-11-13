@@ -63,7 +63,8 @@ describe("parseDataLayers", () => {
                 "group",
                 [
                     ["sta-ds-14", "sta-datastream"],
-                    ["sta-ds-15", "sta-datastream"]
+                    ["sta-ds-15", "sta-datastream"],
+                    ["sta-ds-16", "sta-datastream"]
                 ]
             ]
         ]);
@@ -112,6 +113,15 @@ describe("parseDataLayers", () => {
         expect(parseDataLayers({ layers: [{ id: "s", type: "sta-datastream", endpoint: "https://x" }] })).toHaveLength(
             0
         );
+    });
+
+    it("validates observed property and unit of sensors", () => {
+        const sensor = { id: "s", type: "sta-datastream", name: "S", endpoint: "https://x" };
+        expect(
+            parseDataLayers({ layers: [{ ...sensor, observedProperty: "soil_temperature", unit: "°C" }] })
+        ).toHaveLength(1);
+        expect(parseDataLayers({ layers: [{ ...sensor, observedProperty: "" }] })).toHaveLength(0);
+        expect(parseDataLayers({ layers: [{ ...sensor, unit: 5 }] })).toHaveLength(0);
     });
 
     it("validates the optional feature info configuration", () => {

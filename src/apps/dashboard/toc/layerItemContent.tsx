@@ -7,6 +7,7 @@ import { ReactNode } from "react";
 import { LuTrash2 } from "react-icons/lu";
 import { getDataLayerConfig } from "../dataLayers/dataLayerBase";
 import { wfsLayerColor } from "../dataLayers/ows/wfsStyle";
+import { useStationColors } from "../dataLayers/sta/useStaSensors";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { UserLayerKind } from "../dataLayers/userLayers";
 import { LayerLoadWarning, WatchedSource } from "./LayerLoadWarning";
@@ -46,6 +47,36 @@ function ColorSwatch({ color }: { color: string }) {
     );
 }
 
+/**
+ * The colour of a sensor's station as a dot in front of the layer's checkbox, so that the sensors of a station
+ * can be recognized in the TOC. Appears once the sensor has been loaded.
+ */
+function StationDot({ layerId }: { layerId: string }) {
+    const map = useMapModelValue();
+    const color = useStationColors(map)[layerId];
+    if (!color) {
+        return null;
+    }
+    // The content of an item is placed below its title row (2.5rem high), indented to the title and with a
+    // padding below. The margins move the dot up into the row, into the free place of the collapse button
+    // (2.25rem wide), and cancel the dot's height and the padding so that the item keeps its height.
+    return (
+        <Box
+            aria-hidden
+            width="0.75rem"
+            height="0.75rem"
+            marginTop="-1.625rem"
+            marginBottom="0.375rem"
+            marginInlineStart="-3.625rem"
+            borderRadius="full"
+            borderWidth="1px"
+            borderColor="white"
+            backgroundColor={color}
+            pointerEvents="none"
+        />
+    );
+}
+
 interface LayerControlsProps {
     layer: AnyLayer;
     olLayer: BaseLayer;
@@ -77,6 +108,7 @@ function LayerControls({ layer, olLayer, source, color, userKind }: LayerControl
 /**
  * Additional content for TOC items of WMS and WFS layers: a transparency slider (with a warning if the layer cannot
  * be loaded), the colour of WFS features, and a remove button for the layers the user added.
+ * Sensors get the colour of their station.
  */
 export function layerItemContent(layer: AnyLayer): ReactNode {
     const config = getDataLayerConfig(layer);
@@ -100,6 +132,9 @@ export function layerItemContent(layer: AnyLayer): ReactNode {
                 userKind={config.temporary ? config.type : undefined}
             />
         );
+    }
+    if (config?.type === "sta-datastream") {
+        return <StationDot layerId={layer.id} />;
     }
     return undefined;
 }

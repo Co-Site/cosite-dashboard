@@ -12,13 +12,19 @@ const LOG = createLogger("dashboard:staLayer");
 /** Time after which a datastream that has not been loaded counts as failed (instead of loading forever). */
 const DATASTREAM_TIMEOUT_MS = 30_000;
 
-const SENSOR_STYLE = new Style({
-    image: new Circle({
-        radius: 8,
-        fill: new Fill({ color: "#dd6b20" }),
-        stroke: new Stroke({ color: "#ffffff", width: 2 })
-    })
-});
+/** Style of a sensor point in the given colour. */
+export function sensorStyle(color: string): Style {
+    return new Style({
+        image: new Circle({
+            radius: 8,
+            fill: new Fill({ color }),
+            stroke: new Stroke({ color: "#ffffff", width: 2 })
+        })
+    });
+}
+
+/** Until the station of the sensor is known, see `StationPointStyles`. */
+const SENSOR_STYLE = sensorStyle("#dd6b20");
 
 export function createStaDatastreamLayer(
     config: StaDatastreamLayerConfig,
@@ -29,7 +35,7 @@ export function createStaDatastreamLayer(
     source.setState("loading");
     fetchDatastream(config.endpoint, AbortSignal.timeout(DATASTREAM_TIMEOUT_MS))
         .then((datastream) => {
-            const feature = createDatastreamFeature(config.id, config.endpoint, datastream, mapProjection);
+            const feature = createDatastreamFeature(config, datastream, mapProjection);
             if (feature) {
                 source.addFeature(feature);
                 source.setState("ready");

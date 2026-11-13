@@ -36,7 +36,7 @@ Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/package
 | `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                                                                                                                                                              |
 | `dataLayers/`      | Datenlayer: `config/` (JSON-Schema `types.ts`, Loader + Parser `loadDataLayers.ts`, Texte je Sprache), `ows/` (WMS, WFS), `sta/` (SensorThings), Layer-Fabrik `createDataLayer.ts` mit `dataLayerBase.ts`, Session-Gruppen `userLayers.ts` |
 | `mapClick/`        | Kartenklick: Popup mit allen Sensoren an der Stelle oder mit den Attributen von WFS-Features und WMS-GetFeatureInfo                                                                                                                        |
-| `charts/`          | Analyse-Panel unten (`AnalysisPanel.tsx`, Tabs „Einzelsensor“ / „Sensorvergleich“), Zeitfilter, Sensor- und Typauswahl, Messwerte laden, Diagramme: Linie, Balken, Boxplot, Windrose                                                       |
+| `charts/`          | Analyse-Panel unten (`AnalysisPanel.tsx`, Tabs „Einzelsensor“ / „Sensorvergleich“ / „Messgrößenvergleich“), Zeitfilter, Sensor- und Typauswahl, Messwerte laden, Diagramme: Linie, Balken, Boxplot, Windrose                               |
 | `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen, eigene WMS/WFS hinzufügen                                                                                                                   |
 
 ## Datenlayer (`src/public/config/dataLayers.json`)
@@ -80,31 +80,33 @@ und stehen im TOC weiter oben.
 
 ### Felder
 
-| Feld                      | Pflicht     | Bedeutung                                                                       |
-| ------------------------- | ----------- | ------------------------------------------------------------------------------- |
-| `id`                      | ja          | Eindeutige ID (über die ganze Datei), auch Layer-ID in der Karte                |
-| `type`                    | ja          | `group`, `wms`, `wfs` oder `sta-datastream`                                     |
-| `name`                    | ja¹         | Anzeigename im TOC (Text oder pro Sprache, s. u.)                               |
-| `description`             | nein        | Beschreibung im ⋮-Menü des Layers (Text oder pro Sprache)                       |
-| `visible`                 | nein        | Initial sichtbar (Default `true`)                                               |
-| `opacity`                 | nein        | Deckkraft 0–1 (Default `1`)                                                     |
-| `layers`                  | bei `group` | Enthaltene Layer und Kategorien                                                 |
-| `endpoint`                | bei Layern  | URL des Dienstes (WMS-/WFS-Basis-URL bzw. URL des SensorThings-Datastreams)²    |
-| `attribution`             | nein        | Quellenangabe auf der Karte                                                     |
-| `wms.layers`              | bei `wms`   | Liste der WMS-Layernamen aus den Capabilities                                   |
-| `wms.featureInfo.enabled` | nein        | GetFeatureInfo beim Kartenklick (Default `true`)                                |
-| `wms.featureInfo.format`  | nein        | Antwortformat (GeoJSON); ohne Angabe aus den Capabilities, s. u.                |
-| `wms.featureInfo.fields`  | nein        | Anzuzeigende Attribute `{ property, label?, unit? }`; ohne Angabe: alle         |
-| `wms.legend.enabled`      | nein        | Legende im FeatureInfo-Popup (Default `true`)                                   |
-| `wms.legend.url`          | nein        | Eigene Legenden-URL statt Capabilities/GetLegendGraphic                         |
-| `wms.legend.params`       | nein        | Zusätzliche URL-Parameter, z. B. `{ "LEGEND_OPTIONS": "columns:4;fontSize:9" }` |
-| `wfs.featureType`         | bei `wfs`   | Name des Feature-Typs aus den Capabilities, z. B. `app:bezirke`                 |
-| `wfs.version`             | nein        | `2.0.0` oder `1.1.0`; ohne Angabe die neueste, die der Dienst kann              |
-| `wfs.outputFormat`        | nein        | GetFeature-Format; ohne Angabe aus den Capabilities (GeoJSON vor GML)           |
-| `wfs.maxFeatures`         | nein        | Höchstzahl Features pro Anfrage (Default `1000`)                                |
-| `wfs.color`               | nein        | Farbe der Features (CSS); ohne Angabe aus der Layer-ID abgeleitet               |
-| `wfs.featureInfo.enabled` | nein        | Attribute beim Kartenklick zeigen (Default `true`)                              |
-| `wfs.featureInfo.fields`  | nein        | Anzuzeigende Attribute wie bei `wms.featureInfo.fields`                         |
+| Feld                      | Pflicht     | Bedeutung                                                                         |
+| ------------------------- | ----------- | --------------------------------------------------------------------------------- |
+| `id`                      | ja          | Eindeutige ID (über die ganze Datei), auch Layer-ID in der Karte                  |
+| `type`                    | ja          | `group`, `wms`, `wfs` oder `sta-datastream`                                       |
+| `name`                    | ja¹         | Anzeigename im TOC (Text oder pro Sprache, s. u.)                                 |
+| `description`             | nein        | Beschreibung im ⋮-Menü des Layers (Text oder pro Sprache)                         |
+| `visible`                 | nein        | Initial sichtbar (Default `true`)                                                 |
+| `opacity`                 | nein        | Deckkraft 0–1 (Default `1`)                                                       |
+| `layers`                  | bei `group` | Enthaltene Layer und Kategorien                                                   |
+| `endpoint`                | bei Layern  | URL des Dienstes (WMS-/WFS-Basis-URL bzw. URL des SensorThings-Datastreams)²      |
+| `attribution`             | nein        | Quellenangabe auf der Karte                                                       |
+| `wms.layers`              | bei `wms`   | Liste der WMS-Layernamen aus den Capabilities                                     |
+| `wms.featureInfo.enabled` | nein        | GetFeatureInfo beim Kartenklick (Default `true`)                                  |
+| `wms.featureInfo.format`  | nein        | Antwortformat (GeoJSON); ohne Angabe aus den Capabilities, s. u.                  |
+| `wms.featureInfo.fields`  | nein        | Anzuzeigende Attribute `{ property, label?, unit? }`; ohne Angabe: alle           |
+| `wms.legend.enabled`      | nein        | Legende im FeatureInfo-Popup (Default `true`)                                     |
+| `wms.legend.url`          | nein        | Eigene Legenden-URL statt Capabilities/GetLegendGraphic                           |
+| `wms.legend.params`       | nein        | Zusätzliche URL-Parameter, z. B. `{ "LEGEND_OPTIONS": "columns:4;fontSize:9" }`   |
+| `wfs.featureType`         | bei `wfs`   | Name des Feature-Typs aus den Capabilities, z. B. `app:bezirke`                   |
+| `wfs.version`             | nein        | `2.0.0` oder `1.1.0`; ohne Angabe die neueste, die der Dienst kann                |
+| `wfs.outputFormat`        | nein        | GetFeature-Format; ohne Angabe aus den Capabilities (GeoJSON vor GML)             |
+| `wfs.maxFeatures`         | nein        | Höchstzahl Features pro Anfrage (Default `1000`)                                  |
+| `wfs.color`               | nein        | Farbe der Features (CSS); ohne Angabe aus der Layer-ID abgeleitet                 |
+| `wfs.featureInfo.enabled` | nein        | Attribute beim Kartenklick zeigen (Default `true`)                                |
+| `wfs.featureInfo.fields`  | nein        | Anzuzeigende Attribute wie bei `wms.featureInfo.fields`                           |
+| `observedProperty`        | nein        | Nur `sta-datastream`: Key der Messgröße, z. B. `soil_temperature`³                |
+| `unit`                    | nein        | Nur `sta-datastream`: Einheit der Messwerte, z. B. `°C`; ohne Angabe aus der STA³ |
 
 ¹ Bei `wms` und `wfs` optional: Ohne `name` zeigt das TOC den Titel aus den Capabilities (Sprache des Dienstes, meist
 Deutsch), bis dahin den Layernamen bzw. den Namen des Feature-Typs. Ohne `description` wird der Abstract übernommen, wenn er sich vom Titel unterscheidet.
@@ -114,6 +116,15 @@ Hat ein WMS-Eintrag mehrere `wms.layers`, bekommen die Unterlayer ihre Titel imm
 
 ² Relative URLs (z. B. `./proxy/leverkusen/GCGisService`) löst `parseDataLayers` gegen die URL der App auf. So
 funktioniert derselbe Eintrag lokal und auf dem Server, siehe [Proxy für Dienste ohne CORS](#proxy-für-dienste-ohne-cors).
+
+³ Messgröße und Einheit stehen direkt am Sensor, eine zentrale Liste gibt es nicht. Sensoren mit demselben
+`observedProperty` gelten als dieselbe Messgröße (Grundlage für den Vergleich nach Messgröße, siehe `TODO.md`).
+`unit` ersetzt die Einheit aus der STA, umgerechnet wird nicht.
+
+**Hinweis für die Pflege:** Die Konfiguration ist verantwortlich. Wer `dataLayers.json` pflegt, benennt die Sensoren
+sorgfältig, vergibt für dieselbe Messgröße überall denselben Key (gleiche Schreibweise) und trägt die Einheit ein, in
+der der Sensor tatsächlich misst. Die App prüft nur, dass die Angaben Texte sind. Sie gleicht weder Keys noch Einheiten
+untereinander ab (Hintergrund: `DashboardDecisions.md`, Überblick).
 
 **FeatureInfo-Format:** Die App liest nur GeoJSON. Ohne `format` wählt sie aus den Capabilities `application/json`
 (GeoServer), sonst `application/geo+json` (ArcGIS, MapServer). Bietet der Dienst beides nicht an oder ist der Layer
@@ -169,6 +180,7 @@ Fehlt die aktuelle Sprache, wird Englisch genommen, sonst der erste Eintrag (`da
   Geometrietyp in der Farbe des Layers (`dataLayers/ows/wfsStyle.ts`). Hintergrund: `DashboardDecisions.md`, Abschnitt 19.
 - **`sta-datastream`** → Punktlayer (`SimpleLayer` + OL-`VectorLayer`) an der Location des Things.
   Das Feature trägt u. a. `observationsUrl`, `unit` und `name` (siehe `StaDatastreamProperties` in `dataLayers/sta/sta.ts`).
+  `unit` ist die konfigurierte Einheit des Sensors, sonst die aus der STA.
   `healthCheck` auf den Endpunkt markiert den Layer im TOC als nicht verfügbar, wenn der Dienst nicht antwortet.
 
 Jeder erzeugte Layer hat die Original-Konfiguration im Attribut `dataLayer` (`layer.attributes.dataLayer`).
@@ -210,7 +222,7 @@ Im Analyse-Panel (`charts/AnalysisPanel.tsx`):
 
 - **Zeitfilter** (`charts/TimeRangeFilter.tsx`): Presets 24 Stunden, 7 Tage (Default), 30 Tage oder eigener Zeitraum von/bis.
   Ungültige Eingaben (von ≥ bis) werden markiert, der letzte gültige Zeitraum bleibt aktiv.
-- **Diagramm** (`charts/DatastreamChart.tsx`, `charts/ObservationChart.tsx`): lädt die Messwerte des Datastreams im
+- **Diagramm** (`charts/DatastreamChart.tsx`, `charts/SeriesChart.tsx`): lädt die Messwerte des Datastreams im
   Zeitraum (`fetchObservations` in `dataLayers/sta/sta.ts`, folgt `@iot.nextLink`, max. 20.000 Werte) und zeigt sie als
   Liniendiagramm mit Tooltip und Fadenkreuz. Lücken in den Daten bleiben als Lücke sichtbar. Darüber stehen
   Anzahl, Min, Max und letzter Wert.
@@ -224,9 +236,25 @@ Im Analyse-Panel (`charts/AnalysisPanel.tsx`):
   `VITE_SENSOR_GROUPING` (`location` = Standard, `thing`, `location-or-thing`; `dataLayers/sta/colocation.ts`) und
   `VITE_SENSOR_GROUPING_RADIUS` (Meter, Standard 1), dafür tragen die Datastream-Properties am Feature (`getDatastreamProperties`) `position` und `thingId`. Jede Kachel lädt den neuesten Wert (`fetchLatestObservation`),
   ein Klick ruft das `onChange` des Dropdowns auf.
+- **Messgrößenvergleich** (`charts/PropertyComparisonView.tsx`): dritter Tab. `useObservedProperties`
+  (`dataLayers/sta/useStaSensors.ts`) liest die Keys `observedProperty` aus der Konfiguration der STA-Layer und
+  liefert die Messgrößen mit mindestens zwei Sensoren (`observedPropertyGroups` in
+  `dataLayers/sta/observedProperties.ts`). Der Name im Dropdown kommt aus den i18n-Dateien
+  (`observedProperty.<key>`), ohne Übersetzung steht dort der Key. `useSeriesObservations` lädt die Messwerte je
+  Sensor einzeln, `SeriesChart` zeichnet sie als Linien in ein Diagramm (in den Stationsfarben, s. u.). Die Sensoren stehen als Kacheln daneben (`SensorTiles` mit `hidden`): Ein Klick blendet
+  eine Reihe aus oder ein. Messgröße und ausgeblendete Sensoren liegen in `AnalysisSelection.property`
+  (`charts/analysisSelection.ts`).
+- **Stationsfarben**: `assignStations` (`dataLayers/sta/colocation.ts`) teilt die geladenen Sensoren in Stationen
+  ein (gleiche Gruppierung wie die Kacheln, ein einzelner Sensor ist auch eine Station), `stationColor`
+  (`dataLayers/sta/stationColors.ts`) gibt jeder Station eine von 20 Farben. `useStationColors`
+  (`dataLayers/sta/useStaSensors.ts`) liefert die Farbe je Layer-ID. Genutzt von: `StationPointStyles` (setzt den
+  Stil der Sensorpunkte auf der Karte, eingehängt in `DashboardApp.tsx`), `StationDot` im TOC
+  (`toc/layerItemContent.tsx`), dem Rand der Kacheln und allen Diagrammen (Farbe je Reihe in `SeriesChart`, `color`-Prop von
+  `BarChart`, `BoxPlotChart`, `WindRoseChart`).
 - **Chart.js statt recharts**: Trails rendert die App im Shadow DOM. recharts sucht Portale über `document`
   und musste dafür gepatcht werden (siehe alter Branch `origin/test/charts`). Chart.js zeichnet auf Canvas und braucht das nicht.
 - Einheiten aus der STA werden für die Anzeige übersetzt (`degC` → `°C`, siehe `displayUnit` in `dataLayers/sta/sta.ts`).
+  Eine in der Konfiguration angegebene `unit` wird unverändert angezeigt und hat Vorrang.
 
 ## TOC und Transparenz-Slider
 

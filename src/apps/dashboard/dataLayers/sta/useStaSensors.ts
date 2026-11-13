@@ -6,8 +6,10 @@ import { unByKey } from "ol/Observable";
 import VectorSource from "ol/source/Vector";
 import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import { getDataLayerConfig } from "../dataLayerBase";
-import { colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
+import { assignStations, colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
+import { observedPropertyGroups } from "./observedProperties";
 import { getDatastreamProperties, StaDatastreamProperties } from "./sta";
+import { stationColor } from "./stationColors";
 
 /** A SensorThings datastream layer of the map. */
 export interface StaSensor {
@@ -33,6 +35,23 @@ export function useStaSensors(map: MapModel): StaSensor[] {
                 .getRecursiveLayers({ filter: "operational" })
                 .filter(isStaLayer)
                 .map((layer) => ({ id: layer.id, title: layer.title })),
+        [map]
+    );
+}
+
+/**
+ * Returns the observed properties that at least two sensors of the map measure (also hidden ones):
+ * their keys in configuration order, each with its sensors (data layer ids).
+ */
+export function useObservedProperties(map: MapModel): Record<string, string[]> {
+    return useReactiveSnapshot(
+        () =>
+            observedPropertyGroups(
+                map.layers.getRecursiveLayers({ filter: "operational" }).flatMap((layer) => {
+                    const config = getDataLayerConfig(layer);
+                    return config?.type === "sta-datastream" ? [config] : [];
+                })
+            ),
         [map]
     );
 }
@@ -64,26 +83,6 @@ function datastreamFeature(source: VectorSource<FeatureLike> | undefined): Featu
 }
 
 /**
- * Returns the datastream properties of a SensorThings layer,
- * or `undefined` while the datastream is still loading, if it failed (see {@link useSensorLoadFailed})
- * or for unknown layers.
- */
-export function useDatastreamProperties(
-    map: MapModel,
-    dataLayerId: string | undefined
-): StaDatastreamProperties | undefined {
-    // Looked up once per id, not reactively: the layer must already be in the map
-    // (see `docs/DashboardDecisions.md`, section 8, "Annahmen der STA-Hooks").
-    const source = useMemo(() => getSensorSource(map, dataLayerId), [map, dataLayerId]);
-    const subscribe = useCallback(
-        (onChange: () => void) => subscribeSources(source ? [source] : [], onChange),
-        [source]
-    );
-    const feature = useSyncExternalStore(subscribe, () => datastreamFeature(source));
-    return useMemo(() => (feature ? getDatastreamProperties(feature) : undefined), [feature]);
-}
-
-/**
  * Whether a SensorThings layer is not available: its datastream could not be loaded (error or timeout),
  * has no location, or the endpoint fails the layer's health check.
  */
@@ -94,22 +93,30 @@ export function useSensorLoadFailed(map: MapModel, dataLayerId: string | undefin
     );
 }
 
+/** Returns those of the given SensorThings layers that are not available, see {@link useSensorLoadFailed}. */
+export function useFailedSensors(map: MapModel, dataLayerIds: string[]): string[] {
+    return useReactiveSnapshot(
+        () => dataLayerIds.filter((id) => map.layers.getLayerById(id)?.loadState === "error"),
+        [map, dataLayerIds]
+    );
+}
+
 /**
- * Returns the other SensorThings sensors at the site of the given sensor
- * (see {@link SENSOR_GROUPING} and {@link SENSOR_GROUPING_RADIUS}),
- * in configuration order. Sensors appear once their datastream has been loaded.
+ * Returns the datastream properties of the given SensorThings layers, in the given order.
+ * Sensors appear once their datastream has been loaded.
  */
-export function useColocatedSensors(map: MapModel, dataLayerId: string | undefined): StaDatastreamProperties[] {
-    const sensors = useStaSensors(map);
-    // Titles change with the language, the sources only with the layers.
-    const sensorIds = sensors.map((sensor) => sensor.id).join("\n");
+export function useLoadedDatastreams(map: MapModel, dataLayerIds: string[]): StaDatastreamProperties[] {
+    // The array is new on every render, the ids rarely change.
+    const idList = dataLayerIds.join("\n");
+    // Looked up once per ids, not reactively: the layers must already be in the map
+    // (see `docs/DashboardDecisions.md`, section 8, "Annahmen der STA-Hooks").
     const sources = useMemo(
         () =>
-            sensorIds
+            idList
                 .split("\n")
                 .map((id) => getSensorSource(map, id))
                 .filter((source) => source !== undefined),
-        [map, sensorIds]
+        [map, idList]
     );
     const subscribe = useCallback((onChange: () => void) => subscribeSources(sources, onChange), [sources]);
 
@@ -124,9 +131,55 @@ export function useColocatedSensors(map: MapModel, dataLayerId: string | undefin
         return snapshot.current;
     });
 
+    return useMemo(
+        () => features.map(getDatastreamProperties).filter((datastream) => datastream !== undefined),
+        [features]
+    );
+}
+
+/**
+ * Returns the datastream properties of a SensorThings layer,
+ * or `undefined` while the datastream is still loading, if it failed (see {@link useSensorLoadFailed})
+ * or for unknown layers.
+ */
+export function useDatastreamProperties(
+    map: MapModel,
+    dataLayerId: string | undefined
+): StaDatastreamProperties | undefined {
+    return useLoadedDatastreams(map, dataLayerId ? [dataLayerId] : [])[0];
+}
+
+/** Returns the datastream properties of all SensorThings layers of the map, in configuration order. */
+function useAllLoadedDatastreams(map: MapModel): StaDatastreamProperties[] {
+    const sensors = useStaSensors(map);
+    return useLoadedDatastreams(
+        map,
+        sensors.map((sensor) => sensor.id)
+    );
+}
+
+/**
+ * Returns the other SensorThings sensors at the site of the given sensor
+ * (see {@link SENSOR_GROUPING} and {@link SENSOR_GROUPING_RADIUS}),
+ * in configuration order. Sensors appear once their datastream has been loaded.
+ */
+export function useColocatedSensors(map: MapModel, dataLayerId: string | undefined): StaDatastreamProperties[] {
+    const all = useAllLoadedDatastreams(map);
     return useMemo(() => {
-        const all = features.map(getDatastreamProperties).filter((datastream) => datastream !== undefined);
         const selected = all.find((datastream) => datastream.dataLayerId === dataLayerId);
         return selected ? colocatedSensors(selected, all, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS) : [];
-    }, [features, dataLayerId]);
+    }, [all, dataLayerId]);
+}
+
+/**
+ * Returns the colour of every sensor's station by data layer id. Sensors at the same site are one station
+ * (see {@link SENSOR_GROUPING}), a sensor on its own is a station too.
+ * A sensor gets its colour once its datastream has been loaded (only then its location is known).
+ */
+export function useStationColors(map: MapModel): Record<string, string> {
+    const all = useAllLoadedDatastreams(map);
+    return useMemo(() => {
+        const stations = assignStations(all, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS);
+        return Object.fromEntries([...stations].map(([id, station]) => [id, stationColor(station)]));
+    }, [all]);
 }

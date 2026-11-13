@@ -4,23 +4,18 @@ What has to be done next. Each entry describes **what** was decided, not how to 
 reasoning behind decisions are in [docs/DashboardDecisions.md](./docs/DashboardDecisions.md) (section 15). Terms are
 defined in [GLOSSARY.md](./GLOSSARY.md).
 
-## Observed properties in the configuration
+## Manual review of `dev` (for me, not for Claude)
 
-- `dataLayers.json` gets a central list of observed properties: key, name (de/en) and unit,
-  e.g. `air_temperature`, "Lufttemperatur" / "Air temperature", `°C`.
-- Every sensor references its observed property by key.
-- Configuration over STA: where a sensor has an observed property, its name and unit are used everywhere (single
-  sensor, sensor comparison, tiles) instead of the STA ObservedProperty and unitOfMeasurement.
-- No unit conversion. Whoever assigns a sensor to an observed property makes sure the unit fits.
+- Next time, before anything else: review the `dev` branch by hand. `feature/observed_properties` was merged on
+  2026-11-13 (observed property and unit per sensor, observed property comparison tab, station colours, refactoring
+  and simplification) without a manual review.
 
-## Observed property comparison
+## Observed property comparison: more chart types
 
-- A third tab in the analysis panel, next to single sensor and sensor comparison.
-- Choose an observed property. Next to the chart, all sensors with this observed property are listed with a checkbox
-  each, all checked initially. Every checked sensor is one series in **one** chart.
-- All chart types should be selectable.
-- Sensors without a configured observed property do not appear.
-- The time filter works as in the other tabs.
-- Depends on: [Observed properties in the configuration](#observed-properties-in-the-configuration).
-- Prerequisite for testing: a second real station. Datastreams 1–12 on the STA server are dummies.
-- Open: label of a series (layer name or station name).
+The tab exists with a line chart (see `docs/DashboardDecisions.md`, section 20). Still to do:
+
+- Bar chart for several sensors: grouped bars per section of time (mean per sensor).
+- Box plot for several sensors: one box per sensor, side by side.
+- No wind rose in the comparison.
+- Open: label of a series. For now the layer name; the station name is the alternative.
+- For testing: datastream 14 and 16 both measure soil temperature. Datastreams 1–12 on the STA server are dummies.

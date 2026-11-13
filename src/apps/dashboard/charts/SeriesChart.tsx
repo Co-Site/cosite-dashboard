@@ -12,7 +12,7 @@ import {
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback } from "react";
 import { Observation } from "../dataLayers/sta/sta";
-import { createValueFormatter, SERIES_COLOR, timeScale, valueScale } from "./chartStyle";
+import { createValueFormatter, timeScale, valueScale } from "./chartStyle";
 import { TimeRange } from "./timeRange";
 import { useChart } from "./useChart";
 
@@ -40,10 +40,17 @@ const CROSSHAIR_PLUGIN: Plugin<"line"> = {
     }
 };
 
-export interface ObservationChartProps {
+/** A time series of the chart. */
+export interface Series {
+    label: string;
+    color: string;
     observations: Observation[];
+}
 
-    /** Name of the series, used for the accessible label. */
+export interface SeriesChartProps {
+    series: Series[];
+
+    /** What the series have in common (e.g. the observed property), used for the accessible label. */
     label: string;
     unit: string | undefined;
 
@@ -78,17 +85,16 @@ export function withGaps(observations: Observation[]): Point[] {
 }
 
 /**
- * Line chart of a single time series (x: time, y: value).
+ * Line chart of one or several time series on the same axes (x: time, y: value).
  */
-export function ObservationChart({ observations, label, unit, range }: ObservationChartProps) {
+export function SeriesChart({ series, label, unit, range }: SeriesChartProps) {
     const intl = useIntl();
 
     const createConfig = useCallback((): ChartConfiguration<"line", Point[]> => {
         const formatValue = createValueFormatter(intl, unit);
-
         return {
             type: "line",
-            data: { datasets: [{ data: [] }] },
+            data: { datasets: [] },
             plugins: [CROSSHAIR_PLUGIN],
             options: {
                 responsive: true,
@@ -99,11 +105,9 @@ export function ObservationChart({ observations, label, unit, range }: Observati
                 interaction: { mode: "nearest", axis: "x", intersect: false },
                 datasets: {
                     line: {
-                        borderColor: SERIES_COLOR,
                         borderWidth: 2,
                         pointRadius: 0,
                         pointHoverRadius: 4,
-                        pointHoverBackgroundColor: SERIES_COLOR,
                         pointHoverBorderColor: "#ffffff",
                         pointHoverBorderWidth: 2,
                         tension: 0
@@ -115,7 +119,6 @@ export function ObservationChart({ observations, label, unit, range }: Observati
                 },
                 plugins: {
                     tooltip: {
-                        displayColors: false,
                         callbacks: {
                             title: (items) =>
                                 items[0]
@@ -124,7 +127,7 @@ export function ObservationChart({ observations, label, unit, range }: Observati
                                           timeStyle: "short"
                                       })
                                     : "",
-                            label: (item) => formatValue(item.parsed.y ?? 0)
+                            label: (item) => `${item.dataset.label}: ${formatValue(item.parsed.y ?? 0)}`
                         }
                     }
                 }
@@ -134,18 +137,20 @@ export function ObservationChart({ observations, label, unit, range }: Observati
 
     const applyData = useCallback(
         (chart: Chart<"line", Point[]>) => {
-            const dataset = chart.data.datasets[0];
-            if (!dataset) {
-                return;
-            }
-            dataset.data = withGaps(observations);
+            chart.data.datasets = series.map(({ label, color, observations }) => ({
+                label,
+                data: withGaps(observations),
+                borderColor: color,
+                backgroundColor: color,
+                pointHoverBackgroundColor: color
+            }));
             const xScale = chart.options.scales?.x;
             if (xScale) {
                 xScale.min = range.from.getTime();
                 xScale.max = range.to.getTime();
             }
         },
-        [observations, range]
+        [series, range]
     );
     const canvasRef = useChart(createConfig, applyData);
 

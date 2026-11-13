@@ -132,6 +132,15 @@ export interface WfsDataLayerConfig extends DataLayerConfigBase {
 export interface StaDatastreamLayerConfig extends DataLayerConfigBase {
     type: "sta-datastream";
     name: LocalizedText;
+
+    /**
+     * Key of the observed property, e.g. `soil_temperature`. Sensors with the same key measure the same quantity.
+     * Whoever maintains the configuration assigns the keys; the dashboard does not check them against each other.
+     */
+    observedProperty?: string;
+
+    /** Unit of the observations, e.g. `°C` (default: the datastream's `unitOfMeasurement`). Values are not converted. */
+    unit?: string;
 }
 
 /** A category that groups other layers (shown as a group in the TOC). */

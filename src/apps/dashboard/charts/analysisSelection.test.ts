@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { INITIAL_SELECTION, withChartType, withCompareSensor, withDefaultSensors } from "./analysisSelection";
+import {
+    INITIAL_SELECTION,
+    withChartType,
+    withCompareSensor,
+    withDefaultSensors,
+    withToggledSensor
+} from "./analysisSelection";
 
 describe("withDefaultSensors", () => {
     it("selects the first sensor (single) and the first two sensors (compare)", () => {
@@ -15,13 +21,12 @@ describe("withDefaultSensors", () => {
     });
 
     it("keeps valid selections and replaces unknown ones", () => {
-        const charts = INITIAL_SELECTION.charts;
-        const selection = withDefaultSensors({ tab: "compare", single: "c", compare: ["unknown", "c"], charts }, [
-            "a",
-            "b",
-            "c"
-        ]);
-        expect(selection).toEqual({ tab: "compare", single: "c", compare: ["a", "c"], charts });
+        const { charts, property } = INITIAL_SELECTION;
+        const selection = withDefaultSensors(
+            { tab: "compare", single: "c", compare: ["unknown", "c"], charts, property },
+            ["a", "b", "c"]
+        );
+        expect(selection).toEqual({ tab: "compare", single: "c", compare: ["a", "c"], charts, property });
     });
 
     it("selects nothing without sensors", () => {
@@ -56,5 +61,14 @@ describe("withChartType", () => {
             single: "line",
             compare: ["line", "windrose"]
         });
+    });
+});
+
+describe("withToggledSensor", () => {
+    it("switches a sensor off and on again", () => {
+        const off = withToggledSensor(INITIAL_SELECTION, "a");
+        expect(off.property.hidden).toEqual(["a"]);
+        expect(withToggledSensor(off, "b").property.hidden).toEqual(["a", "b"]);
+        expect(withToggledSensor(off, "a").property.hidden).toEqual([]);
     });
 });

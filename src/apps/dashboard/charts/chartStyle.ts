@@ -1,10 +1,18 @@
 import { PackageIntl } from "@open-pioneer/runtime";
+import { asArray } from "ol/color";
 
 // Chart colors (canvas needs concrete values), shared by all charts.
+// `SERIES_COLOR` is used until the station of a sensor is known, see `useStationColors`.
 export const SERIES_COLOR = "#2a78d6";
-export const SERIES_FILL = "rgba(42, 120, 214, 0.35)";
+
 export const TEXT_SECONDARY = "#52514e";
 export const GRID_COLOR = "rgba(0, 0, 0, 0.08)";
+
+/** The translucent fill that belongs to a series colour. */
+export function seriesFill(color: string): string {
+    const [r, g, b] = asArray(color);
+    return `rgba(${r}, ${g}, ${b}, 0.35)`;
+}
 
 /** Formats an observed value with its unit, e.g. `12.34 °C`. */
 export function createValueFormatter(intl: PackageIntl, unit: string | undefined): (value: number) => string {
