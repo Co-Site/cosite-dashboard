@@ -14,13 +14,13 @@ describe("observedPropertyGroups", () => {
             sensor("c", "wind_speed"),
             sensor("d", "soil_temperature")
         ]);
-        expect(groups).toEqual([
-            { key: "soil_temperature", sensorIds: ["a", "d"] },
-            { key: "wind_speed", sensorIds: ["b", "c"] }
+        expect(Object.entries(groups)).toEqual([
+            ["soil_temperature", ["a", "d"]],
+            ["wind_speed", ["b", "c"]]
         ]);
     });
 
     it("omits observed properties with a single sensor and sensors without observed property", () => {
-        expect(observedPropertyGroups([sensor("a", "soil_moisture"), sensor("b"), sensor("c")])).toEqual([]);
+        expect(observedPropertyGroups([sensor("a", "soil_moisture"), sensor("b"), sensor("c")])).toEqual({});
     });
 });

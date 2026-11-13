@@ -7,7 +7,7 @@ import VectorSource from "ol/source/Vector";
 import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import { getDataLayerConfig } from "../dataLayerBase";
 import { assignStations, colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
-import { ObservedPropertyGroup, observedPropertyGroups } from "./observedProperties";
+import { observedPropertyGroups } from "./observedProperties";
 import { getDatastreamProperties, StaDatastreamProperties } from "./sta";
 import { stationColor } from "./stationColors";
 
@@ -40,10 +40,10 @@ export function useStaSensors(map: MapModel): StaSensor[] {
 }
 
 /**
- * Returns the observed properties that at least two sensors of the map measure (also hidden ones),
- * in configuration order.
+ * Returns the observed properties that at least two sensors of the map measure (also hidden ones):
+ * their keys in configuration order, each with its sensors (data layer ids).
  */
-export function useObservedProperties(map: MapModel): ObservedPropertyGroup[] {
+export function useObservedProperties(map: MapModel): Record<string, string[]> {
     return useReactiveSnapshot(
         () =>
             observedPropertyGroups(

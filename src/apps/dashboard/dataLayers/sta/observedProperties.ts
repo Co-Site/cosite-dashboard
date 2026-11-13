@@ -1,27 +1,15 @@
 import { StaDatastreamLayerConfig } from "../config/types";
 
-/** An observed property that can be compared: its key and the sensors (data layer ids) that measure it. */
-export interface ObservedPropertyGroup {
-    key: string;
-    sensorIds: string[];
-}
-
 /**
- * Groups the sensors by the key of their observed property, in the order in which the keys first appear.
- * Observed properties with a single sensor are omitted, there is nothing to compare.
+ * Groups the sensors (data layer ids) by the key of their observed property, in the order in which the keys
+ * first appear. Observed properties with a single sensor are omitted, there is nothing to compare.
  */
-export function observedPropertyGroups(sensors: StaDatastreamLayerConfig[]): ObservedPropertyGroup[] {
-    const groups = new Map<string, string[]>();
+export function observedPropertyGroups(sensors: StaDatastreamLayerConfig[]): Record<string, string[]> {
+    const groups: Record<string, string[]> = {};
     for (const { id, observedProperty } of sensors) {
-        if (observedProperty === undefined) {
-            continue;
-        }
-        const sensorIds = groups.get(observedProperty);
-        if (sensorIds) {
-            sensorIds.push(id);
-        } else {
-            groups.set(observedProperty, [id]);
+        if (observedProperty !== undefined) {
+            (groups[observedProperty] ??= []).push(id);
         }
     }
-    return [...groups].map(([key, sensorIds]) => ({ key, sensorIds })).filter((group) => group.sensorIds.length >= 2);
+    return Object.fromEntries(Object.entries(groups).filter(([, sensorIds]) => sensorIds.length >= 2));
 }

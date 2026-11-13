@@ -62,7 +62,7 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
             props.selection,
             sensors.map((sensor) => sensor.id)
         ),
-        properties.map((property) => property.key)
+        Object.keys(properties)
     );
     const collapseLabel = intl.formatMessage({ id: "panel.collapse" });
 

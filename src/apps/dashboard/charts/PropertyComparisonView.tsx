@@ -2,7 +2,6 @@ import { Box, chakra, Flex, NativeSelect, Spinner, Text } from "@chakra-ui/react
 import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { ChangeEvent, useId, useMemo } from "react";
-import { ObservedPropertyGroup } from "../dataLayers/sta/observedProperties";
 import {
     useFailedSensors,
     useLoadedDatastreams,
@@ -21,8 +20,8 @@ const NO_SENSORS: string[] = [];
 type SensorSeries = Series & { id: string };
 
 export interface PropertyComparisonViewProps {
-    /** Observed properties to choose from. */
-    properties: ObservedPropertyGroup[];
+    /** Observed properties to choose from: their keys, each with its sensors (data layer ids). */
+    properties: Record<string, string[]>;
 
     /** Key of the chosen observed property. */
     value: string | undefined;
@@ -46,7 +45,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
     const map = useMapModelValue();
     const selectId = useId();
 
-    const sensorIds = properties.find((property) => property.key === value)?.sensorIds ?? NO_SENSORS;
+    const sensorIds = (value !== undefined && properties[value]) || NO_SENSORS;
     const sensors = useStaSensors(map);
     const datastreams = useLoadedDatastreams(map, sensorIds);
     const failedSensors = useFailedSensors(map, sensorIds);
@@ -78,7 +77,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
     const propertyName = (key: string) => intl.formatMessage({ id: `observedProperty.${key}`, defaultMessage: key });
     const selectProperty = (event: ChangeEvent<HTMLSelectElement>) => onChange(event.currentTarget.value);
 
-    if (properties.length === 0 || value === undefined) {
+    if (value === undefined) {
         return <Text color="fg.muted">{intl.formatMessage({ id: "panel.property.none" })}</Text>;
     }
 
@@ -102,7 +101,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
                 </chakra.label>
                 <NativeSelect.Root size="xs" maxWidth="sm">
                     <NativeSelect.Field id={selectId} value={value} onChange={selectProperty}>
-                        {properties.map(({ key }) => (
+                        {Object.keys(properties).map((key) => (
                             <option key={key} value={key}>
                                 {propertyName(key)}
                             </option>
