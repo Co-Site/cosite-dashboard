@@ -691,3 +691,32 @@ standardmäßig sichtbar: Stadtklimaprojektionen, Hochwasser, Starkregen, Grundw
   `dataLayers.json` noch nicht eingetragen.
 - **Commits:** `96b332d`, `e83aab9`, `9e60605`, `abad3d4`, `cd69e8e`, `c532ca8`, `c3a701b`, `ca342b2`; Doku: `3113d55`; Aufräumen: `5996bac`, `8591894`, `4040c3c`, `3da326f`, `27cd718`, `387c7c3`,
   `5f30255`, `971d8d2`, `e9b51ed`, `e4cdc46`, `f882a36`
+
+## 20. Messgrößenvergleich
+
+🟡 **Was:** Ein dritter Tab im Analyse-Panel vergleicht alle Sensoren einer Messgröße in einem Diagramm
+(`TODO.md`, Grilling am 2026-11-13). Grundlage ist der Key `observedProperty` am Sensor (siehe Überblick).
+
+- **Auswahl:** Zur Wahl stehen nur Messgrößen, die mindestens zwei konfigurierte Sensoren tragen, in der Reihenfolge
+  der Konfiguration; die erste ist vorgewählt. Im TOC ausgeblendete Layer zählen mit. Gibt es keine solche
+  Messgröße, bleibt der Tab sichtbar und zeigt einen Hinweis.
+- **Name der Messgröße:** Übersetzung aus den i18n-Dateien der App (`observedProperty.<key>`), sonst der rohe Key.
+  Eine neue Messgröße braucht für einen schönen Namen also einen Eintrag in `i18n/de.yaml` und `en.yaml` (und einen
+  Neubau). Verworfen: ein Namensfeld in `dataLayers.json`.
+- **Reihen:** Eine Linie je Sensor, beschriftet mit dem Layernamen aus der Konfiguration (vorläufig). Achse und
+  Tooltip nutzen die Einheit des ersten Sensors; geprüft wird nichts (Grundsatz „Die Konfiguration ist
+  verantwortlich“, bisher gibt es nur °C).
+- **Kacheln statt Legende:** Die Sensoren stehen wie im Einzel-Tab als Kacheln mit neuestem Wert neben dem Diagramm,
+  der Rand hat die Farbe der Linie. Ein Klick blendet die Reihe aus oder ein, anfangs sind alle an. Gemerkt werden
+  die ausgeblendeten Sensoren, damit neue von selbst erscheinen; die Auswahl übersteht den Tab-Wechsel.
+- **Laden:** Jeder Sensor lädt einzeln und parallel (max. 20.000 Werte je Sensor). Ein Fehler betrifft nur seine
+  Kachel („nicht verfügbar“). Geladen werden auch ausgeblendete Sensoren, damit das Einblenden sofort wirkt.
+- **Weggelassen:** die Zeile mit Anzahl, Min, Max und letztem Wert; der Hinweis auf abgeschnittene Daten bei mehr
+  als 20.000 Werten.
+- **Nur Linie:** Balken und Boxplot für mehrere Reihen kommen später (`TODO.md`), die Windrose entfällt im Vergleich.
+- **Farben:** `SERIES_COLORS` hat 20 Farben (Wunsch: 20, es wird nicht viele Stationen geben). Die ersten acht sind
+  die bisherige Diagrammpalette. Geprüft mit dem Validator des dataviz-Skills: Benachbarte Farben der Liste bleiben
+  auch bei Farbfehlsichtigkeit unterscheidbar, weit auseinanderliegende können sich ähneln. Bei 20 Farben geht es
+  nicht besser.
+- **Im Browser geprüft:** Datastream 14 und 16 als zwei Linien, Tooltip, Ausblenden über die Kachel, Tab-Wechsel,
+  Sprachwechsel.
