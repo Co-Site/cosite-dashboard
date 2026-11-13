@@ -112,22 +112,28 @@ export function useSensorLoadFailed(map: MapModel, dataLayerId: string | undefin
     );
 }
 
+/** Returns those of the given SensorThings layers that are not available, see {@link useSensorLoadFailed}. */
+export function useFailedSensors(map: MapModel, dataLayerIds: string[]): string[] {
+    return useReactiveSnapshot(
+        () => dataLayerIds.filter((id) => map.layers.getLayerById(id)?.loadState === "error"),
+        [map, dataLayerIds]
+    );
+}
+
 /**
- * Returns the other SensorThings sensors at the site of the given sensor
- * (see {@link SENSOR_GROUPING} and {@link SENSOR_GROUPING_RADIUS}),
- * in configuration order. Sensors appear once their datastream has been loaded.
+ * Returns the datastream properties of the given SensorThings layers, in the given order.
+ * Sensors appear once their datastream has been loaded.
  */
-export function useColocatedSensors(map: MapModel, dataLayerId: string | undefined): StaDatastreamProperties[] {
-    const sensors = useStaSensors(map);
-    // Titles change with the language, the sources only with the layers.
-    const sensorIds = sensors.map((sensor) => sensor.id).join("\n");
+export function useLoadedDatastreams(map: MapModel, dataLayerIds: string[]): StaDatastreamProperties[] {
+    // The array is new on every render, the ids rarely change.
+    const idList = dataLayerIds.join("\n");
     const sources = useMemo(
         () =>
-            sensorIds
+            idList
                 .split("\n")
                 .map((id) => getSensorSource(map, id))
                 .filter((source) => source !== undefined),
-        [map, sensorIds]
+        [map, idList]
     );
     const subscribe = useCallback((onChange: () => void) => subscribeSources(sources, onChange), [sources]);
 
@@ -142,9 +148,25 @@ export function useColocatedSensors(map: MapModel, dataLayerId: string | undefin
         return snapshot.current;
     });
 
+    return useMemo(
+        () => features.map(getDatastreamProperties).filter((datastream) => datastream !== undefined),
+        [features]
+    );
+}
+
+/**
+ * Returns the other SensorThings sensors at the site of the given sensor
+ * (see {@link SENSOR_GROUPING} and {@link SENSOR_GROUPING_RADIUS}),
+ * in configuration order. Sensors appear once their datastream has been loaded.
+ */
+export function useColocatedSensors(map: MapModel, dataLayerId: string | undefined): StaDatastreamProperties[] {
+    const sensors = useStaSensors(map);
+    const all = useLoadedDatastreams(
+        map,
+        sensors.map((sensor) => sensor.id)
+    );
     return useMemo(() => {
-        const all = features.map(getDatastreamProperties).filter((datastream) => datastream !== undefined);
         const selected = all.find((datastream) => datastream.dataLayerId === dataLayerId);
         return selected ? colocatedSensors(selected, all, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS) : [];
-    }, [features, dataLayerId]);
+    }, [all, dataLayerId]);
 }

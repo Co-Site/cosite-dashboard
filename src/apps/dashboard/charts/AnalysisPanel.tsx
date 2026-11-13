@@ -172,6 +172,7 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
                                         properties={properties}
                                         value={selection.property.key}
                                         onChange={selectProperty}
+                                        timeFilter={timeFilter}
                                     />
                                 </Tabs.Content>
                             </>

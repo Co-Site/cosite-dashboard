@@ -21,7 +21,7 @@ Chart.register(LineController, LineElement, PointElement, LinearScale, Tooltip);
 const CROSSHAIR_COLOR = "rgba(0, 0, 0, 0.35)";
 
 /** Draws a vertical line at the hovered x position. */
-const CROSSHAIR_PLUGIN: Plugin<"line"> = {
+export const CROSSHAIR_PLUGIN: Plugin<"line"> = {
     id: "crosshair",
     afterDatasetsDraw(chart) {
         const active = chart.tooltip?.getActiveElements()[0];
