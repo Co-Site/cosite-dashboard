@@ -4,6 +4,12 @@ What has to be done next. Each entry describes **what** was decided, not how to 
 reasoning behind decisions are in [docs/DashboardDecisions.md](./docs/DashboardDecisions.md) (section 15). Terms are
 defined in [GLOSSARY.md](./GLOSSARY.md).
 
+## Manual review of `dev` (for me, not for Claude)
+
+- Next time, before anything else: review the `dev` branch by hand. `feature/observed_properties` was merged on
+  2026-11-13 (observed property and unit per sensor, observed property comparison tab, station colours, refactoring
+  and simplification) without a manual review.
+
 ## Observed property comparison: more chart types
 
 The tab exists with a line chart (see `docs/DashboardDecisions.md`, section 20). Still to do:
