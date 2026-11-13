@@ -1,6 +1,13 @@
 import Feature from "ol/Feature";
 import { describe, expect, it } from "vitest";
-import { createDatastreamFeature, getDatastreamProperties, parseObservation, pointPosition } from "./sta";
+import { StaDatastreamLayerConfig } from "../config/types";
+import {
+    createDatastreamFeature,
+    getDatastreamProperties,
+    parseObservation,
+    pointPosition,
+    StaDatastream
+} from "./sta";
 
 describe("pointPosition", () => {
     it("returns the coordinates of a point unchanged", () => {
@@ -46,23 +53,27 @@ describe("parseObservation", () => {
     });
 });
 
+const SENSOR: StaDatastreamLayerConfig = {
+    id: "sta-ds-14",
+    type: "sta-datastream",
+    name: "Soil temperature",
+    endpoint: "https://example.org/Datastreams(14)"
+};
+
+const DATASTREAM: StaDatastream = {
+    "@iot.id": 14,
+    "name": "Soil temperature",
+    "unitOfMeasurement": { symbol: "degC" },
+    "Thing": {
+        "@iot.id": 2,
+        "name": "Node",
+        "Locations": [{ location: { type: "Point", coordinates: [7, 51] } }]
+    }
+};
+
 describe("getDatastreamProperties", () => {
     it("returns the properties of a datastream feature", () => {
-        const feature = createDatastreamFeature(
-            "sta-ds-14",
-            "https://example.org/Datastreams(14)",
-            {
-                "@iot.id": 14,
-                "name": "Soil temperature",
-                "unitOfMeasurement": { symbol: "degC" },
-                "Thing": {
-                    "@iot.id": 2,
-                    "name": "Node",
-                    "Locations": [{ location: { type: "Point", coordinates: [7, 51] } }]
-                }
-            },
-            "EPSG:4326"
-        );
+        const feature = createDatastreamFeature(SENSOR, DATASTREAM, "EPSG:4326");
         expect(feature && getDatastreamProperties(feature)).toEqual({
             dataLayerId: "sta-ds-14",
             datastreamUrl: "https://example.org/Datastreams(14)",
@@ -74,6 +85,11 @@ describe("getDatastreamProperties", () => {
             thingId: "2",
             position: [7, 51]
         });
+    });
+
+    it("prefers the configured unit over the unit of the datastream", () => {
+        const feature = createDatastreamFeature({ ...SENSOR, unit: "K" }, DATASTREAM, "EPSG:4326");
+        expect(feature && getDatastreamProperties(feature)?.unit).toBe("K");
     });
 
     it("returns nothing for other features", () => {

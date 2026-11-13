@@ -29,7 +29,7 @@ export function createStaDatastreamLayer(
     source.setState("loading");
     fetchDatastream(config.endpoint, AbortSignal.timeout(DATASTREAM_TIMEOUT_MS))
         .then((datastream) => {
-            const feature = createDatastreamFeature(config.id, config.endpoint, datastream, mapProjection);
+            const feature = createDatastreamFeature(config, datastream, mapProjection);
             if (feature) {
                 source.addFeature(feature);
                 source.setState("ready");
