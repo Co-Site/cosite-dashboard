@@ -112,7 +112,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
                     <Text fontWeight="semibold">{title}</Text>
                     <Box flex="1" minHeight={0} position="relative">
                         {loadedCount > 0 ? (
-                            <SeriesChart series={series} label={title} unit={unit} range={range} seriesNames />
+                            <SeriesChart series={series} label={title} unit={unit} range={range} />
                         ) : loading ? (
                             <Flex height="100%" alignItems="center" justifyContent="center" gap={2}>
                                 <Spinner size="sm" />

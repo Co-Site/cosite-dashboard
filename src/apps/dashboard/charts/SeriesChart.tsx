@@ -56,12 +56,6 @@ export interface SeriesChartProps {
 
     /** Range of the x axis. */
     range: TimeRange;
-
-    /**
-     * Whether the tooltip names the series of a value (with its colour).
-     * Not needed for a single series whose name stands above the chart.
-     */
-    seriesNames?: boolean;
 }
 
 type Point = { x: number; y: number | null };
@@ -93,7 +87,7 @@ export function withGaps(observations: Observation[]): Point[] {
 /**
  * Line chart of one or several time series on the same axes (x: time, y: value).
  */
-export function SeriesChart({ series, label, unit, range, seriesNames = false }: SeriesChartProps) {
+export function SeriesChart({ series, label, unit, range }: SeriesChartProps) {
     const intl = useIntl();
 
     const createConfig = useCallback((): ChartConfiguration<"line", Point[]> => {
@@ -125,7 +119,6 @@ export function SeriesChart({ series, label, unit, range, seriesNames = false }:
                 },
                 plugins: {
                     tooltip: {
-                        displayColors: seriesNames,
                         callbacks: {
                             title: (items) =>
                                 items[0]
@@ -134,16 +127,13 @@ export function SeriesChart({ series, label, unit, range, seriesNames = false }:
                                           timeStyle: "short"
                                       })
                                     : "",
-                            label: (item) => {
-                                const value = formatValue(item.parsed.y ?? 0);
-                                return seriesNames ? `${item.dataset.label}: ${value}` : value;
-                            }
+                            label: (item) => `${item.dataset.label}: ${formatValue(item.parsed.y ?? 0)}`
                         }
                     }
                 }
             }
         };
-    }, [intl, unit, seriesNames]);
+    }, [intl, unit]);
 
     const applyData = useCallback(
         (chart: Chart<"line", Point[]>) => {
