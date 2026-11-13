@@ -1,16 +1,47 @@
 import { Box } from "@chakra-ui/react";
-import { Chart, ChartConfiguration } from "chart.js";
+import {
+    Chart,
+    ChartConfiguration,
+    LinearScale,
+    LineController,
+    LineElement,
+    Plugin,
+    PointElement,
+    Tooltip
+} from "chart.js";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback } from "react";
 import { Observation } from "../dataLayers/sta/sta";
 import { createValueFormatter, timeScale, valueScale } from "./chartStyle";
-import { CROSSHAIR_PLUGIN, withGaps } from "./ObservationChart";
 import { TimeRange } from "./timeRange";
 import { useChart } from "./useChart";
 
+Chart.register(LineController, LineElement, PointElement, LinearScale, Tooltip);
+
+const CROSSHAIR_COLOR = "rgba(0, 0, 0, 0.35)";
+
+/** Draws a vertical line at the hovered x position. */
+const CROSSHAIR_PLUGIN: Plugin<"line"> = {
+    id: "crosshair",
+    afterDatasetsDraw(chart) {
+        const active = chart.tooltip?.getActiveElements()[0];
+        if (!active) {
+            return;
+        }
+        const { ctx, chartArea } = chart;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(active.element.x, chartArea.top);
+        ctx.lineTo(active.element.x, chartArea.bottom);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = CROSSHAIR_COLOR;
+        ctx.stroke();
+        ctx.restore();
+    }
+};
+
 /** A time series of the chart. */
 export interface Series {
-    id: string;
     label: string;
     color: string;
     observations: Observation[];
@@ -25,15 +56,44 @@ export interface SeriesChartProps {
 
     /** Range of the x axis. */
     range: TimeRange;
+
+    /**
+     * Whether the tooltip names the series of a value (with its colour).
+     * Not needed for a single series whose name stands above the chart.
+     */
+    seriesNames?: boolean;
 }
 
 type Point = { x: number; y: number | null };
 
 /**
- * Line chart of several time series on the same axes (x: time, y: value).
- * The chart registrations of {@link ObservationChart} apply.
+ * Inserts `null` points where the time between two observations is much larger than usual,
+ * so that missing data is shown as a gap instead of a straight line.
  */
-export function SeriesChart({ series, label, unit, range }: SeriesChartProps) {
+export function withGaps(observations: Observation[]): Point[] {
+    const intervals = observations
+        .slice(1)
+        .map((o, i) => o.time - (observations[i]?.time ?? o.time))
+        .sort((a, b) => a - b);
+    const median = intervals[Math.floor(intervals.length / 2)] ?? 0;
+    const maxGap = Math.max(median * 5, 60 * 60 * 1000);
+
+    const points: Point[] = [];
+    let previous: Observation | undefined;
+    for (const o of observations) {
+        if (previous && o.time - previous.time > maxGap) {
+            points.push({ x: (previous.time + o.time) / 2, y: null });
+        }
+        points.push({ x: o.time, y: o.value });
+        previous = o;
+    }
+    return points;
+}
+
+/**
+ * Line chart of one or several time series on the same axes (x: time, y: value).
+ */
+export function SeriesChart({ series, label, unit, range, seriesNames = false }: SeriesChartProps) {
     const intl = useIntl();
 
     const createConfig = useCallback((): ChartConfiguration<"line", Point[]> => {
@@ -65,6 +125,7 @@ export function SeriesChart({ series, label, unit, range }: SeriesChartProps) {
                 },
                 plugins: {
                     tooltip: {
+                        displayColors: seriesNames,
                         callbacks: {
                             title: (items) =>
                                 items[0]
@@ -73,13 +134,16 @@ export function SeriesChart({ series, label, unit, range }: SeriesChartProps) {
                                           timeStyle: "short"
                                       })
                                     : "",
-                            label: (item) => `${item.dataset.label}: ${formatValue(item.parsed.y ?? 0)}`
+                            label: (item) => {
+                                const value = formatValue(item.parsed.y ?? 0);
+                                return seriesNames ? `${item.dataset.label}: ${value}` : value;
+                            }
                         }
                     }
                 }
             }
         };
-    }, [intl, unit]);
+    }, [intl, unit, seriesNames]);
 
     const applyData = useCallback(
         (chart: Chart<"line", Point[]>) => {

@@ -10,7 +10,7 @@ import { BarChart } from "./BarChart";
 import { BoxPlotChart } from "./BoxPlotChart";
 import { createValueFormatter, SERIES_COLOR } from "./chartStyle";
 import { ChartType } from "./chartTypes";
-import { ObservationChart } from "./ObservationChart";
+import { SeriesChart } from "./SeriesChart";
 import { displayRange, TimeFilter, TimeRange } from "./timeRange";
 import { WindRoseChart } from "./WindRoseChart";
 
@@ -36,9 +36,12 @@ function TypedChart(props: {
     color: string;
 }) {
     const { type, ...chartProps } = props;
+    const { observations, label, unit, range, color } = chartProps;
+    // The line chart draws several series, here it gets one.
+    const series = useMemo(() => [{ label, color, observations }], [label, color, observations]);
     switch (type) {
         case "line":
-            return <ObservationChart {...chartProps} />;
+            return <SeriesChart series={series} label={label} unit={unit} range={range} />;
         case "bar":
             return <BarChart {...chartProps} />;
         case "boxplot":

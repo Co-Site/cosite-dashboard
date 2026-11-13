@@ -222,7 +222,7 @@ Im Analyse-Panel (`charts/AnalysisPanel.tsx`):
 
 - **Zeitfilter** (`charts/TimeRangeFilter.tsx`): Presets 24 Stunden, 7 Tage (Default), 30 Tage oder eigener Zeitraum von/bis.
   Ungültige Eingaben (von ≥ bis) werden markiert, der letzte gültige Zeitraum bleibt aktiv.
-- **Diagramm** (`charts/DatastreamChart.tsx`, `charts/ObservationChart.tsx`): lädt die Messwerte des Datastreams im
+- **Diagramm** (`charts/DatastreamChart.tsx`, `charts/SeriesChart.tsx`): lädt die Messwerte des Datastreams im
   Zeitraum (`fetchObservations` in `dataLayers/sta/sta.ts`, folgt `@iot.nextLink`, max. 20.000 Werte) und zeigt sie als
   Liniendiagramm mit Tooltip und Fadenkreuz. Lücken in den Daten bleiben als Lücke sichtbar. Darüber stehen
   Anzahl, Min, Max und letzter Wert.
@@ -249,8 +249,8 @@ Im Analyse-Panel (`charts/AnalysisPanel.tsx`):
   (`dataLayers/sta/stationColors.ts`) gibt jeder Station eine von 20 Farben. `useStationColors`
   (`dataLayers/sta/useStaSensors.ts`) liefert die Farbe je Layer-ID. Genutzt von: `StationPointStyles` (setzt den
   Stil der Sensorpunkte auf der Karte, eingehängt in `DashboardApp.tsx`), `StationDot` im TOC
-  (`toc/layerItemContent.tsx`), dem Rand der Kacheln und allen Diagrammen (`color`-Prop von `ObservationChart`,
-  `BarChart`, `BoxPlotChart`, `WindRoseChart`, `SeriesChart`).
+  (`toc/layerItemContent.tsx`), dem Rand der Kacheln und allen Diagrammen (Farbe je Reihe in `SeriesChart`, `color`-Prop von
+  `BarChart`, `BoxPlotChart`, `WindRoseChart`).
 - **Chart.js statt recharts**: Trails rendert die App im Shadow DOM. recharts sucht Portale über `document`
   und musste dafür gepatcht werden (siehe alter Branch `origin/test/charts`). Chart.js zeichnet auf Canvas und braucht das nicht.
 - Einheiten aus der STA werden für die Anzeige übersetzt (`degC` → `°C`, siehe `displayUnit` in `dataLayers/sta/sta.ts`).

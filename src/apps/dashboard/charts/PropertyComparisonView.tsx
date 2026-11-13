@@ -17,6 +17,9 @@ import { useSeriesObservations } from "./useSeriesObservations";
 
 const NO_SENSORS: string[] = [];
 
+/** The series of a sensor (data layer id). */
+type SensorSeries = Series & { id: string };
+
 export interface PropertyComparisonViewProps {
     /** Observed properties to choose from. */
     properties: ObservedPropertyGroup[];
@@ -52,7 +55,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
     const colors = useStationColors(map);
     const loaded = useMemo(
         () =>
-            datastreams.flatMap(({ dataLayerId }): Series[] => {
+            datastreams.flatMap(({ dataLayerId }): SensorSeries[] => {
                 const state = states[dataLayerId];
                 if (state?.kind !== "loaded") {
                     return [];
@@ -114,7 +117,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
                     <Box flex="1" minHeight={0} position="relative">
                         {loaded.length > 0 ? (
                             firstTimes.length > 0 || loading ? (
-                                <SeriesChart series={series} label={title} unit={unit} range={range} />
+                                <SeriesChart series={series} label={title} unit={unit} range={range} seriesNames />
                             ) : (
                                 <Text color="fg.muted">{intl.formatMessage({ id: "chart.empty" })}</Text>
                             )
