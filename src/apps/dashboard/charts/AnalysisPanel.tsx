@@ -11,7 +11,8 @@ import {
     withChartType,
     withCompareSensor,
     withDefaultProperty,
-    withDefaultSensors
+    withDefaultSensors,
+    withToggledSensor
 } from "./analysisSelection";
 import { ChartType } from "./chartTypes";
 import { PropertyComparisonView } from "./PropertyComparisonView";
@@ -74,6 +75,7 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
     const closePanel = () => onOpenChange(false);
     const selectSingle = (single: string) => onSelectionChange({ ...selection, single });
     const changeSingleChartType = (type: ChartType) => setChartType("single", type);
+    const toggleSensor = (sensorId: string) => onSelectionChange(withToggledSensor(selection, sensorId));
     const selectProperty = (key: string) =>
         onSelectionChange({ ...selection, property: { ...selection.property, key } });
 
@@ -172,6 +174,8 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
                                         properties={properties}
                                         value={selection.property.key}
                                         onChange={selectProperty}
+                                        hidden={selection.property.hidden}
+                                        onToggle={toggleSensor}
                                         timeFilter={timeFilter}
                                     />
                                 </Tabs.Content>

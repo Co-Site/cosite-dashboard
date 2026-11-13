@@ -125,7 +125,13 @@ export function SensorChartView(props: SensorChartViewProps) {
                         <Text color="fg.muted">{intl.formatMessage({ id: "panel.sensor.placeholder" })}</Text>
                     )}
                 </Box>
-                {colocated.length > 0 && <SensorTiles sensors={colocated} onSelect={onChange} />}
+                {colocated.length > 0 && (
+                    <SensorTiles
+                        sensors={colocated}
+                        onSelect={onChange}
+                        label={intl.formatMessage({ id: "panel.colocated.label" })}
+                    />
+                )}
             </Flex>
         </Flex>
     );

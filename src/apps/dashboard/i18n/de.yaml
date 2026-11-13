@@ -32,6 +32,9 @@ messages:
     property:
       label: "Messgröße"
       none: "Keine Messgröße wird von mindestens zwei Sensoren gemessen."
+      sensors: "Sensoren der Messgröße"
+      toggle: "{sensor} ein- oder ausblenden (letzter Wert: {value})"
+      unavailable: "nicht verfügbar"
     colocated:
       label: "Weitere Sensoren am Standort"
       noValue: "–"

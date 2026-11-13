@@ -5,6 +5,7 @@ import { ChangeEvent, useId, useMemo } from "react";
 import { ObservedPropertyGroup } from "../dataLayers/sta/observedProperties";
 import { useFailedSensors, useLoadedDatastreams, useStaSensors } from "../dataLayers/sta/useStaSensors";
 import { seriesColor } from "./chartStyle";
+import { SensorTiles } from "./SensorTiles";
 import { Series, SeriesChart } from "./SeriesChart";
 import { displayRange, TimeFilter } from "./timeRange";
 import { useSeriesObservations } from "./useSeriesObservations";
@@ -19,14 +20,19 @@ export interface PropertyComparisonViewProps {
     value: string | undefined;
     onChange(key: string): void;
 
+    /** Sensors (data layer ids) that are switched off. */
+    hidden: string[];
+    onToggle(sensorId: string): void;
+
     timeFilter: TimeFilter;
 }
 
 /**
  * Selection of an observed property; all sensors that measure it are compared in one chart.
+ * The sensors are tiles next to the chart, a click shows or hides a sensor.
  */
 export function PropertyComparisonView(props: PropertyComparisonViewProps) {
-    const { properties, value, onChange, timeFilter } = props;
+    const { properties, value, onChange, hidden, onToggle, timeFilter } = props;
     const intl = useIntl();
     const map = useMapModelValue();
     const selectId = useId();
@@ -37,7 +43,11 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
     const failedSensors = useFailedSensors(map, sensorIds);
     const states = useSeriesObservations(datastreams, timeFilter.range);
 
-    const series = useMemo(
+    const colors = useMemo(
+        () => Object.fromEntries(sensorIds.map((id, index) => [id, seriesColor(index)])),
+        [sensorIds]
+    );
+    const loaded = useMemo(
         () =>
             datastreams.flatMap(({ dataLayerId }): Series[] => {
                 const state = states[dataLayerId];
@@ -49,13 +59,14 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
                         id: dataLayerId,
                         // Localized name from the data layer configuration.
                         label: sensors.find((sensor) => sensor.id === dataLayerId)?.title ?? dataLayerId,
-                        color: seriesColor(sensorIds.indexOf(dataLayerId)),
+                        color: colors[dataLayerId] ?? seriesColor(0),
                         observations: state.observations
                     }
                 ];
             }),
-        [datastreams, states, sensors, sensorIds]
+        [datastreams, states, sensors, colors]
     );
+    const series = useMemo(() => loaded.filter(({ id }) => !hidden.includes(id)), [loaded, hidden]);
 
     // Names of the observed properties are translated by the app; unknown keys are shown as they are.
     const propertyName = (key: string) => intl.formatMessage({ id: `observedProperty.${key}`, defaultMessage: key });
@@ -65,13 +76,16 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
         return <Text color="fg.muted">{intl.formatMessage({ id: "panel.property.none" })}</Text>;
     }
 
-    const failed = failedSensors.length + datastreams.filter((d) => states[d.dataLayerId]?.kind === "error").length;
-    const loading = series.length + failed < sensorIds.length;
+    const unavailable = [
+        ...failedSensors,
+        ...sensorIds.filter((id) => states[id]?.kind === "error" && !failedSensors.includes(id))
+    ];
+    const loading = loaded.length + unavailable.length < sensorIds.length;
     // All sensors of an observed property have the same unit (the configuration is responsible for that).
     const unit = datastreams[0]?.unit;
     const name = propertyName(value);
     const title = unit ? `${name} (${unit})` : name;
-    const firstTimes = series.flatMap(({ observations }) => (observations[0] ? [observations[0].time] : []));
+    const firstTimes = loaded.flatMap(({ observations }) => (observations[0] ? [observations[0].time] : []));
     const range = displayRange(timeFilter, firstTimes.length > 0 ? Math.min(...firstTimes) : undefined);
 
     return (
@@ -91,24 +105,34 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
                     <NativeSelect.Indicator />
                 </NativeSelect.Root>
             </Flex>
-            <Flex direction="column" flex="1" minHeight={0} gap={1}>
-                <Text fontWeight="semibold">{title}</Text>
-                <Box flex="1" minHeight={0} position="relative">
-                    {series.length > 0 ? (
-                        firstTimes.length > 0 || loading ? (
-                            <SeriesChart series={series} label={title} unit={unit} range={range} />
+            <Flex flex="1" minHeight={0} gap={3}>
+                <Flex direction="column" flex="1" minWidth={0} gap={1}>
+                    <Text fontWeight="semibold">{title}</Text>
+                    <Box flex="1" minHeight={0} position="relative">
+                        {loaded.length > 0 ? (
+                            firstTimes.length > 0 || loading ? (
+                                <SeriesChart series={series} label={title} unit={unit} range={range} />
+                            ) : (
+                                <Text color="fg.muted">{intl.formatMessage({ id: "chart.empty" })}</Text>
+                            )
+                        ) : loading ? (
+                            <Flex height="100%" alignItems="center" justifyContent="center" gap={2}>
+                                <Spinner size="sm" />
+                                <Text>{intl.formatMessage({ id: "chart.loading" })}</Text>
+                            </Flex>
                         ) : (
-                            <Text color="fg.muted">{intl.formatMessage({ id: "chart.empty" })}</Text>
-                        )
-                    ) : loading ? (
-                        <Flex height="100%" alignItems="center" justifyContent="center" gap={2}>
-                            <Spinner size="sm" />
-                            <Text>{intl.formatMessage({ id: "chart.loading" })}</Text>
-                        </Flex>
-                    ) : (
-                        <Text color="fg.error">{intl.formatMessage({ id: "chart.error" })}</Text>
-                    )}
-                </Box>
+                            <Text color="fg.error">{intl.formatMessage({ id: "chart.error" })}</Text>
+                        )}
+                    </Box>
+                </Flex>
+                <SensorTiles
+                    sensors={datastreams}
+                    onSelect={onToggle}
+                    label={intl.formatMessage({ id: "panel.property.sensors" })}
+                    hidden={hidden}
+                    colors={colors}
+                    unavailable={unavailable}
+                />
             </Flex>
         </Flex>
     );

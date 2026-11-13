@@ -32,6 +32,9 @@ messages:
     property:
       label: "Observed property"
       none: "No observed property is measured by at least two sensors."
+      sensors: "Sensors of the observed property"
+      toggle: "Show or hide {sensor} (latest value: {value})"
+      unavailable: "not available"
     colocated:
       label: "Other sensors at this site"
       noValue: "–"
