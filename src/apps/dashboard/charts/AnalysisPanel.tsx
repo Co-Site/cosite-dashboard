@@ -10,7 +10,6 @@ import {
     AnalysisView,
     withChartType,
     withCompareSensor,
-    withDefaultProperty,
     withDefaultSensors,
     withToggledSensor
 } from "./analysisSelection";
@@ -57,13 +56,12 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
     const map = useMapModelValue();
     const sensors = useStaSensors(map);
     const properties = useObservedProperties(map);
-    const selection = withDefaultProperty(
-        withDefaultSensors(
-            props.selection,
-            sensors.map((sensor) => sensor.id)
-        ),
-        Object.keys(properties)
+    const selection = withDefaultSensors(
+        props.selection,
+        sensors.map((sensor) => sensor.id)
     );
+    // The first observed property until the user chooses one.
+    const propertyKey = selection.property.key ?? Object.keys(properties)[0];
     const collapseLabel = intl.formatMessage({ id: "panel.collapse" });
 
     const setCompare = (index: 0 | 1, sensorId: string) =>
@@ -172,7 +170,7 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
                                 <Tabs.Content value="property" flex="1" minHeight={0} pt={0}>
                                     <PropertyComparisonView
                                         properties={properties}
-                                        value={selection.property.key}
+                                        value={propertyKey}
                                         onChange={selectProperty}
                                         hidden={selection.property.hidden}
                                         onToggle={toggleSensor}

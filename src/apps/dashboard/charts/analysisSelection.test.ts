@@ -3,7 +3,6 @@ import {
     INITIAL_SELECTION,
     withChartType,
     withCompareSensor,
-    withDefaultProperty,
     withDefaultSensors,
     withToggledSensor
 } from "./analysisSelection";
@@ -62,24 +61,6 @@ describe("withChartType", () => {
             single: "line",
             compare: ["line", "windrose"]
         });
-    });
-});
-
-describe("withDefaultProperty", () => {
-    it("chooses the first observed property", () => {
-        expect(withDefaultProperty(INITIAL_SELECTION, ["soil_temperature", "wind_speed"]).property.key).toBe(
-            "soil_temperature"
-        );
-    });
-
-    it("keeps an available choice and replaces an unknown one", () => {
-        const chosen = (key: string) => ({ ...INITIAL_SELECTION, property: { key, hidden: ["a"] } });
-        expect(withDefaultProperty(chosen("b"), ["a", "b"]).property).toEqual({ key: "b", hidden: ["a"] });
-        expect(withDefaultProperty(chosen("gone"), ["a", "b"]).property.key).toBe("a");
-    });
-
-    it("chooses nothing without observed properties", () => {
-        expect(withDefaultProperty(INITIAL_SELECTION, []).property.key).toBeUndefined();
     });
 });
 

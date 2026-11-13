@@ -72,15 +72,6 @@ export function withChartType(
     return { ...selection, charts };
 }
 
-/**
- * Chooses the first observed property if none is chosen or the chosen one is not available (anymore).
- */
-export function withDefaultProperty(selection: AnalysisSelection, keys: string[]): AnalysisSelection {
-    const chosen = selection.property.key;
-    const key = chosen !== undefined && keys.includes(chosen) ? chosen : keys[0];
-    return { ...selection, property: { ...selection.property, key } };
-}
-
 /** Switches a sensor of the observed property comparison off, or on again. */
 export function withToggledSensor(selection: AnalysisSelection, sensorId: string): AnalysisSelection {
     const { hidden } = selection.property;
