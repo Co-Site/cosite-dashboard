@@ -12,7 +12,7 @@ import {
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback } from "react";
 import { Observation } from "../dataLayers/sta/sta";
-import { createValueFormatter, SERIES_COLOR, timeScale, valueScale } from "./chartStyle";
+import { createValueFormatter, timeScale, valueScale } from "./chartStyle";
 import { TimeRange } from "./timeRange";
 import { useChart } from "./useChart";
 
@@ -49,6 +49,9 @@ export interface ObservationChartProps {
 
     /** Range of the x axis. */
     range: TimeRange;
+
+    /** Colour of the series (the colour of the sensor's station). */
+    color: string;
 }
 
 type Point = { x: number; y: number | null };
@@ -80,7 +83,7 @@ export function withGaps(observations: Observation[]): Point[] {
 /**
  * Line chart of a single time series (x: time, y: value).
  */
-export function ObservationChart({ observations, label, unit, range }: ObservationChartProps) {
+export function ObservationChart({ observations, label, unit, range, color }: ObservationChartProps) {
     const intl = useIntl();
 
     const createConfig = useCallback((): ChartConfiguration<"line", Point[]> => {
@@ -99,11 +102,11 @@ export function ObservationChart({ observations, label, unit, range }: Observati
                 interaction: { mode: "nearest", axis: "x", intersect: false },
                 datasets: {
                     line: {
-                        borderColor: SERIES_COLOR,
+                        borderColor: color,
                         borderWidth: 2,
                         pointRadius: 0,
                         pointHoverRadius: 4,
-                        pointHoverBackgroundColor: SERIES_COLOR,
+                        pointHoverBackgroundColor: color,
                         pointHoverBorderColor: "#ffffff",
                         pointHoverBorderWidth: 2,
                         tension: 0
@@ -130,7 +133,7 @@ export function ObservationChart({ observations, label, unit, range }: Observati
                 }
             }
         };
-    }, [intl, unit]);
+    }, [intl, unit, color]);
 
     const applyData = useCallback(
         (chart: Chart<"line", Point[]>) => {

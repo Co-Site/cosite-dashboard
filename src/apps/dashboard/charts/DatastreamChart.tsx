@@ -4,10 +4,11 @@ import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { useEffect, useMemo, useState } from "react";
 import { fetchObservations, Observation, StaDatastreamProperties } from "../dataLayers/sta/sta";
+import { useStationColors } from "../dataLayers/sta/useStaSensors";
 import { useLayerTitle } from "../dataLayers/useLayerTitle";
 import { BarChart } from "./BarChart";
 import { BoxPlotChart } from "./BoxPlotChart";
-import { createValueFormatter } from "./chartStyle";
+import { createValueFormatter, SERIES_COLOR } from "./chartStyle";
 import { ChartType } from "./chartTypes";
 import { ObservationChart } from "./ObservationChart";
 import { displayRange, TimeFilter, TimeRange } from "./timeRange";
@@ -32,6 +33,7 @@ function TypedChart(props: {
     label: string;
     unit: string | undefined;
     range: TimeRange;
+    color: string;
 }) {
     const { type, ...chartProps } = props;
     switch (type) {
@@ -106,6 +108,7 @@ export function DatastreamChart({ datastream, chartType, timeFilter }: Datastrea
     // Localized name from the data layer configuration; the datastream name comes from the server.
     const map = useMapModelValue();
     const name = useLayerTitle(map, datastream.dataLayerId) ?? datastream.name;
+    const color = useStationColors(map)[datastream.dataLayerId] ?? SERIES_COLOR;
     const title = datastream.unit ? `${name} (${datastream.unit})` : name;
     const source = [datastream.name, datastream.thing].filter(Boolean).join(" · ");
     return (
@@ -137,6 +140,7 @@ export function DatastreamChart({ datastream, chartType, timeFilter }: Datastrea
                         label={title}
                         unit={datastream.unit}
                         range={displayRange(timeFilter, state.observations[0]?.time)}
+                        color={color}
                     />
                 )}
             </Box>

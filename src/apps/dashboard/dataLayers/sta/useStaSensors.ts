@@ -6,9 +6,10 @@ import { unByKey } from "ol/Observable";
 import VectorSource from "ol/source/Vector";
 import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import { getDataLayerConfig } from "../dataLayerBase";
-import { colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
+import { assignStations, colocatedSensors, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS } from "./colocation";
 import { ObservedPropertyGroup, observedPropertyGroups } from "./observedProperties";
 import { getDatastreamProperties, StaDatastreamProperties } from "./sta";
+import { stationColor } from "./stationColors";
 
 /** A SensorThings datastream layer of the map. */
 export interface StaSensor {
@@ -169,4 +170,21 @@ export function useColocatedSensors(map: MapModel, dataLayerId: string | undefin
         const selected = all.find((datastream) => datastream.dataLayerId === dataLayerId);
         return selected ? colocatedSensors(selected, all, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS) : [];
     }, [all, dataLayerId]);
+}
+
+/**
+ * Returns the colour of every sensor's station by data layer id. Sensors at the same site are one station
+ * (see {@link SENSOR_GROUPING}), a sensor on its own is a station too.
+ * A sensor gets its colour once its datastream has been loaded (only then its location is known).
+ */
+export function useStationColors(map: MapModel): Record<string, string> {
+    const sensors = useStaSensors(map);
+    const all = useLoadedDatastreams(
+        map,
+        sensors.map((sensor) => sensor.id)
+    );
+    return useMemo(() => {
+        const stations = assignStations(all, SENSOR_GROUPING, SENSOR_GROUPING_RADIUS);
+        return Object.fromEntries([...stations].map(([id, station]) => [id, stationColor(station)]));
+    }, [all]);
 }

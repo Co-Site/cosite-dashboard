@@ -3,8 +3,13 @@ import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { ChangeEvent, useId, useMemo } from "react";
 import { ObservedPropertyGroup } from "../dataLayers/sta/observedProperties";
-import { useFailedSensors, useLoadedDatastreams, useStaSensors } from "../dataLayers/sta/useStaSensors";
-import { seriesColor } from "./chartStyle";
+import {
+    useFailedSensors,
+    useLoadedDatastreams,
+    useStaSensors,
+    useStationColors
+} from "../dataLayers/sta/useStaSensors";
+import { SERIES_COLOR } from "./chartStyle";
 import { SensorTiles } from "./SensorTiles";
 import { Series, SeriesChart } from "./SeriesChart";
 import { displayRange, TimeFilter } from "./timeRange";
@@ -29,7 +34,8 @@ export interface PropertyComparisonViewProps {
 
 /**
  * Selection of an observed property; all sensors that measure it are compared in one chart.
- * The sensors are tiles next to the chart, a click shows or hides a sensor.
+ * The sensors are tiles next to the chart, a click shows or hides a sensor. Lines and tiles have the colour of
+ * the sensor's station.
  */
 export function PropertyComparisonView(props: PropertyComparisonViewProps) {
     const { properties, value, onChange, hidden, onToggle, timeFilter } = props;
@@ -43,10 +49,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
     const failedSensors = useFailedSensors(map, sensorIds);
     const states = useSeriesObservations(datastreams, timeFilter.range);
 
-    const colors = useMemo(
-        () => Object.fromEntries(sensorIds.map((id, index) => [id, seriesColor(index)])),
-        [sensorIds]
-    );
+    const colors = useStationColors(map);
     const loaded = useMemo(
         () =>
             datastreams.flatMap(({ dataLayerId }): Series[] => {
@@ -59,7 +62,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
                         id: dataLayerId,
                         // Localized name from the data layer configuration.
                         label: sensors.find((sensor) => sensor.id === dataLayerId)?.title ?? dataLayerId,
-                        color: colors[dataLayerId] ?? seriesColor(0),
+                        color: colors[dataLayerId] ?? SERIES_COLOR,
                         observations: state.observations
                     }
                 ];

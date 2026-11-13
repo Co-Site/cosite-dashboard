@@ -714,9 +714,33 @@ standardmäßig sichtbar: Stadtklimaprojektionen, Hochwasser, Starkregen, Grundw
 - **Weggelassen:** die Zeile mit Anzahl, Min, Max und letztem Wert; der Hinweis auf abgeschnittene Daten bei mehr
   als 20.000 Werten.
 - **Nur Linie:** Balken und Boxplot für mehrere Reihen kommen später (`TODO.md`), die Windrose entfällt im Vergleich.
-- **Farben:** `SERIES_COLORS` hat 20 Farben (Wunsch: 20, es wird nicht viele Stationen geben). Die ersten acht sind
-  die bisherige Diagrammpalette. Geprüft mit dem Validator des dataviz-Skills: Benachbarte Farben der Liste bleiben
-  auch bei Farbfehlsichtigkeit unterscheidbar, weit auseinanderliegende können sich ähneln. Bei 20 Farben geht es
-  nicht besser.
+- **Farben:** Linien und Kachelränder haben die Farbe der Station des Sensors (Abschnitt 21).
 - **Im Browser geprüft:** Datastream 14 und 16 als zwei Linien, Tooltip, Ausblenden über die Kachel, Tab-Wechsel,
   Sprachwechsel.
+
+## 21. Stationsfarben
+
+🟡 **Was:** Jede Station hat eine Farbe, die sich durch die ganze App zieht (Grilling am 2026-11-13). So erkennt
+man im TOC, auf der Karte und in den Diagrammen, welche Sensoren zusammengehören.
+
+- **Station:** Sensoren am selben Standort nach der bestehenden Gruppierung (`VITE_SENSOR_GROUPING`, Radius 1 m).
+  Ein Sensor ohne Nachbarn ist eine Station mit einem Sensor und bekommt ebenfalls eine eigene Farbe, sonst wären
+  zwei einzelne Sensoren im Vergleich nicht zu unterscheiden.
+- **Vergabe:** In der Reihenfolge der Konfiguration, aus einer festen Palette mit 20 Farben (es wird nicht viele
+  Stationen geben); danach wiederholen sie sich. Die Farbe steht nicht in `dataLayers.json`.
+- **Wo:** Sensorpunkt auf der Karte (vorher alle orange), Punkt vor dem Sensor im TOC, Rand der Kacheln, Linien,
+  Balken, Boxen und Windrose in allen drei Tabs (vorher festes Blau).
+- **Palette:** Die ersten acht Farben sind die bisherige Diagrammpalette. Geprüft mit dem Validator des
+  dataviz-Skills: Benachbarte Farben der Liste bleiben auch bei Farbfehlsichtigkeit unterscheidbar, weit
+  auseinanderliegende können sich ähneln. Bei 20 Farben geht es nicht besser.
+- **Bewusst nicht behandelt:** Ketten (A–B und B–C nah, A–C nicht): Ein Sensor kommt zur ersten Station, deren
+  erster Sensor am selben Standort liegt. Zwei Sensoren derselben Station mit derselben Messgröße hätten im
+  Vergleich dieselbe Linienfarbe. Beides kommt laut Nutzer nicht vor.
+- **Eigenheit:** Die Station ergibt sich aus dem Standort, und den kennt die App erst, wenn der Datastream geladen
+  ist. Die Farben erscheinen also mit den Sensoren; lädt ein früherer Sensor später als ein späterer, kann eine
+  Farbe beim Start einmal wechseln. Ein Sensor, der nicht lädt, hat keine Farbe.
+- **TOC-Punkt:** Das TOC erlaubt Inhalt nur unter der Titelzeile (`TocItemExtensions`). Der Punkt wird mit negativen
+  Abständen in die Zeile gezogen, an den freien Platz des Aufklapp-Pfeils. Bei mehrzeiligen Titeln sitzt er dadurch
+  etwas unter der Mitte der Zeile.
+- **Im Browser geprüft:** Datastream 14 und 15 (Köln-Kalk) blau, Datastream 16 (Demo-Knoten) orange, jeweils auf der
+  Karte, im TOC, an den Kacheln und in den Liniendiagrammen aller drei Tabs.

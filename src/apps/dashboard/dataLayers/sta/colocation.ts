@@ -31,31 +31,55 @@ export const SENSOR_GROUPING: SensorGrouping = parseSensorGrouping(import.meta.e
 export const SENSOR_GROUPING_RADIUS: number = parseGroupingRadius(import.meta.env.VITE_SENSOR_GROUPING_RADIUS);
 
 /**
- * Returns the other sensors at the site of the selected sensor, in the order of `all`.
- * Point locations count as the same site within `radius` meters (great-circle distance).
- * Sensors without the key used by the grouping are never grouped.
+ * Whether two sensors are at the same site. Point locations count as the same site within `radius` meters
+ * (great-circle distance). Sensors without the key used by the grouping are never at the same site.
  */
+function sameSite(
+    a: StaDatastreamProperties,
+    b: StaDatastreamProperties,
+    grouping: SensorGrouping,
+    radius: number
+): boolean {
+    const sameThing = a.thingId !== undefined && a.thingId === b.thingId;
+    const sameLocation =
+        a.position !== undefined && b.position !== undefined && getDistance(a.position, b.position) <= radius;
+    switch (grouping) {
+        case "location":
+            return sameLocation;
+        case "thing":
+            return sameThing;
+        case "location-or-thing":
+            return sameLocation || sameThing;
+    }
+}
+
+/** Returns the other sensors at the site of the selected sensor (see {@link sameSite}), in the order of `all`. */
 export function colocatedSensors(
     selected: StaDatastreamProperties,
     all: StaDatastreamProperties[],
     grouping: SensorGrouping,
     radius: number
 ): StaDatastreamProperties[] {
-    const sameThing = (other: StaDatastreamProperties) =>
-        selected.thingId !== undefined && selected.thingId === other.thingId;
-    const sameLocation = (other: StaDatastreamProperties) =>
-        selected.position !== undefined &&
-        other.position !== undefined &&
-        getDistance(selected.position, other.position) <= radius;
-    const sameSite = (other: StaDatastreamProperties) => {
-        switch (grouping) {
-            case "location":
-                return sameLocation(other);
-            case "thing":
-                return sameThing(other);
-            case "location-or-thing":
-                return sameLocation(other) || sameThing(other);
-        }
-    };
-    return all.filter((other) => other.dataLayerId !== selected.dataLayerId && sameSite(other));
+    return all.filter(
+        (other) => other.dataLayerId !== selected.dataLayerId && sameSite(selected, other, grouping, radius)
+    );
+}
+
+/**
+ * Divides the sensors into stations and returns the number of each sensor's station (by data layer id).
+ * Stations are numbered in the order of `all`. A sensor belongs to the first station whose first sensor is at the
+ * same site (see {@link sameSite}); otherwise it starts a new station, so a sensor on its own is a station too.
+ */
+export function assignStations(
+    all: StaDatastreamProperties[],
+    grouping: SensorGrouping,
+    radius: number
+): Map<string, number> {
+    const firstSensors: StaDatastreamProperties[] = [];
+    const stations = new Map<string, number>();
+    for (const sensor of all) {
+        const station = firstSensors.findIndex((first) => sameSite(first, sensor, grouping, radius));
+        stations.set(sensor.dataLayerId, station >= 0 ? station : firstSensors.push(sensor) - 1);
+    }
+    return stations;
 }

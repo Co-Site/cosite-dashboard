@@ -4,7 +4,7 @@ import { CategoryScale, Chart, ChartConfiguration, LinearScale, Tooltip } from "
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback } from "react";
 import { Observation } from "../dataLayers/sta/sta";
-import { createValueFormatter, GRID_COLOR, SERIES_COLOR, SERIES_FILL, TEXT_SECONDARY, valueScale } from "./chartStyle";
+import { createValueFormatter, GRID_COLOR, seriesFill, TEXT_SECONDARY, valueScale } from "./chartStyle";
 import { useChart } from "./useChart";
 
 Chart.register(BoxPlotController, BoxAndWiskers, CategoryScale, LinearScale, Tooltip);
@@ -15,13 +15,16 @@ export interface BoxPlotChartProps {
     /** Name of the series, shown below the box and used for the accessible label. */
     label: string;
     unit: string | undefined;
+
+    /** Colour of the series (the colour of the sensor's station). */
+    color: string;
 }
 
 /**
  * Box plot of all observations (of the selected time range): quartiles, median,
  * whiskers (1.5 × interquartile range) and outliers.
  */
-export function BoxPlotChart({ observations, label, unit }: BoxPlotChartProps) {
+export function BoxPlotChart({ observations, label, unit, color }: BoxPlotChartProps) {
     const intl = useIntl();
 
     const createConfig = useCallback((): ChartConfiguration<"boxplot"> => {
@@ -35,11 +38,11 @@ export function BoxPlotChart({ observations, label, unit }: BoxPlotChartProps) {
                 animation: false,
                 datasets: {
                     boxplot: {
-                        backgroundColor: SERIES_FILL,
-                        borderColor: SERIES_COLOR,
+                        backgroundColor: seriesFill(color),
+                        borderColor: color,
                         borderWidth: 1,
-                        medianColor: SERIES_COLOR,
-                        outlierBackgroundColor: SERIES_COLOR,
+                        medianColor: color,
+                        outlierBackgroundColor: color,
                         outlierRadius: 2,
                         maxBarThickness: 120,
                         coef: 1.5
@@ -75,7 +78,7 @@ export function BoxPlotChart({ observations, label, unit }: BoxPlotChartProps) {
                 }
             }
         };
-    }, [intl, unit]);
+    }, [intl, unit, color]);
 
     const applyData = useCallback(
         (chart: Chart<"boxplot">) => {

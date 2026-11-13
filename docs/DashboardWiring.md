@@ -241,10 +241,16 @@ Im Analyse-Panel (`charts/AnalysisPanel.tsx`):
   liefert die Messgrößen mit mindestens zwei Sensoren (`observedPropertyGroups` in
   `dataLayers/sta/observedProperties.ts`). Der Name im Dropdown kommt aus den i18n-Dateien
   (`observedProperty.<key>`), ohne Übersetzung steht dort der Key. `useSeriesObservations` lädt die Messwerte je
-  Sensor einzeln, `SeriesChart` zeichnet sie als Linien in ein Diagramm (Farben: `SERIES_COLORS` in
-  `charts/chartStyle.ts`). Die Sensoren stehen als Kacheln daneben (`SensorTiles` mit `hidden`): Ein Klick blendet
+  Sensor einzeln, `SeriesChart` zeichnet sie als Linien in ein Diagramm (in den Stationsfarben, s. u.). Die Sensoren stehen als Kacheln daneben (`SensorTiles` mit `hidden`): Ein Klick blendet
   eine Reihe aus oder ein. Messgröße und ausgeblendete Sensoren liegen in `AnalysisSelection.property`
   (`charts/analysisSelection.ts`).
+- **Stationsfarben**: `assignStations` (`dataLayers/sta/colocation.ts`) teilt die geladenen Sensoren in Stationen
+  ein (gleiche Gruppierung wie die Kacheln, ein einzelner Sensor ist auch eine Station), `stationColor`
+  (`dataLayers/sta/stationColors.ts`) gibt jeder Station eine von 20 Farben. `useStationColors`
+  (`dataLayers/sta/useStaSensors.ts`) liefert die Farbe je Layer-ID. Genutzt von: `StationPointStyles` (setzt den
+  Stil der Sensorpunkte auf der Karte, eingehängt in `DashboardApp.tsx`), `StationDot` im TOC
+  (`toc/layerItemContent.tsx`), dem Rand der Kacheln und allen Diagrammen (`color`-Prop von `ObservationChart`,
+  `BarChart`, `BoxPlotChart`, `WindRoseChart`, `SeriesChart`).
 - **Chart.js statt recharts**: Trails rendert die App im Shadow DOM. recharts sucht Portale über `document`
   und musste dafür gepatcht werden (siehe alter Branch `origin/test/charts`). Chart.js zeichnet auf Canvas und braucht das nicht.
 - Einheiten aus der STA werden für die Anzeige übersetzt (`degC` → `°C`, siehe `displayUnit` in `dataLayers/sta/sta.ts`).
