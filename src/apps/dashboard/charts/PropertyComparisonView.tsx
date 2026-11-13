@@ -16,9 +16,6 @@ import { useSeriesObservations } from "./useSeriesObservations";
 
 const NO_SENSORS: string[] = [];
 
-/** The series of a sensor (data layer id). */
-type SensorSeries = Series & { id: string };
-
 export interface PropertyComparisonViewProps {
     /** Observed properties to choose from: their keys, each with its sensors (data layer ids). */
     properties: Record<string, string[]>;
@@ -52,16 +49,16 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
     const states = useSeriesObservations(datastreams, timeFilter.range);
 
     const colors = useStationColors(map);
-    const loaded = useMemo(
+    // The series of the sensors that are loaded and switched on.
+    const series = useMemo(
         () =>
-            datastreams.flatMap(({ dataLayerId }): SensorSeries[] => {
+            datastreams.flatMap(({ dataLayerId }): Series[] => {
                 const observations = states[dataLayerId];
-                if (!Array.isArray(observations)) {
+                if (!Array.isArray(observations) || hidden.includes(dataLayerId)) {
                     return [];
                 }
                 return [
                     {
-                        id: dataLayerId,
                         // Localized name from the data layer configuration.
                         label: sensors.find((sensor) => sensor.id === dataLayerId)?.title ?? dataLayerId,
                         color: colors[dataLayerId] ?? SERIES_COLOR,
@@ -69,9 +66,8 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
                     }
                 ];
             }),
-        [datastreams, states, sensors, colors]
+        [datastreams, states, hidden, sensors, colors]
     );
-    const series = useMemo(() => loaded.filter(({ id }) => !hidden.includes(id)), [loaded, hidden]);
 
     // Names of the observed properties are translated by the app; unknown keys are shown as they are.
     const propertyName = (key: string) => intl.formatMessage({ id: `observedProperty.${key}`, defaultMessage: key });
@@ -85,12 +81,13 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
         ...failedSensors,
         ...sensorIds.filter((id) => states[id] === "error" && !failedSensors.includes(id))
     ];
-    const loading = loaded.length + unavailable.length < sensorIds.length;
+    const loadedCount = sensorIds.filter((id) => Array.isArray(states[id])).length;
+    const loading = loadedCount + unavailable.length < sensorIds.length;
     // All sensors of an observed property have the same unit (the configuration is responsible for that).
     const unit = datastreams[0]?.unit;
     const name = propertyName(value);
     const title = unit ? `${name} (${unit})` : name;
-    const firstTimes = loaded.flatMap(({ observations }) => (observations[0] ? [observations[0].time] : []));
+    const firstTimes = series.flatMap(({ observations }) => (observations[0] ? [observations[0].time] : []));
     const range = displayRange(timeFilter, firstTimes.length > 0 ? Math.min(...firstTimes) : undefined);
 
     return (
@@ -114,7 +111,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
                 <Flex direction="column" flex="1" minWidth={0} gap={1}>
                     <Text fontWeight="semibold">{title}</Text>
                     <Box flex="1" minHeight={0} position="relative">
-                        {loaded.length > 0 ? (
+                        {loadedCount > 0 ? (
                             firstTimes.length > 0 || loading ? (
                                 <SeriesChart series={series} label={title} unit={unit} range={range} seriesNames />
                             ) : (
