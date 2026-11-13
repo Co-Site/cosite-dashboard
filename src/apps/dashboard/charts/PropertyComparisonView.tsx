@@ -55,8 +55,8 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
     const loaded = useMemo(
         () =>
             datastreams.flatMap(({ dataLayerId }): SensorSeries[] => {
-                const state = states[dataLayerId];
-                if (state?.kind !== "loaded") {
+                const observations = states[dataLayerId];
+                if (!Array.isArray(observations)) {
                     return [];
                 }
                 return [
@@ -65,7 +65,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
                         // Localized name from the data layer configuration.
                         label: sensors.find((sensor) => sensor.id === dataLayerId)?.title ?? dataLayerId,
                         color: colors[dataLayerId] ?? SERIES_COLOR,
-                        observations: state.observations
+                        observations
                     }
                 ];
             }),
@@ -83,7 +83,7 @@ export function PropertyComparisonView(props: PropertyComparisonViewProps) {
 
     const unavailable = [
         ...failedSensors,
-        ...sensorIds.filter((id) => states[id]?.kind === "error" && !failedSensors.includes(id))
+        ...sensorIds.filter((id) => states[id] === "error" && !failedSensors.includes(id))
     ];
     const loading = loaded.length + unavailable.length < sensorIds.length;
     // All sensors of an observed property have the same unit (the configuration is responsible for that).
