@@ -1,0 +1,19 @@
+# Runs behind the Traefik of the InfoTool deployment (compose project "cosite"),
+# which provides TLS and the network cosite_default. Start InfoTool first.
+services:
+  umwelt-monitoring:
+    build: .
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.umwelt-monitoring.rule=Host(`infotool.cosite.thk.52north.org`) && PathPrefix(`/umwelt-monitoring`)"
+      - "traefik.http.routers.umwelt-monitoring.entrypoints=websecure"
+      - "traefik.http.routers.umwelt-monitoring.tls=true"
+      - "traefik.http.routers.umwelt-monitoring.tls.certresolver=lets-encrypt"
+      - "traefik.http.routers.umwelt-monitoring.service=umwelt-monitoring"
+      - "traefik.http.services.umwelt-monitoring.loadbalancer.server.port=8080"
+
+networks:
+  default:
+    name: cosite_default
+    external: true
