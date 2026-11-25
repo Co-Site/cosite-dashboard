@@ -325,20 +325,45 @@ CORS-Prüfung), der die Anfrage an den Dienst weiterleitet.
 - **Konfiguration:** `endpoint` relativ zur App, z. B. `./proxy/leverkusen/GCGisService`.
 - **Lokal:** `pnpm dev` und `pnpm preview` leiten `/proxy/leverkusen/` per Vite weiter (`SERVICE_PROXIES` in
   `vite.config.ts`).
-- **Produktiv:** Der Webserver, der das Dashboard ausliefert, braucht denselben Pfad relativ zur App. Beispiel für
-  nginx, wenn das Dashboard unter `/dashboard/` liegt:
+- **Produktiv:** Der Webserver, der das Dashboard ausliefert, braucht denselben Pfad relativ zur App. Im
+  Docker-Image übernimmt das `nginx_default.conf` (Dashboard unter `/umwelt-monitoring/`, siehe
+  [Deployment](#deployment)):
 
 ```nginx
-location /dashboard/proxy/leverkusen/ {
-    proxy_pass https://geoportal.leverkusen.de/;
+location = /umwelt-monitoring/proxy/leverkusen/GCGisService {
+    proxy_pass https://geoportal.leverkusen.de/GCGisService;
     proxy_ssl_server_name on;
 }
 ```
 
 - Das Ziel steht fest in der Konfiguration. Nie die Ziel-URL aus der Anfrage übernehmen, sonst ist es ein offener
   Proxy.
+- Produktiv nur die Endpunkte freigeben, die `dataLayers.json` nutzt (exakte `location =`), nicht den ganzen Host.
+  Ein neuer Endpunkt braucht eine eigene `location` in `nginx_default.conf`.
 - Liegt vor dem nginx noch ein Load Balancer oder Ingress, muss er den Pfad durchlassen.
 - Eigene WMS (temporär) gehen nicht über den Proxy, Dienste ohne CORS lassen sich dort weiterhin nicht hinzufügen.
+
+## Deployment
+
+Das Dashboard läuft unter `https://infotool.cosite.thk.52north.org/umwelt-monitoring/` hinter dem Traefik des
+InfoTool-Deployments (Compose-Projekt `cosite`). InfoTool stellt Traefik, TLS (Let's Encrypt) und das Netzwerk
+`cosite_default` bereit, alles Übrige steht in diesem Repo:
+
+- `Dockerfile`: baut mit Node 24 (`pnpm build`, relative Basis `./` aus `vite.config.ts`) und kopiert `dist/www`
+  nach `/usr/share/nginx/html/umwelt-monitoring`. `.dockerignore` hält `node_modules`, `dist` und `.git` aus dem
+  Build-Kontext.
+- `nginx_default.conf`: liefert unter `/umwelt-monitoring/` aus, leitet `/umwelt-monitoring` auf den Pfad mit Slash
+  um (die App lädt ihre Dateien relativ) und enthält den Proxy für Dienste ohne CORS.
+- `compose.yml`: hängt sich als `external` in `cosite_default` ein. Traefik-Labels routen
+  ``Host(`infotool.cosite.thk.52north.org`) && PathPrefix(`/umwelt-monitoring`)`` über `websecure` an Port 8080.
+  Die Regel ist länger als die des CMS auf demselben Host (`PathPrefix(/)`) und gewinnt deshalb.
+
+Der Pfad `/umwelt-monitoring` steht an drei Stellen: COPY-Ziel im `Dockerfile`, `nginx_default.conf` und
+Router-Regel in `compose.yml`.
+
+Start auf dem Server, nachdem InfoTool läuft: `docker compose up -d --build`.
+Lokal ohne Traefik: `docker build -t umwelt-monitoring .` und `docker run --rm -p 8081:8080 umwelt-monitoring`,
+dann `http://localhost:8081/umwelt-monitoring/`.
 
 ## Sprache (i18n)
 

@@ -1,0 +1,29 @@
+FROM node:24-slim AS build
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN npm install -g corepack && corepack enable
+
+COPY . /app
+WORKDIR /app
+RUN pnpm install
+# option disabled as build is failing atm
+# should be enabled in production deployment image build
+# RUN pnpm install --frozen-lockfile
+RUN pnpm build
+
+FROM nginx/nginx-unprivileged:1.31.9-alpine-slim
+
+#keep updated
+USER root
+RUN apk update && apk upgrade
+USER 101
+
+# copy application from build stage to run stage, served under /umwelt-monitoring/ (see nginx_default.conf, compose.yml)
+COPY --from=build /app/dist/www /usr/share/nginx/html/umwelt-monitoring
+
+COPY nginx_default.conf /etc/nginx/conf.d/default.conf
+
+# nginx-unprivileged runs without root and therefore listens on 8080 (see nginx_default.conf)
+EXPOSE 8080
