@@ -21,6 +21,18 @@ Jedes Element folgt demselben Schema: **Was** · **Entscheidung** · **Warum** �
   (z. B. `temperature` und `Temperature` als zwei ObservedProperties, `°C` und `degC` als Einheit). Die Config rückt
   das gerade: Wo sie etwas angibt, gilt sie vor den Angaben der STA. Was für ein Feature konfiguriert sein muss und es
   nicht ist, wird im Zweifel nicht angezeigt, statt auf die STA-Angaben zurückzufallen.
+- **Grundsatz Die Konfiguration ist verantwortlich (2026-11-13):** Im Betrieb liegt die Korrektheit bei dem, der
+  `dataLayers.json` pflegt: Sensoren sorgfältig benennen, den richtigen Key für die Messgröße vergeben, die passende
+  Einheit eintragen. Das ist gewollt, kein Versäumnis. Das Dashboard prüft nur die Form der Angaben (Typen), nicht
+  ihren Inhalt: Es gleicht Keys nicht untereinander ab, vergleicht Einheiten nicht und rechnet nicht um.
+- **Messgröße und Einheit am Sensor (2026-11-13):** Jeder `sta-datastream` kann `observedProperty` (Key, z. B.
+  `soil_temperature`) und `unit` tragen. Die Einheit gilt vor `unitOfMeasurement` der STA.
+    - **Verworfen:** eine zentrale Liste der Messgrößen (Key, Name de/en, Einheit), auf die Sensoren verweisen. Sie
+      hätte eine einheitliche Einheit je Messgröße erzwungen und einen übersetzten Namen geliefert, die Konfiguration
+      aber um eine zweite Stelle erweitert. Alles am Sensor ist einfacher zu lesen und zu pflegen.
+    - **Folgen:** Der Name der Messgröße kommt weiter aus der STA (Detailzeile im Sensor-Popup, nicht übersetzt). Für
+      die Auswahl im Vergleich nach Messgröße gibt es noch keinen übersetzten Namen (offen, siehe `TODO.md`). Der Key
+      wird bisher nur geprüft; gelesen wird er erst vom Vergleich, über die Konfiguration am Layer.
 
 | #   | Element                                                                             | Schwierigkeit |
 | --- | ----------------------------------------------------------------------------------- | ------------- |
@@ -175,6 +187,9 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
   ausgeblendet, damit er die Temperatur nicht verdeckt. Seit 20.10. sind auf Wunsch alle Layer beim Start sichtbar
   (RADOLAN mit 30 % Transparenz). Dazu Datastream 15 (SMT100 Bodenfeuchte in %, gleicher Knoten und Standort wie
   Datastream 14).
+- **Ergänzt (2026-11-13):** Datastream 16 (SMT100 Bodentemperatur, Thing „ESP32 Node Test“, liefert seit 30.10.2026).
+  Ein Demo-Aufbau, etwa 800 m westlich des Knotens in Kalk. Er dient als zweite Station, gegen die der Vergleich nach
+  Messgröße entwickelt wird.
 - **Commits:** `6a1d0da`
 
 ## 6. Kategorien (Untergruppen) im TOC
@@ -263,9 +278,9 @@ Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne T
     - **Ein Layer, ein Datastream:** Die Hooks lesen nur das erste Feature der Quelle (`datastreamFeature`). Wird
       künftig z. B. ein ganzes Thing mit mehreren Datastreams als _ein_ Layer importiert, zeigen Dropdown, Diagramm
       und Kacheln stillschweigend nur den ersten. Dann entweder pro Datastream einen eigenen Layer erzeugen
-      (`createStaDatastreamLayer`) oder `datastreamFeature`, `useDatastreamProperties` und `useColocatedSensors`
-      anpassen.
-    - **`useDatastreamProperties` sucht die Quelle nur einmal pro Layer-ID**, nicht reaktiv. Heute unkritisch,
+      (`createStaDatastreamLayer`) oder `datastreamFeature` und `useLoadedDatastreams` anpassen (darauf stützen
+      sich `useDatastreamProperties`, `useColocatedSensors` und `useStationColors`).
+    - **`useLoadedDatastreams` (und damit `useDatastreamProperties`) sucht die Quellen nur einmal pro Layer-ID**, nicht reaktiv. Heute unkritisch,
       weil die ID immer aus der Liste vorhandener Layer kommt (`useStaSensors`). Wird der Hook mit einer festen ID
       aufgerufen, solange die Konfiguration noch lädt, bleibt das Ergebnis `undefined`. `useColocatedSensors` ist
       über `useStaSensors` reaktiv und nicht betroffen.
@@ -676,3 +691,62 @@ standardmäßig sichtbar: Stadtklimaprojektionen, Hochwasser, Starkregen, Grundw
   `dataLayers.json` noch nicht eingetragen.
 - **Commits:** `96b332d`, `e83aab9`, `9e60605`, `abad3d4`, `cd69e8e`, `c532ca8`, `c3a701b`, `ca342b2`; Doku: `3113d55`; Aufräumen: `5996bac`, `8591894`, `4040c3c`, `3da326f`, `27cd718`, `387c7c3`,
   `5f30255`, `971d8d2`, `e9b51ed`, `e4cdc46`, `f882a36`
+
+## 20. Messgrößenvergleich
+
+🟡 **Was:** Ein dritter Tab im Analyse-Panel vergleicht alle Sensoren einer Messgröße in einem Diagramm
+(`TODO.md`, Grilling am 2026-11-13). Grundlage ist der Key `observedProperty` am Sensor (siehe Überblick).
+
+- **Auswahl:** Zur Wahl stehen nur Messgrößen, die mindestens zwei konfigurierte Sensoren tragen, in der Reihenfolge
+  der Konfiguration; die erste ist vorgewählt. Im TOC ausgeblendete Layer zählen mit. Gibt es keine solche
+  Messgröße, bleibt der Tab sichtbar und zeigt einen Hinweis.
+- **Name der Messgröße:** Übersetzung aus den i18n-Dateien der App (`observedProperty.<key>`), sonst der rohe Key.
+  Eine neue Messgröße braucht für einen schönen Namen also einen Eintrag in `i18n/de.yaml` und `en.yaml` (und einen
+  Neubau). Verworfen: ein Namensfeld in `dataLayers.json`.
+- **Reihen:** Eine Linie je Sensor, beschriftet mit dem Layernamen aus der Konfiguration (vorläufig). Achse und
+  Tooltip nutzen die Einheit des ersten Sensors; geprüft wird nichts (Grundsatz „Die Konfiguration ist
+  verantwortlich“, bisher gibt es nur °C).
+- **Kacheln statt Legende:** Die Sensoren stehen wie im Einzel-Tab als Kacheln mit neuestem Wert neben dem Diagramm,
+  der Rand hat die Farbe der Linie. Ein Klick blendet die Reihe aus oder ein, anfangs sind alle an. Gemerkt werden
+  die ausgeblendeten Sensoren, damit neue von selbst erscheinen; die Auswahl übersteht den Tab-Wechsel.
+- **Laden:** Jeder Sensor lädt einzeln und parallel (max. 20.000 Werte je Sensor). Ein Fehler betrifft nur seine
+  Kachel („nicht verfügbar“). Geladen werden auch ausgeblendete Sensoren, damit das Einblenden sofort wirkt.
+- **Weggelassen:** die Zeile mit Anzahl, Min, Max und letztem Wert; der Hinweis auf abgeschnittene Daten bei mehr
+  als 20.000 Werten.
+- **Vereinfacht (2026-11-13, Maßstab Einfachheit):** Messgrößen als `Record` (Key → Sensoren) statt eigenem Typ,
+  Messwerte je Sensor als Liste oder `"error"` statt Zustands-Union, keine Prüfung „gewählte Messgröße noch
+  vorhanden“ (die Konfiguration ändert sich zur Laufzeit nicht). Ein Liniendiagramm (`SeriesChart`) für alle Tabs;
+  sein Tooltip nennt immer die Reihe, auch im Einzel-Tab. Sind Reihen geladen, aber ohne Werte im Zeitraum, bleibt
+  das Diagramm leer (kein eigener Text). Bei „Gesamter Zeitraum“ beginnt die Achse beim ersten Wert der sichtbaren
+  Reihen. Bewusst behalten: die Formprüfung von `observedProperty` und `unit` und die Kachel „nicht verfügbar“.
+- **Nur Linie:** Balken und Boxplot für mehrere Reihen kommen später (`TODO.md`), die Windrose entfällt im Vergleich.
+- **Farben:** Linien und Kachelränder haben die Farbe der Station des Sensors (Abschnitt 21).
+- **Im Browser geprüft:** Datastream 14 und 16 als zwei Linien, Tooltip, Ausblenden über die Kachel, Tab-Wechsel,
+  Sprachwechsel.
+
+## 21. Stationsfarben
+
+🟡 **Was:** Jede Station hat eine Farbe, die sich durch die ganze App zieht (Grilling am 2026-11-13). So erkennt
+man im TOC, auf der Karte und in den Diagrammen, welche Sensoren zusammengehören.
+
+- **Station:** Sensoren am selben Standort nach der bestehenden Gruppierung (`VITE_SENSOR_GROUPING`, Radius 1 m).
+  Ein Sensor ohne Nachbarn ist eine Station mit einem Sensor und bekommt ebenfalls eine eigene Farbe, sonst wären
+  zwei einzelne Sensoren im Vergleich nicht zu unterscheiden.
+- **Vergabe:** In der Reihenfolge der Konfiguration, aus einer festen Palette mit 20 Farben (es wird nicht viele
+  Stationen geben); danach wiederholen sie sich. Die Farbe steht nicht in `dataLayers.json`.
+- **Wo:** Sensorpunkt auf der Karte (vorher alle orange), Punkt vor dem Sensor im TOC, Rand der Kacheln, Linien,
+  Balken, Boxen und Windrose in allen drei Tabs (vorher festes Blau).
+- **Palette:** Die ersten acht Farben sind die bisherige Diagrammpalette. Geprüft mit dem Validator des
+  dataviz-Skills: Benachbarte Farben der Liste bleiben auch bei Farbfehlsichtigkeit unterscheidbar, weit
+  auseinanderliegende können sich ähneln. Bei 20 Farben geht es nicht besser.
+- **Bewusst nicht behandelt:** Ketten (A–B und B–C nah, A–C nicht): Ein Sensor kommt zur ersten Station, deren
+  erster Sensor am selben Standort liegt. Zwei Sensoren derselben Station mit derselben Messgröße hätten im
+  Vergleich dieselbe Linienfarbe. Beides kommt laut Nutzer nicht vor.
+- **Eigenheit:** Die Station ergibt sich aus dem Standort, und den kennt die App erst, wenn der Datastream geladen
+  ist. Die Farben erscheinen also mit den Sensoren; lädt ein früherer Sensor später als ein späterer, kann eine
+  Farbe beim Start einmal wechseln. Ein Sensor, der nicht lädt, hat keine Farbe.
+- **TOC-Punkt:** Das TOC erlaubt Inhalt nur unter der Titelzeile (`TocItemExtensions`). Der Punkt wird mit negativen
+  Abständen in die Zeile gezogen, an den freien Platz des Aufklapp-Pfeils. Bei mehrzeiligen Titeln sitzt er dadurch
+  etwas unter der Mitte der Zeile.
+- **Im Browser geprüft:** Datastream 14 und 15 (Köln-Kalk) blau, Datastream 16 (Demo-Knoten) orange, jeweils auf der
+  Karte, im TOC, an den Kacheln und in den Liniendiagrammen aller drei Tabs.

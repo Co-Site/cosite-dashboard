@@ -3,16 +3,18 @@ import { useMapModelValue } from "@open-pioneer/map";
 import { useIntl } from "open-pioneer:react-hooks";
 import { Ref } from "react";
 import { LuPanelBottomClose } from "react-icons/lu";
-import { useStaSensors } from "../dataLayers/sta/useStaSensors";
+import { useObservedProperties, useStaSensors } from "../dataLayers/sta/useStaSensors";
 import {
     AnalysisSelection,
     AnalysisTab,
     AnalysisView,
     withChartType,
     withCompareSensor,
-    withDefaultSensors
+    withDefaultSensors,
+    withToggledSensor
 } from "./analysisSelection";
 import { ChartType } from "./chartTypes";
+import { PropertyComparisonView } from "./PropertyComparisonView";
 import { SensorChartView } from "./SensorChartView";
 import { TimeFilter } from "./timeRange";
 import { TimeRangeFilter } from "./TimeRangeFilter";
@@ -44,7 +46,8 @@ export interface AnalysisPanelProps {
 
 /**
  * Collapsible analysis panel at the bottom of the dashboard (collapsed, only an icon remains, see `DashboardApp`).
- * Shows the observations of a single sensor or compares two sensors, within the same time range.
+ * Shows the observations of a single sensor, compares two sensors or compares all sensors of an observed property,
+ * within the same time range.
  */
 export function AnalysisPanel(props: AnalysisPanelProps) {
     const { id, open, onOpenChange, closeButtonRef } = props;
@@ -52,10 +55,13 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
     const intl = useIntl();
     const map = useMapModelValue();
     const sensors = useStaSensors(map);
+    const properties = useObservedProperties(map);
     const selection = withDefaultSensors(
         props.selection,
         sensors.map((sensor) => sensor.id)
     );
+    // The first observed property until the user chooses one.
+    const propertyKey = selection.property.key ?? Object.keys(properties)[0];
     const collapseLabel = intl.formatMessage({ id: "panel.collapse" });
 
     const setCompare = (index: 0 | 1, sensorId: string) =>
@@ -67,6 +73,9 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
     const closePanel = () => onOpenChange(false);
     const selectSingle = (single: string) => onSelectionChange({ ...selection, single });
     const changeSingleChartType = (type: ChartType) => setChartType("single", type);
+    const toggleSensor = (sensorId: string) => onSelectionChange(withToggledSensor(selection, sensorId));
+    const selectProperty = (key: string) =>
+        onSelectionChange({ ...selection, property: { ...selection.property, key } });
 
     return (
         <Collapsible.Root open={open}>
@@ -105,6 +114,9 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
                                     </Tabs.Trigger>
                                     <Tabs.Trigger value="compare">
                                         {intl.formatMessage({ id: "panel.tabs.compare" })}
+                                    </Tabs.Trigger>
+                                    <Tabs.Trigger value="property">
+                                        {intl.formatMessage({ id: "panel.tabs.property" })}
                                     </Tabs.Trigger>
                                 </Tabs.List>
                                 <Spacer />
@@ -154,6 +166,16 @@ export function AnalysisPanel(props: AnalysisPanelProps) {
                                             </Box>
                                         ))}
                                     </Flex>
+                                </Tabs.Content>
+                                <Tabs.Content value="property" flex="1" minHeight={0} pt={0}>
+                                    <PropertyComparisonView
+                                        properties={properties}
+                                        value={propertyKey}
+                                        onChange={selectProperty}
+                                        hidden={selection.property.hidden}
+                                        onToggle={toggleSensor}
+                                        timeFilter={timeFilter}
+                                    />
                                 </Tabs.Content>
                             </>
                         )}

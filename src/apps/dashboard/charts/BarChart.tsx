@@ -4,7 +4,7 @@ import { BarController, BarElement, Chart, ChartConfiguration, LinearScale, Tool
 import { useIntl } from "open-pioneer:react-hooks";
 import { useCallback, useMemo } from "react";
 import { Observation } from "../dataLayers/sta/sta";
-import { createValueFormatter, SERIES_COLOR, SERIES_FILL, timeScale, valueScale } from "./chartStyle";
+import { createValueFormatter, seriesFill, timeScale, valueScale } from "./chartStyle";
 import { Bucket, BucketSize, bucketSize, meanPerBucket } from "./statistics";
 import { TimeRange } from "./timeRange";
 import { useChart } from "./useChart";
@@ -20,6 +20,9 @@ export interface BarChartProps {
 
     /** Range of the x axis; also determines the length of the sections (hour, day, week). */
     range: TimeRange;
+
+    /** Colour of the series (the colour of the sensor's station). */
+    color: string;
 }
 
 type BarPoint = { x: number; y: number; bucket: Bucket };
@@ -40,7 +43,7 @@ function formatBucket(intl: PackageIntl, bucket: Bucket, size: BucketSize): stri
 /**
  * Bar chart of the mean value per section of time (hour, day or week, depending on the range).
  */
-export function BarChart({ observations, label, unit, range }: BarChartProps) {
+export function BarChart({ observations, label, unit, range, color }: BarChartProps) {
     const intl = useIntl();
     const size = bucketSize(range);
     const buckets = useMemo(() => meanPerBucket(observations, size), [observations, size]);
@@ -58,10 +61,10 @@ export function BarChart({ observations, label, unit, range }: BarChartProps) {
                 parsing: false,
                 datasets: {
                     bar: {
-                        backgroundColor: SERIES_FILL,
-                        borderColor: SERIES_COLOR,
+                        backgroundColor: seriesFill(color),
+                        borderColor: color,
                         borderWidth: 1,
-                        hoverBackgroundColor: SERIES_COLOR,
+                        hoverBackgroundColor: color,
                         barPercentage: 0.9,
                         categoryPercentage: 1
                     }
@@ -90,7 +93,7 @@ export function BarChart({ observations, label, unit, range }: BarChartProps) {
                 }
             }
         };
-    }, [intl, unit, size]);
+    }, [intl, unit, size, color]);
 
     const applyData = useCallback(
         (chart: Chart<"bar", BarPoint[]>) => {

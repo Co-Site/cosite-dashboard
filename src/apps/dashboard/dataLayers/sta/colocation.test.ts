@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { colocatedSensors, parseGroupingRadius, parseSensorGrouping } from "./colocation";
+import { assignStations, colocatedSensors, parseGroupingRadius, parseSensorGrouping } from "./colocation";
 import { StaDatastreamProperties } from "./sta";
 
 function sensor(dataLayerId: string, position?: [number, number], thingId?: string): StaDatastreamProperties {
@@ -65,6 +65,26 @@ describe("colocatedSensors", () => {
 
     it("excludes the selected sensor", () => {
         expect(colocatedSensors(elsewhere, all, "location-or-thing", 1)).toEqual([]);
+    });
+});
+
+describe("assignStations", () => {
+    const a = sensor("a", [7, 51]);
+    const beside = sensor("b", [7, 51]);
+    const alone = sensor("c", [8, 52]);
+    const later = sensor("d", [7, 51]);
+
+    it("numbers the stations in the order of the sensors", () => {
+        expect([...assignStations([a, beside, alone, later], "location", 1)]).toEqual([
+            ["a", 0],
+            ["b", 0],
+            ["c", 1],
+            ["d", 0]
+        ]);
+    });
+
+    it("makes every sensor without location its own station", () => {
+        expect([...assignStations([sensor("x"), sensor("y")], "location", 1).values()]).toEqual([0, 1]);
     });
 });
 

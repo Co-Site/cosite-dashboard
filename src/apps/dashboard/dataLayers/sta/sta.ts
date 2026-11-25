@@ -1,6 +1,7 @@
 import Feature, { FeatureLike } from "ol/Feature";
 import GeoJSON from "ol/format/GeoJSON";
 import { Geometry } from "ol/geom";
+import { StaDatastreamLayerConfig } from "../config/types";
 
 export interface GeoJSONGeometry {
     type: string;
@@ -95,8 +96,7 @@ const DATASTREAM_PROPERTY = "staDatastream";
  * (or at the datastream's observed area if the thing has no location).
  */
 export function createDatastreamFeature(
-    dataLayerId: string,
-    endpoint: string,
+    config: StaDatastreamLayerConfig,
     datastream: StaDatastream,
     mapProjection: string
 ): Feature<Geometry> | undefined {
@@ -110,11 +110,12 @@ export function createDatastreamFeature(
         featureProjection: mapProjection
     });
     const properties: StaDatastreamProperties = {
-        dataLayerId,
-        datastreamUrl: endpoint,
-        observationsUrl: datastream["Observations@iot.navigationLink"] ?? `${endpoint}/Observations`,
+        dataLayerId: config.id,
+        datastreamUrl: config.endpoint,
+        observationsUrl: datastream["Observations@iot.navigationLink"] ?? `${config.endpoint}/Observations`,
         name: datastream.name,
-        unit: displayUnit(datastream.unitOfMeasurement?.symbol),
+        // Configuration over STA: a configured unit replaces the one of the datastream.
+        unit: config.unit ?? displayUnit(datastream.unitOfMeasurement?.symbol),
         observedProperty: datastream.ObservedProperty?.name,
         thing: datastream.Thing?.name,
         thingId: datastream.Thing?.["@iot.id"] === undefined ? undefined : String(datastream.Thing["@iot.id"]),

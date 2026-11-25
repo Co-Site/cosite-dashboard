@@ -13,12 +13,44 @@ const LOG = createLogger("dashboard:SensorTiles");
 type LatestState = { kind: "loading" } | { kind: "loaded"; observation: Observation | undefined };
 
 export interface SensorTilesProps {
-    /** The other sensors at the site of the shown sensor. */
+    /** The sensors to show as tiles. */
     sensors: StaDatastreamProperties[];
 
-    /** Switches the chart to the sensor (data layer id). */
+    /** Called with the sensor (data layer id) of the clicked tile. */
     onSelect(sensorId: string): void;
+
+    /** Accessible name of the group of tiles. */
+    label: string;
+
+    /**
+     * Makes the tiles switches that show or hide a sensor: the sensors (data layer ids) that are switched off.
+     * Without it, a tile is a button that shows its sensor.
+     */
+    hidden?: string[];
+
+    /** Border colours of the tiles by data layer id. */
+    colors: Record<string, string>;
+
+    /** Sensors (data layer ids) that could not be loaded; their tiles only say so. */
+    unavailable?: string[];
 }
+
+const TILE_STYLE = {
+    variant: "outline",
+    height: "auto",
+    flexShrink: 0,
+    paddingX: 2,
+    paddingY: 1.5,
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 0,
+    whiteSpace: "normal",
+    textAlign: "start",
+    borderWidth: "2px"
+} as const;
+
+/** Border of a tile that is switched off or not available. */
+const BORDER_OFF = "border.emphasized";
 
 /** Time of the newest value: only the time of day for today, otherwise with the date. */
 function formatTime(intl: PackageIntl, time: number): string {
@@ -78,8 +110,14 @@ function useLatestObservation(observationsUrl: string): LatestState {
     return state;
 }
 
-function SensorTile(props: { sensor: StaDatastreamProperties; onSelect(sensorId: string): void }) {
-    const { sensor, onSelect } = props;
+/** A tile is a switch that is on or off (`on`), or a plain button (`on` is `undefined`). */
+function SensorTile(props: {
+    sensor: StaDatastreamProperties;
+    onSelect(sensorId: string): void;
+    color: string | undefined;
+    on: boolean | undefined;
+}) {
+    const { sensor, onSelect, color, on } = props;
     const intl = useIntl();
     const map = useMapModelValue();
     // Localized name from the data layer configuration, like in the sensor selection.
@@ -96,18 +134,12 @@ function SensorTile(props: { sensor: StaDatastreamProperties; onSelect(sensorId:
 
     return (
         <Button
-            variant="outline"
-            height="auto"
-            flexShrink={0}
-            paddingX={2}
-            paddingY={1.5}
-            flexDirection="column"
-            alignItems="flex-start"
-            gap={0}
-            whiteSpace="normal"
-            textAlign="start"
+            {...TILE_STYLE}
+            borderColor={on === false ? BORDER_OFF : color}
+            opacity={on === false ? 0.55 : 1}
+            aria-pressed={on}
             aria-label={intl.formatMessage(
-                { id: "panel.colocated.show" },
+                { id: on === undefined ? "panel.colocated.show" : "panel.property.toggle" },
                 { sensor: title, value: latest.kind === "loading" ? "…" : value }
             )}
             onClick={select}
@@ -134,13 +166,30 @@ function SensorTile(props: { sensor: StaDatastreamProperties; onSelect(sensorId:
     );
 }
 
+/** Tile of a sensor whose datastream or observations could not be loaded. */
+function UnavailableTile({ sensorId }: { sensorId: string }) {
+    const intl = useIntl();
+    const map = useMapModelValue();
+    const title = useLayerTitle(map, sensorId) ?? sensorId;
+    return (
+        <Button {...TILE_STYLE} borderColor={BORDER_OFF} disabled>
+            <Text fontSize="xs" fontWeight="semibold" lineClamp={2}>
+                {title}
+            </Text>
+            <Text fontSize="xs" color="fg.error" minHeight={6}>
+                {intl.formatMessage({ id: "panel.property.unavailable" })}
+            </Text>
+        </Button>
+    );
+}
+
 /**
- * Stacked tiles for the other sensors at the same site, each with its newest value.
- * Clicking a tile shows that sensor in the chart instead.
+ * Stacked tiles for sensors, each with its newest value.
+ * Clicking a tile shows that sensor in the chart instead, or (with `hidden`) shows or hides it.
  */
 export function SensorTiles(props: SensorTilesProps) {
-    const { sensors, onSelect } = props;
-    const intl = useIntl();
+    const { sensors, onSelect, label, hidden, colors, unavailable = [] } = props;
+    const available = sensors.filter((sensor) => !unavailable.includes(sensor.dataLayerId));
     const listRef = useRef<HTMLDivElement>(null);
     const moreBelow = useMoreBelow(listRef, sensors);
     return (
@@ -149,7 +198,7 @@ export function SensorTiles(props: SensorTilesProps) {
             <Stack
                 ref={listRef}
                 role="group"
-                aria-label={intl.formatMessage({ id: "panel.colocated.label" })}
+                aria-label={label}
                 gap={2}
                 flex="1"
                 minHeight={0}
@@ -159,8 +208,17 @@ export function SensorTiles(props: SensorTilesProps) {
                 // The scrollbar does not change the tiles' width when it appears.
                 css={{ scrollbarGutter: "stable", scrollbarWidth: "thin" }}
             >
-                {sensors.map((sensor) => (
-                    <SensorTile key={sensor.dataLayerId} sensor={sensor} onSelect={onSelect} />
+                {available.map((sensor) => (
+                    <SensorTile
+                        key={sensor.dataLayerId}
+                        sensor={sensor}
+                        onSelect={onSelect}
+                        color={colors[sensor.dataLayerId]}
+                        on={hidden && !hidden.includes(sensor.dataLayerId)}
+                    />
+                ))}
+                {unavailable.map((sensorId) => (
+                    <UnavailableTile key={sensorId} sensorId={sensorId} />
                 ))}
             </Stack>
             {moreBelow && (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { withGaps } from "./ObservationChart";
+import { withGaps } from "./SeriesChart";
 
 const MINUTE = 60 * 1000;
 
