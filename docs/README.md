@@ -2,9 +2,10 @@
 
 ## Table of contents
 
-- [Dashboard: Wie das Projekt verdrahtet ist](./DashboardWiring.md)
-- [Dashboard: Entstehung und Entscheidungen](./DashboardDecisions.md)
-- [TOC-Erweiterung: Fork oder öffentliche API?](./TocExtensionDecision.md)
+- [Dashboard: How the project is wired](./DashboardWiring.md)
+- [Dashboard: History and decisions](./DashboardDecisions.md)
+- [Dashboard: Deployment](./Deployment.md)
+- [TOC extension: fork or public API?](./TocExtensionDecision.md)
 - [Introduction](./Introduction.md)
 - [Getting started](./GettingStarted.md)
 - [Repository guide](./RepositoryGuide.md)

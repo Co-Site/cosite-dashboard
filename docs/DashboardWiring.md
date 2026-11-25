@@ -1,63 +1,68 @@
-# Dashboard: Wie das Projekt verdrahtet ist
+# Dashboard: How the project is wired
 
-Kurzreferenz, wie Workspace, Vite, Apps, Services und Pakete zusammenhängen.
-Warum etwas so gelöst ist und welche Alternativen es gab: [DashboardDecisions.md](./DashboardDecisions.md).
-Die ursprünglichen Beispiele des Trails Starters (`src/samples/*`, `src/packages/sample-package`,
-`src/apps/empty`, `src/sites/empty`) wurden entfernt; sie sind auf dem Branch `main` weiterhin vorhanden.
+Quick reference for how the workspace, Vite, apps, services and packages fit together.
+Why something is solved the way it is and which alternatives existed: [DashboardDecisions.md](./DashboardDecisions.md).
+The original samples of the Trails Starter (`src/samples/*`, `src/packages/sample-package`,
+`src/apps/empty`, `src/sites/empty`) have been removed; they are still available on the `main` branch.
 
-## pnpm-Workspace
+## pnpm workspace
 
-- `pnpm-workspace.yaml` → `packages: src/**`: jedes Verzeichnis unter `src/` mit einer `package.json` ist ein Workspace-Paket.
-- Versionen werden zentral im `catalog:` gepflegt; in den `package.json`-Dateien steht nur `"<paket>": "catalog:"`.
-  Die Trails-OpenLayers-Pakete teilen sich eine Version über den YAML-Anker `&ol_base_packages_version`,
-  die Core-Pakete über `&core_packages_version`.
-- Neues Trails-Paket hinzufügen: Eintrag im Catalog ergänzen, dann in der App-`package.json` mit `catalog:` referenzieren, `pnpm install`.
+- `pnpm-workspace.yaml` → `packages: src/**`: every directory under `src/` with a `package.json` is a workspace
+  package.
+- Versions are maintained centrally in the `catalog:`; the `package.json` files only contain `"<paket>": "catalog:"`.
+  The Trails OpenLayers packages share one version via the YAML anchor `&ol_base_packages_version`,
+  the core packages via `&core_packages_version`.
+- Adding a new Trails package: add an entry to the catalog, then reference it with `catalog:` in the app's
+  `package.json`, `pnpm install`.
 
 ## Vite
 
-- `vite.config.ts`: `root: src`, Build-Ausgabe nach `dist/www`.
+- `vite.config.ts`: `root: src`, build output to `dist/www`.
 - Plugin `pioneer({ rootSite, sites, apps })`:
-    - `rootSite: true` → `src/index.html` wird gebaut. Diese Seite hostet aktuell direkt die Dashboard-App.
-    - `sites: [...]` → weitere Ordner mit eigener `index.html` (z. B. `"sites/foo"`).
-    - `apps: [...]` → Apps, die zusätzlich als eigenständige `.js`-Dateien (Embedding) ausgeliefert werden.
-- Eine Site lädt eine App per `<script type="module" src="./apps/<app>/app.ts">` und enthält das Custom Element (z. B. `<dashboard-app>`).
-- `server.proxy` und `preview.proxy` (`SERVICE_PROXIES`): leiten `/proxy/leverkusen/…` an `https://geoportal.leverkusen.de/…`
-  weiter, siehe [Proxy für Dienste ohne CORS](#proxy-für-dienste-ohne-cors).
+    - `rootSite: true` → `src/index.html` is built. This page currently hosts the dashboard app directly.
+    - `sites: [...]` → further folders with their own `index.html` (e.g. `"sites/foo"`).
+    - `apps: [...]` → apps that are additionally delivered as standalone `.js` files (embedding).
+- A site loads an app via `<script type="module" src="./apps/<app>/app.ts">` and contains the custom element
+  (e.g. `<dashboard-app>`).
+- `server.proxy` and `preview.proxy` (`SERVICE_PROXIES`): forward `/proxy/leverkusen/…` to
+  `https://geoportal.leverkusen.de/…`, see [Proxy for services without CORS](#proxy-for-services-without-cors).
 
-## App-Aufbau (`src/apps/dashboard`)
+## App structure (`src/apps/dashboard`)
 
-| Datei              | Zweck                                                                                                                                                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `package.json`     | Paketname + Abhängigkeiten (alle über `catalog:`)                                                                                                                                                                                          |
-| `build.config.mjs` | `defineBuildConfig({ i18n, styles, services, ui })` – Sprachen, CSS, Service-Registrierung, UI-Referenzen                                                                                                                                  |
-| `app.ts`           | `createCustomElement({ component, appMetadata })` + `customElements.define("dashboard-app", ...)`                                                                                                                                          |
-| `services.ts`      | Service-Klassen, z. B. `MainMapProvider` (Kartenkonfiguration)                                                                                                                                                                             |
-| `DashboardApp.tsx` | Root-Komponente: Karte, TOC, Kartenwerkzeuge, Analyse-Panel                                                                                                                                                                                |
-| `i18n/*.yaml`      | Übersetzungen, Zugriff über `useIntl().formatMessage({ id })`                                                                                                                                                                              |
-| `dataLayers/`      | Datenlayer: `config/` (JSON-Schema `types.ts`, Loader + Parser `loadDataLayers.ts`, Texte je Sprache), `ows/` (WMS, WFS), `sta/` (SensorThings), Layer-Fabrik `createDataLayer.ts` mit `dataLayerBase.ts`, Session-Gruppen `userLayers.ts` |
-| `mapClick/`        | Kartenklick: Popup mit allen Sensoren an der Stelle oder mit den Attributen von WFS-Features und WMS-GetFeatureInfo                                                                                                                        |
-| `charts/`          | Analyse-Panel unten (`AnalysisPanel.tsx`, Tabs „Einzelsensor“ / „Sensorvergleich“ / „Messgrößenvergleich“), Zeitfilter, Sensor- und Typauswahl, Messwerte laden, Diagramme: Linie, Balken, Boxplot, Windrose                               |
-| `toc/`             | Ergänzungen zum TOC: Transparenz-Slider, Sprachumschalter (EN/DE), Übersetzung der Layernamen, eigene WMS/WFS hinzufügen                                                                                                                   |
+| File               | Purpose                                                                                                                                                                                                                                        |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `package.json`     | Package name + dependencies (all via `catalog:`)                                                                                                                                                                                               |
+| `build.config.mjs` | `defineBuildConfig({ i18n, styles, services, ui })` – languages, CSS, service registration, UI references                                                                                                                                      |
+| `app.ts`           | `createCustomElement({ component, appMetadata })` + `customElements.define("dashboard-app", ...)`                                                                                                                                              |
+| `services.ts`      | Service classes, e.g. `MainMapProvider` (map configuration)                                                                                                                                                                                    |
+| `DashboardApp.tsx` | Root component: map, TOC, map tools, analysis panel                                                                                                                                                                                            |
+| `i18n/*.yaml`      | Translations, accessed via `useIntl().formatMessage({ id })`                                                                                                                                                                                   |
+| `dataLayers/`      | Data layers: `config/` (JSON schema `types.ts`, loader + parser `loadDataLayers.ts`, texts per language), `ows/` (WMS, WFS), `sta/` (SensorThings), layer factory `createDataLayer.ts` with `dataLayerBase.ts`, session groups `userLayers.ts` |
+| `mapClick/`        | Map click: popup with all sensors at the location or with the attributes of WFS features and WMS GetFeatureInfo                                                                                                                                |
+| `charts/`          | Analysis panel at the bottom (`AnalysisPanel.tsx`, tabs "Einzelsensor" / "Sensorvergleich" / "Messgrößenvergleich"), time filter, sensor and type selection, loading measurements, charts: line, bar, box plot, wind rose                      |
+| `toc/`             | Additions to the TOC: transparency slider, language switcher (EN/DE), translation of layer names, adding custom WMS/WFS                                                                                                                        |
 
-## Datenlayer (`src/public/config/dataLayers.json`)
+## Data layers (`src/public/config/dataLayers.json`)
 
-Die Datenlayer der Karte sind nicht im Code festgelegt, sondern stehen in einer JSON-Datei, die die App **zur Laufzeit** lädt.
+The map's data layers are not fixed in the code but are listed in a JSON file that the app loads **at runtime**.
 
-- Die Datei liegt in `src/public/` (Vites `publicDir`) und wird beim Build unverändert nach `dist/www/config/dataLayers.json` kopiert.
-  Nach dem Deployment lässt sie sich auf dem Webserver ändern, ohne neu zu bauen.
-- Kein Backend: Der Browser lädt sie per `fetch` und parst sie mit `response.json()` (`dataLayers/config/loadDataLayers.ts`).
-- Andere Quelle (Bucket, API …): `VITE_DATA_LAYERS_URL` setzen, z. B. in `.env.local`. Der Server muss dann CORS erlauben.
-- Ist die Datei nicht erreichbar oder ungültig, startet die Karte nur mit der Basemap. Der Fehler steht in der Browser-Konsole.
-  Einzelne ungültige Einträge werden mit Warnung übersprungen.
+- The file lives in `src/public/` (Vite's `publicDir`) and is copied unchanged to `dist/www/config/dataLayers.json`
+  during the build. After deployment it can be changed on the web server without rebuilding. In the Docker deployment
+  this only works once a bind mount for the config directory is added to `compose.yml`, see
+  [Deployment.md](./Deployment.md#configuration).
+- No backend: the browser loads it via `fetch` and parses it with `response.json()` (`dataLayers/config/loadDataLayers.ts`).
+- Different source (bucket, API …): set `VITE_DATA_LAYERS_URL`, e.g. in `.env.local`. The server must then allow CORS.
+- If the file is unreachable or invalid, the map starts with the basemap only. The error appears in the browser console.
+  Individual invalid entries are skipped with a warning.
 
-### Aufbau: Kategorien und Layer
+### Structure: categories and layers
 
-`layers` ist eine Liste aus Layern und Kategorien. Eine Kategorie (`"type": "group"`) hat selbst wieder
-eine `layers`-Liste und kann beliebig verschachtelt werden. Kategorien erscheinen im TOC als einklappbare Gruppen
-und lassen sich als Ganzes ein- und ausschalten. Aktuell gibt es die Kategorien „WMS“ und „Sensoren (STA)“.
+`layers` is a list of layers and categories. A category (`"type": "group"`) itself has a
+`layers` list and can be nested arbitrarily. Categories appear in the TOC as collapsible groups
+and can be switched on and off as a whole. Currently there are the categories "WMS" and "Sensoren (STA)".
 
-Die Reihenfolge in der Datei ist die Zeichenreihenfolge: Spätere Einträge liegen auf der Karte oben
-und stehen im TOC weiter oben.
+The order in the file is the drawing order: later entries lie on top on the map
+and appear higher up in the TOC.
 
 ```json
 {
@@ -78,63 +83,64 @@ und stehen im TOC weiter oben.
 }
 ```
 
-### Felder
+### Fields
 
-| Feld                      | Pflicht     | Bedeutung                                                                         |
-| ------------------------- | ----------- | --------------------------------------------------------------------------------- |
-| `id`                      | ja          | Eindeutige ID (über die ganze Datei), auch Layer-ID in der Karte                  |
-| `type`                    | ja          | `group`, `wms`, `wfs` oder `sta-datastream`                                       |
-| `name`                    | ja¹         | Anzeigename im TOC (Text oder pro Sprache, s. u.)                                 |
-| `description`             | nein        | Beschreibung im ⋮-Menü des Layers (Text oder pro Sprache)                         |
-| `visible`                 | nein        | Initial sichtbar (Default `true`)                                                 |
-| `opacity`                 | nein        | Deckkraft 0–1 (Default `1`)                                                       |
-| `layers`                  | bei `group` | Enthaltene Layer und Kategorien                                                   |
-| `endpoint`                | bei Layern  | URL des Dienstes (WMS-/WFS-Basis-URL bzw. URL des SensorThings-Datastreams)²      |
-| `attribution`             | nein        | Quellenangabe auf der Karte                                                       |
-| `wms.layers`              | bei `wms`   | Liste der WMS-Layernamen aus den Capabilities                                     |
-| `wms.featureInfo.enabled` | nein        | GetFeatureInfo beim Kartenklick (Default `true`)                                  |
-| `wms.featureInfo.format`  | nein        | Antwortformat (GeoJSON); ohne Angabe aus den Capabilities, s. u.                  |
-| `wms.featureInfo.fields`  | nein        | Anzuzeigende Attribute `{ property, label?, unit? }`; ohne Angabe: alle           |
-| `wms.legend.enabled`      | nein        | Legende im FeatureInfo-Popup (Default `true`)                                     |
-| `wms.legend.url`          | nein        | Eigene Legenden-URL statt Capabilities/GetLegendGraphic                           |
-| `wms.legend.params`       | nein        | Zusätzliche URL-Parameter, z. B. `{ "LEGEND_OPTIONS": "columns:4;fontSize:9" }`   |
-| `wfs.featureType`         | bei `wfs`   | Name des Feature-Typs aus den Capabilities, z. B. `app:bezirke`                   |
-| `wfs.version`             | nein        | `2.0.0` oder `1.1.0`; ohne Angabe die neueste, die der Dienst kann                |
-| `wfs.outputFormat`        | nein        | GetFeature-Format; ohne Angabe aus den Capabilities (GeoJSON vor GML)             |
-| `wfs.maxFeatures`         | nein        | Höchstzahl Features pro Anfrage (Default `1000`)                                  |
-| `wfs.color`               | nein        | Farbe der Features (CSS); ohne Angabe aus der Layer-ID abgeleitet                 |
-| `wfs.featureInfo.enabled` | nein        | Attribute beim Kartenklick zeigen (Default `true`)                                |
-| `wfs.featureInfo.fields`  | nein        | Anzuzeigende Attribute wie bei `wms.featureInfo.fields`                           |
-| `observedProperty`        | nein        | Nur `sta-datastream`: Key der Messgröße, z. B. `soil_temperature`³                |
-| `unit`                    | nein        | Nur `sta-datastream`: Einheit der Messwerte, z. B. `°C`; ohne Angabe aus der STA³ |
+| Field                     | Required    | Meaning                                                                               |
+| ------------------------- | ----------- | ------------------------------------------------------------------------------------- |
+| `id`                      | yes         | Unique ID (across the whole file), also the layer ID in the map                       |
+| `type`                    | yes         | `group`, `wms`, `wfs` or `sta-datastream`                                             |
+| `name`                    | yes¹        | Display name in the TOC (text or per language, see below)                             |
+| `description`             | no          | Description in the layer's ⋮ menu (text or per language)                              |
+| `visible`                 | no          | Initially visible (default `true`)                                                    |
+| `opacity`                 | no          | Opacity 0–1 (default `1`)                                                             |
+| `layers`                  | for `group` | Contained layers and categories                                                       |
+| `endpoint`                | for layers  | URL of the service (WMS/WFS base URL or URL of the SensorThings datastream)²          |
+| `attribution`             | no          | Source attribution on the map                                                         |
+| `wms.layers`              | for `wms`   | List of WMS layer names from the capabilities                                         |
+| `wms.featureInfo.enabled` | no          | GetFeatureInfo on map click (default `true`)                                          |
+| `wms.featureInfo.format`  | no          | Response format (GeoJSON); if omitted, taken from the capabilities, see below         |
+| `wms.featureInfo.fields`  | no          | Attributes to display `{ property, label?, unit? }`; if omitted: all                  |
+| `wms.legend.enabled`      | no          | Legend in the FeatureInfo popup (default `true`)                                      |
+| `wms.legend.url`          | no          | Custom legend URL instead of capabilities/GetLegendGraphic                            |
+| `wms.legend.params`       | no          | Additional URL parameters, e.g. `{ "LEGEND_OPTIONS": "columns:4;fontSize:9" }`        |
+| `wfs.featureType`         | for `wfs`   | Name of the feature type from the capabilities, e.g. `app:bezirke`                    |
+| `wfs.version`             | no          | `2.0.0` or `1.1.0`; if omitted, the newest one the service supports                   |
+| `wfs.outputFormat`        | no          | GetFeature format; if omitted, taken from the capabilities (GeoJSON before GML)       |
+| `wfs.maxFeatures`         | no          | Maximum number of features per request (default `1000`)                               |
+| `wfs.color`               | no          | Color of the features (CSS); if omitted, derived from the layer ID                    |
+| `wfs.featureInfo.enabled` | no          | Show attributes on map click (default `true`)                                         |
+| `wfs.featureInfo.fields`  | no          | Attributes to display, as in `wms.featureInfo.fields`                                 |
+| `observedProperty`        | no          | Only `sta-datastream`: key of the observed property, e.g. `soil_temperature`³         |
+| `unit`                    | no          | Only `sta-datastream`: unit of the measurements, e.g. `°C`; if omitted, from the STA³ |
 
-¹ Bei `wms` und `wfs` optional: Ohne `name` zeigt das TOC den Titel aus den Capabilities (Sprache des Dienstes, meist
-Deutsch), bis dahin den Layernamen bzw. den Namen des Feature-Typs. Ohne `description` wird der Abstract übernommen, wenn er sich vom Titel unterscheidet.
-Dafür lädt die App die Capabilities selbst (`dataLayers/ows/wmsCapabilities.ts` bzw. `wfsCapabilities.ts`, ohne
-`LANGUAGE`, einmal pro Dienst).
-Hat ein WMS-Eintrag mehrere `wms.layers`, bekommen die Unterlayer ihre Titel immer aus den Capabilities.
+¹ Optional for `wms` and `wfs`: without `name`, the TOC shows the title from the capabilities (language of the
+service, usually German), and until then the layer name or the name of the feature type. Without `description`, the
+abstract is used if it differs from the title.
+For this, the app loads the capabilities itself (`dataLayers/ows/wmsCapabilities.ts` or `wfsCapabilities.ts`, without
+`LANGUAGE`, once per service).
+If a WMS entry has several `wms.layers`, the sublayers always get their titles from the capabilities.
 
-² Relative URLs (z. B. `./proxy/leverkusen/GCGisService`) löst `parseDataLayers` gegen die URL der App auf. So
-funktioniert derselbe Eintrag lokal und auf dem Server, siehe [Proxy für Dienste ohne CORS](#proxy-für-dienste-ohne-cors).
+² Relative URLs (e.g. `./proxy/leverkusen/GCGisService`) are resolved by `parseDataLayers` against the app's URL. This
+way the same entry works locally and on the server, see [Proxy for services without CORS](#proxy-for-services-without-cors).
 
-³ Messgröße und Einheit stehen direkt am Sensor, eine zentrale Liste gibt es nicht. Sensoren mit demselben
-`observedProperty` gelten als dieselbe Messgröße (Grundlage für den Vergleich nach Messgröße, siehe `TODO.md`).
-`unit` ersetzt die Einheit aus der STA, umgerechnet wird nicht.
+³ Observed property and unit are set directly on the sensor; there is no central list. Sensors with the same
+`observedProperty` count as the same observed property (basis for the comparison by observed property, see `TODO.md`).
+`unit` replaces the unit from the STA; no conversion takes place.
 
-**Hinweis für die Pflege:** Die Konfiguration ist verantwortlich. Wer `dataLayers.json` pflegt, benennt die Sensoren
-sorgfältig, vergibt für dieselbe Messgröße überall denselben Key (gleiche Schreibweise) und trägt die Einheit ein, in
-der der Sensor tatsächlich misst. Die App prüft nur, dass die Angaben Texte sind. Sie gleicht weder Keys noch Einheiten
-untereinander ab (Hintergrund: `DashboardDecisions.md`, Überblick).
+**Note for maintenance:** The configuration is responsible. Whoever maintains `dataLayers.json` names the sensors
+carefully, uses the same key everywhere for the same observed property (same spelling) and enters the unit in which
+the sensor actually measures. The app only checks that the values are texts. It does not reconcile keys or units
+with each other (background: `DashboardDecisions.md`, overview).
 
-**FeatureInfo-Format:** Die App liest nur GeoJSON. Ohne `format` wählt sie aus den Capabilities `application/json`
-(GeoServer), sonst `application/geo+json` (ArcGIS, MapServer). Bietet der Dienst beides nicht an oder ist der Layer
-nicht `queryable`, wird er beim Kartenklick nicht abgefragt. Ein festes `format` spart das Laden der Capabilities
-(bei DWD ca. 1 MB), deshalb steht es bei den DWD-Layern in der Konfiguration.
+**FeatureInfo format:** The app only reads GeoJSON. Without `format`, it picks `application/json` from the
+capabilities (GeoServer), otherwise `application/geo+json` (ArcGIS, MapServer). If the service offers neither or the
+layer is not `queryable`, it is not queried on map click. A fixed `format` saves loading the capabilities
+(about 1 MB for DWD), which is why it is set for the DWD layers in the configuration.
 
-**Attribution:** Nur `attribution` aus der Konfiguration. `@open-pioneer/map` würde sonst `AccessConstraints` oder
-`Fees` des Dienstes als Quellenangabe zeigen (bei DWD eine nackte URL).
+**Attribution:** Only `attribution` from the configuration. Otherwise `@open-pioneer/map` would show the service's
+`AccessConstraints` or `Fees` as source attribution (a bare URL for DWD).
 
-Beispiel WMS-Layer:
+Example WMS layer:
 
 ```json
 {
@@ -160,174 +166,184 @@ Beispiel WMS-Layer:
 }
 ```
 
-### Mehrsprachige Texte
+### Multilingual texts
 
-`name`, `description` und `wms.featureInfo.fields[].label` sind entweder ein einfacher Text (gilt für alle Sprachen)
-oder ein Objekt mit einem Text pro Sprache:
+`name`, `description` and `wms.featureInfo.fields[].label` are either a plain text (applies to all languages)
+or an object with one text per language:
 
 ```json
 "name": { "de": "Lufttemperatur 2 m (DWD ICON)", "en": "Air temperature 2 m (DWD ICON)" }
 ```
 
-Fehlt die aktuelle Sprache, wird Englisch genommen, sonst der erste Eintrag (`dataLayers/config/localizedText.ts`).
+If the current language is missing, English is used, otherwise the first entry (`dataLayers/config/localizedText.ts`).
 
-### Layertypen
+### Layer types
 
-- **`group`** → `GroupLayer` aus `@open-pioneer/map`, Kinder werden rekursiv erzeugt.
-- **`wms`** → `WMSLayer` aus `@open-pioneer/map`. Bei genau einem WMS-Layer wird der Sublayer im TOC ausgeblendet.
-- **`wfs`** → `SimpleLayer` + OL-`VectorLayer` (`dataLayers/ows/wfsLayer.ts`). Geladen wird nur der Kartenausschnitt
-  (`bbox`-Strategie) in einem projizierten KBS (EPSG:3857, sonst 25832/25833), als GeoJSON oder GML. Style je
-  Geometrietyp in der Farbe des Layers (`dataLayers/ows/wfsStyle.ts`). Hintergrund: `DashboardDecisions.md`, Abschnitt 19.
-- **`sta-datastream`** → Punktlayer (`SimpleLayer` + OL-`VectorLayer`) an der Location des Things.
-  Das Feature trägt u. a. `observationsUrl`, `unit` und `name` (siehe `StaDatastreamProperties` in `dataLayers/sta/sta.ts`).
-  `unit` ist die konfigurierte Einheit des Sensors, sonst die aus der STA.
-  `healthCheck` auf den Endpunkt markiert den Layer im TOC als nicht verfügbar, wenn der Dienst nicht antwortet.
+- **`group`** → `GroupLayer` from `@open-pioneer/map`, children are created recursively.
+- **`wms`** → `WMSLayer` from `@open-pioneer/map`. With exactly one WMS layer, the sublayer is hidden in the TOC.
+- **`wfs`** → `SimpleLayer` + OL `VectorLayer` (`dataLayers/ows/wfsLayer.ts`). Only the map extent is loaded
+  (`bbox` strategy) in a projected CRS (EPSG:3857, otherwise 25832/25833), as GeoJSON or GML. Style per
+  geometry type in the layer's color (`dataLayers/ows/wfsStyle.ts`). Background: `DashboardDecisions.md`, section 19.
+- **`sta-datastream`** → point layer (`SimpleLayer` + OL `VectorLayer`) at the location of the thing.
+  Among other things, the feature carries `observationsUrl`, `unit` and `name` (see `StaDatastreamProperties` in
+  `dataLayers/sta/sta.ts`).
+  `unit` is the sensor's configured unit, otherwise the one from the STA.
+  `healthCheck` on the endpoint marks the layer in the TOC as unavailable if the service does not respond.
 
-Jeder erzeugte Layer hat die Original-Konfiguration im Attribut `dataLayer` (`layer.attributes.dataLayer`).
-Darüber findet der Kartenklick z. B. die `featureInfo`-Einstellungen eines WMS-Layers.
+Every created layer has the original configuration in the attribute `dataLayer` (`layer.attributes.dataLayer`).
+Through it, the map click finds e.g. the `featureInfo` settings of a WMS layer.
 
-### Neuen Layertyp hinzufügen
+### Adding a new layer type
 
-1. In `dataLayers/config/types.ts` ein neues Interface mit eigenem `type` anlegen, in die Union `DataLayerConfig` aufnehmen
-   und in `validateEntry` (`dataLayers/config/loadDataLayers.ts`) die typspezifischen Felder prüfen.
-2. Die Erzeugung des Layers in eine eigene Datei im Ordner des Typs legen (z. B. `ows/wmsLayer.ts`, `sta/staLayer.ts`).
-   Gemeinsame Teile (`commonOptions`, `getDataLayerConfig`, Titel aus Capabilities) kommen aus `dataLayerBase.ts`.
-   In `dataLayers/createDataLayer.ts` einen `case` für den neuen Typ ergänzen. TypeScript meldet fehlende Fälle.
-3. Test in `dataLayers/loadDataLayers.test.ts` erweitern und den Typ hier in der Doku eintragen.
+1. In `dataLayers/config/types.ts`, create a new interface with its own `type`, add it to the union `DataLayerConfig`
+   and check the type-specific fields in `validateEntry` (`dataLayers/config/loadDataLayers.ts`).
+2. Put the creation of the layer into its own file in the type's folder (e.g. `ows/wmsLayer.ts`, `sta/staLayer.ts`).
+   Shared parts (`commonOptions`, `getDataLayerConfig`, title from capabilities) come from `dataLayerBase.ts`.
+   Add a `case` for the new type in `dataLayers/createDataLayer.ts`. TypeScript reports missing cases.
+3. Extend the test in `dataLayers/loadDataLayers.test.ts` and add the type to this documentation.
 
-## Kartenklick, Popup und Diagramme
+## Map click, popup and charts
 
-`mapClick/useMapClick.tsx` hört auf Klicks in die Karte:
+`mapClick/useMapClick.tsx` listens for clicks on the map:
 
-1. **Sensorpunkt getroffen** (5 px Toleranz, Mauszeiger wird zur Hand): Der Datastream wird ausgewählt und das
-   Analyse-Panel (`charts/AnalysisPanel.tsx`) geöffnet. Der Zustand (`datastream`, `timeFilter`, `panelOpen`) liegt in `DashboardApp.tsx`.
-2. **Sonst**: Die Features sichtbarer WFS-Layer an der Stelle liefern ihre Attribute direkt (`getWfsFeatureInfo`,
-   ohne Anfrage) und werden hervorgehoben. Alle sichtbaren WMS-Layer mit aktiver FeatureInfo werden per
-   `GetFeatureInfo` (GeoJSON) abgefragt (`mapClick/featureInfo.ts`). Das Ergebnis erscheint als Popup (`map.overlays`)
-   an der Klickposition, WFS vor WMS.
-   Zahlen werden lokalisiert, ISO-Zeitstempel in Ortszeit angezeigt. Darunter steht die **Legende** des Layers
-   (`mapClick/WmsLegend.tsx`, URLs in `mapClick/legendUrls.ts`). Wird das Popup zu hoch, scrollt nur der Inhalt; Titel und ✕ bleiben sichtbar.
-   An der Klickposition erscheint ein **Marker** (`mapClick/clickMarker.ts`, über `map.highlights`). Das Popup steht
-   **neben** dem Marker, mit der Oberkante unterhalb des Klicks (am rechten Rand links davon). Passt es unten nicht hin,
-   wird es so weit hochgeschoben, dass es zwischen Analyse-Panel und Kartenoberkante ganz sichtbar ist
-   (`mapClick/popupPlacement.ts`). Die Platzierung wird neu berechnet, wenn sich die Größe von Popup oder Karte ändert.
+1. **Sensor point hit** (5 px tolerance, the mouse pointer becomes a hand): the datastream is selected and the
+   analysis panel (`charts/AnalysisPanel.tsx`) is opened. The state (`datastream`, `timeFilter`, `panelOpen`) lives in
+   `DashboardApp.tsx`.
+2. **Otherwise**: the features of visible WFS layers at the location provide their attributes directly
+   (`getWfsFeatureInfo`, without a request) and are highlighted. All visible WMS layers with active FeatureInfo are
+   queried via `GetFeatureInfo` (GeoJSON) (`mapClick/featureInfo.ts`). The result appears as a popup (`map.overlays`)
+   at the click position, WFS before WMS.
+   Numbers are localized, ISO timestamps are shown in local time. Below them is the layer's **legend**
+   (`mapClick/WmsLegend.tsx`, URLs in `mapClick/legendUrls.ts`). If the popup gets too tall, only the content scrolls;
+   title and ✕ stay visible.
+   A **marker** appears at the click position (`mapClick/clickMarker.ts`, via `map.highlights`). The popup is placed
+   **next to** the marker, with its top edge below the click (at the right edge, to the left of it). If it does not fit
+   below, it is pushed up far enough to be fully visible between the analysis panel and the top edge of the map
+   (`mapClick/popupPlacement.ts`). The placement is recalculated when the size of the popup or the map changes.
 
-**Legenden-URL:** Bevorzugt aus den Capabilities (`sublayer.legend`), sonst eine Standard-`GetLegendGraphic`-Anfrage.
-Hintergrund: `@open-pioneer/map` 1.5.0 fragt die Capabilities fest mit `LANGUAGE=ger` an, der DWD-GeoServer antwortet
-darauf mit einem Fehler, und die Karte bekommt dann keine Legenden-URL. Mit `wms.legend.params` lässt sich die Legende
-serverseitig kompakt zeichnen (GeoServer: `LEGEND_OPTIONS`, `WIDTH`, `HEIGHT`). Das ist schärfer als ein im Browser
-verkleinertes Bild.
+**Legend URL:** Preferably from the capabilities (`sublayer.legend`), otherwise a standard `GetLegendGraphic` request.
+Background: `@open-pioneer/map` 1.5.0 always requests the capabilities with `LANGUAGE=ger`, the DWD GeoServer responds
+to that with an error, and the map then gets no legend URL. With `wms.legend.params`, the legend can be drawn compactly
+on the server side (GeoServer: `LEGEND_OPTIONS`, `WIDTH`, `HEIGHT`). That is sharper than an image scaled down in the
+browser.
 
-Im Analyse-Panel (`charts/AnalysisPanel.tsx`):
+In the analysis panel (`charts/AnalysisPanel.tsx`):
 
-- **Zeitfilter** (`charts/TimeRangeFilter.tsx`): Presets 24 Stunden, 7 Tage (Default), 30 Tage oder eigener Zeitraum von/bis.
-  Ungültige Eingaben (von ≥ bis) werden markiert, der letzte gültige Zeitraum bleibt aktiv.
-- **Diagramm** (`charts/DatastreamChart.tsx`, `charts/SeriesChart.tsx`): lädt die Messwerte des Datastreams im
-  Zeitraum (`fetchObservations` in `dataLayers/sta/sta.ts`, folgt `@iot.nextLink`, max. 20.000 Werte) und zeigt sie als
-  Liniendiagramm mit Tooltip und Fadenkreuz. Lücken in den Daten bleiben als Lücke sichtbar. Darüber stehen
-  Anzahl, Min, Max und letzter Wert.
-- **Sensor nicht verfügbar**: Scheitert das Laden des Datastreams (Fehler, Zeitlimit 30 s, kein Standort), setzt
-  `createStaDatastreamLayer` (`dataLayers/sta/staLayer.ts`) die Quelle auf `error`. Daraus wird `layer.loadState`: Das TOC markiert den Layer, das
-  Panel zeigt über `useSensorLoadFailed` (`dataLayers/sta/useStaSensors.ts`) einen roten Hinweis statt des Spinners.
-  Annahmen der STA-Hooks (ein Layer, ein Datastream) stehen in `DashboardDecisions.md`, Abschnitt 8.
-- **Weitere Sensoren am Standort** (`charts/SensorTiles.tsx`): `SensorChartView` holt über `useColocatedSensors`
-  (`dataLayers/sta/useStaSensors.ts`) die anderen Sensoren am Standort des gewählten Sensors. Der Hook hört auf alle
-  STA-Quellen, die Kacheln erscheinen also, sobald die Datastreams geladen sind. Gruppiert wird nach
-  `VITE_SENSOR_GROUPING` (`location` = Standard, `thing`, `location-or-thing`; `dataLayers/sta/colocation.ts`) und
-  `VITE_SENSOR_GROUPING_RADIUS` (Meter, Standard 1), dafür tragen die Datastream-Properties am Feature (`getDatastreamProperties`) `position` und `thingId`. Jede Kachel lädt den neuesten Wert (`fetchLatestObservation`),
-  ein Klick ruft das `onChange` des Dropdowns auf.
-- **Messgrößenvergleich** (`charts/PropertyComparisonView.tsx`): dritter Tab. `useObservedProperties`
-  (`dataLayers/sta/useStaSensors.ts`) liest die Keys `observedProperty` aus der Konfiguration der STA-Layer und
-  liefert die Messgrößen mit mindestens zwei Sensoren (`observedPropertyGroups` in
-  `dataLayers/sta/observedProperties.ts`). Der Name im Dropdown kommt aus den i18n-Dateien
-  (`observedProperty.<key>`), ohne Übersetzung steht dort der Key. `useSeriesObservations` lädt die Messwerte je
-  Sensor einzeln, `SeriesChart` zeichnet sie als Linien in ein Diagramm (in den Stationsfarben, s. u.). Die Sensoren stehen als Kacheln daneben (`SensorTiles` mit `hidden`): Ein Klick blendet
-  eine Reihe aus oder ein. Messgröße und ausgeblendete Sensoren liegen in `AnalysisSelection.property`
+- **Time filter** (`charts/TimeRangeFilter.tsx`): presets 24 hours, 7 days (default), 30 days or a custom range
+  from/to. Invalid input (from ≥ to) is marked, the last valid range stays active.
+- **Chart** (`charts/DatastreamChart.tsx`, `charts/SeriesChart.tsx`): loads the datastream's measurements in the
+  range (`fetchObservations` in `dataLayers/sta/sta.ts`, follows `@iot.nextLink`, max. 20,000 values) and shows them as
+  a line chart with tooltip and crosshair. Gaps in the data remain visible as gaps. Above it are
+  count, min, max and latest value.
+- **Sensor unavailable**: if loading the datastream fails (error, 30 s timeout, no location),
+  `createStaDatastreamLayer` (`dataLayers/sta/staLayer.ts`) sets the source to `error`. This becomes `layer.loadState`:
+  the TOC marks the layer, the panel shows a red notice instead of the spinner via `useSensorLoadFailed`
+  (`dataLayers/sta/useStaSensors.ts`).
+  Assumptions of the STA hooks (one layer, one datastream) are in `DashboardDecisions.md`, section 8.
+- **Other sensors at the location** (`charts/SensorTiles.tsx`): `SensorChartView` uses `useColocatedSensors`
+  (`dataLayers/sta/useStaSensors.ts`) to get the other sensors at the location of the selected sensor. The hook listens
+  to all STA sources, so the tiles appear as soon as the datastreams are loaded. Grouping follows
+  `VITE_SENSOR_GROUPING` (`location` = default, `thing`, `location-or-thing`; `dataLayers/sta/colocation.ts`) and
+  `VITE_SENSOR_GROUPING_RADIUS` (meters, default 1); for this, the datastream properties on the feature
+  (`getDatastreamProperties`) carry `position` and `thingId`. Each tile loads the latest value
+  (`fetchLatestObservation`), a click calls the dropdown's `onChange`.
+- **Observed property comparison** (`charts/PropertyComparisonView.tsx`): third tab. `useObservedProperties`
+  (`dataLayers/sta/useStaSensors.ts`) reads the `observedProperty` keys from the configuration of the STA layers and
+  returns the observed properties with at least two sensors (`observedPropertyGroups` in
+  `dataLayers/sta/observedProperties.ts`). The name in the dropdown comes from the i18n files
+  (`observedProperty.<key>`); without a translation, the key is shown. `useSeriesObservations` loads the measurements
+  for each sensor separately, `SeriesChart` draws them as lines in one chart (in the station colors, see below). The
+  sensors are shown as tiles next to it (`SensorTiles` with `hidden`): a click hides or shows
+  a series. The observed property and the hidden sensors are kept in `AnalysisSelection.property`
   (`charts/analysisSelection.ts`).
-- **Stationsfarben**: `assignStations` (`dataLayers/sta/colocation.ts`) teilt die geladenen Sensoren in Stationen
-  ein (gleiche Gruppierung wie die Kacheln, ein einzelner Sensor ist auch eine Station), `stationColor`
-  (`dataLayers/sta/stationColors.ts`) gibt jeder Station eine von 20 Farben. `useStationColors`
-  (`dataLayers/sta/useStaSensors.ts`) liefert die Farbe je Layer-ID. Genutzt von: `StationPointStyles` (setzt den
-  Stil der Sensorpunkte auf der Karte, eingehängt in `DashboardApp.tsx`), `StationDot` im TOC
-  (`toc/layerItemContent.tsx`), dem Rand der Kacheln und allen Diagrammen (Farbe je Reihe in `SeriesChart`, `color`-Prop von
-  `BarChart`, `BoxPlotChart`, `WindRoseChart`).
-- **Chart.js statt recharts**: Trails rendert die App im Shadow DOM. recharts sucht Portale über `document`
-  und musste dafür gepatcht werden (siehe alter Branch `origin/test/charts`). Chart.js zeichnet auf Canvas und braucht das nicht.
-- Einheiten aus der STA werden für die Anzeige übersetzt (`degC` → `°C`, siehe `displayUnit` in `dataLayers/sta/sta.ts`).
-  Eine in der Konfiguration angegebene `unit` wird unverändert angezeigt und hat Vorrang.
+- **Station colors**: `assignStations` (`dataLayers/sta/colocation.ts`) divides the loaded sensors into stations
+  (same grouping as the tiles, a single sensor is also a station), `stationColor`
+  (`dataLayers/sta/stationColors.ts`) gives each station one of 20 colors. `useStationColors`
+  (`dataLayers/sta/useStaSensors.ts`) returns the color per layer ID. Used by: `StationPointStyles` (sets the
+  style of the sensor points on the map, mounted in `DashboardApp.tsx`), `StationDot` in the TOC
+  (`toc/layerItemContent.tsx`), the border of the tiles and all charts (color per series in `SeriesChart`, `color` prop
+  of `BarChart`, `BoxPlotChart`, `WindRoseChart`).
+- **Chart.js instead of recharts**: Trails renders the app in the Shadow DOM. recharts looks up portals via `document`
+  and had to be patched for that (see old branch `origin/test/charts`). Chart.js draws on canvas and does not need
+  this.
+- Units from the STA are translated for display (`degC` → `°C`, see `displayUnit` in `dataLayers/sta/sta.ts`).
+  A `unit` given in the configuration is displayed unchanged and takes precedence.
 
-## TOC und Transparenz-Slider
+## TOC and transparency slider
 
-Der TOC ist das unveränderte `@open-pioneer/toc`. Eigene Inhalte pro Layer kommen über seine öffentliche API dazu
+The TOC is the unmodified `@open-pioneer/toc`. Custom content per layer is added via its public API
 (`toc/TocItemExtensions.tsx`):
 
-- `Toc` meldet in `onReady` eine `TocApi`. `TocItemExtensions` liest daraus reaktiv alle Einträge (`api.getItems()`)
-  und deren DOM-Element (`TocItem.htmlElement`).
-- Für jeden Layer ruft es `layerItemContent(layer)` auf (`toc/layerItemContent.tsx`). Kommt Inhalt zurück, wird ein
-  `<div class="toc-layer-item-extra">` ans Ende des Eintrags gehängt und der Inhalt per `createPortal` hineingerendert.
-- Das Dashboard liefert so für jeden WMS- und WFS-Layer einen **Transparenz-Slider** unter dem Titel
-  (0 % = deckend, Startwert aus `opacity` im JSON). Bei WFS-Layern steht davor ein **Farbfeld** mit der Farbe der Features.
-- Hintergrund und Risiken: [DashboardDecisions.md](./DashboardDecisions.md), Abschnitt 9.
-- Temporäre Layer (s. u.) bekommen neben dem Slider einen **Entfernen-Button**.
-- Lädt das Kartenbild eines WMS-Layers oder lädt ein WFS-Layer keine Features (Ausnahme, HTTP-Fehler), steht über dem
-  Slider ein **Warnhinweis**, bis das Laden wieder klappt (`toc/LayerLoadWarning.tsx`). Hat ein WFS-Layer die
-  Höchstzahl Features erreicht, steht dort „Nicht alle Features geladen“.
-- **TOC-Panel** (`toc/TocPanel.tsx`): enthält Überschrift, Sprachumschalter, „WMS hinzufügen“, „WFS hinzufügen“ und `Toc`. Es lässt sich nach links
-  einklappen, dann bleibt oben links nur ein Ebenen-Button. Das Panel liegt bewusst **nicht** in einer `MapAnchor`,
-  sondern als eigene Ebene über der Karte: `MapAnchor` schneidet Inhalte ab (`overflow: hidden`) und fängt in ihrem
-  Bereich Kartenklicks ab. Der Rahmen hat `pointer-events: none`, nur Panel und Button reagieren auf Klicks.
+- `Toc` reports a `TocApi` in `onReady`. `TocItemExtensions` reactively reads all entries from it (`api.getItems()`)
+  and their DOM element (`TocItem.htmlElement`).
+- For each layer it calls `layerItemContent(layer)` (`toc/layerItemContent.tsx`). If content is returned, a
+  `<div class="toc-layer-item-extra">` is appended to the end of the entry and the content is rendered into it via
+  `createPortal`.
+- This way the dashboard provides a **transparency slider** below the title for every WMS and WFS layer
+  (0 % = opaque, initial value from `opacity` in the JSON). For WFS layers, a **color swatch** with the color of the
+  features is placed in front of it.
+- Background and risks: [DashboardDecisions.md](./DashboardDecisions.md), section 9.
+- Temporary layers (see below) get a **remove button** next to the slider.
+- If the map image of a WMS layer fails to load or a WFS layer loads no features (exception, HTTP error), a
+  **warning** is shown above the slider until loading works again (`toc/LayerLoadWarning.tsx`). If a WFS layer has
+  reached the maximum number of features, it shows "Nicht alle Features geladen".
+- **TOC panel** (`toc/TocPanel.tsx`): contains the heading, language switcher, "WMS hinzufügen", "WFS hinzufügen" and
+  `Toc`. It can be collapsed to the left; then only a layers button remains in the top left. The panel is deliberately
+  **not** placed in a `MapAnchor`, but as a separate layer above the map: `MapAnchor` clips content
+  (`overflow: hidden`) and intercepts map clicks in its area. The frame has `pointer-events: none`; only the panel and
+  the button respond to clicks.
 
-## Eigene WMS und WFS (temporär)
+## Custom WMS and WFS (temporary)
 
-Unter dem TOC-Titel öffnen „WMS hinzufügen“ und „WFS hinzufügen“ je ein Formular. Beide nutzen dieselben Bausteine:
-Formular `toc/AddServiceLayer.tsx`, Dienst laden in `toc/useServiceCapabilities.ts`, Suche in `toc/LayerSearch.tsx`
-(Rangfolge in `searchLayers`), Session-Gruppe in `dataLayers/userLayers.ts`. Was je Diensttyp anders ist
-(Capabilities, Einträge, Prüfung, Layer-Konfiguration), steht in `toc/userServices.ts` (`WMS_SERVICE`, `WFS_SERVICE`).
-Gemeinsame Texte liegen unter `addService.*`, typspezifische unter `addWms.*` bzw. `addWfs.*`. Gespeichert wird nichts,
-nach dem Neuladen sind die Layer weg.
+Below the TOC title, "WMS hinzufügen" and "WFS hinzufügen" each open a form. Both use the same building blocks:
+form `toc/AddServiceLayer.tsx`, loading the service in `toc/useServiceCapabilities.ts`, search in `toc/LayerSearch.tsx`
+(ranking in `searchLayers`), session group in `dataLayers/userLayers.ts`. What differs per service type
+(capabilities, entries, validation, layer configuration) is in `toc/userServices.ts` (`WMS_SERVICE`, `WFS_SERVICE`).
+Shared texts are under `addService.*`, type-specific ones under `addWms.*` or `addWfs.*`. Nothing is saved;
+after a reload the layers are gone.
 
-1. **URL des Dienstes** eingeben und laden. Eine eingefügte GetCapabilities-URL wird bereinigt
-   (`SERVICE`, `REQUEST`, `VERSION`, `LANGUAGE`, `TYPENAME(S)` entfernt, andere Parameter wie `map=` bleiben;
-   `normalizeServiceEndpoint` in `dataLayers/ows/owsService.ts`). `fetchWmsCapabilities` lädt die Capabilities 1.3.0
-   einmal pro Dienst und Sitzung, `fetchWfsCapabilities` mit
-   `ACCEPTVERSIONS=2.0.0,1.1.0` (der Dienst antwortet mit der neuesten Version, die er kann).
-2. **Layer wählen:** Ohne Eingabe stehen alle Layer in einer scrollbaren Liste. Das Suchfeld filtert sie
-   (`searchLayers`): exakter Name zuerst, dann Treffer im Titel, dann im Namen. Pfeiltasten und Enter, Klick auf einen
-   Eintrag fügt ihn hinzu.
-3. **Hinzufügen** (WMS) baut eine normale `WmsDataLayerConfig` mit `temporary: true`: Titel aus den Capabilities, Abstract
-   und Anbieter/Nutzungsbedingungen/Gebühren als Beschreibung (Info-Icon im TOC), FeatureInfo-Format wie oben oder
-   aus. Abgelehnt werden Layer ohne EPSG:3857, doppelte Layer und Layer, für die der Dienst kein Bild liefert
-   (Probe-GetMap mit 1 × 1 Pixel, `probeWmsLayer`; z. B. die benannten Ordnergruppen des DWD).
+1. Enter the **service URL** and load it. A pasted GetCapabilities URL is cleaned up
+   (`SERVICE`, `REQUEST`, `VERSION`, `LANGUAGE`, `TYPENAME(S)` removed, other parameters such as `map=` are kept;
+   `normalizeServiceEndpoint` in `dataLayers/ows/owsService.ts`). `fetchWmsCapabilities` loads the capabilities 1.3.0
+   once per service and session, `fetchWfsCapabilities` with
+   `ACCEPTVERSIONS=2.0.0,1.1.0` (the service responds with the newest version it supports).
+2. **Choose a layer:** without input, all layers are shown in a scrollable list. The search field filters them
+   (`searchLayers`): exact name first, then matches in the title, then in the name. Arrow keys and Enter; clicking an
+   entry adds it.
+3. **"Hinzufügen"** (WMS) builds a normal `WmsDataLayerConfig` with `temporary: true`: title from the capabilities,
+   abstract and provider/terms of use/fees as the description (info icon in the TOC), FeatureInfo format as above or
+   off. Rejected are layers without EPSG:3857, duplicate layers and layers for which the service delivers no image
+   (probe GetMap with 1 × 1 pixel, `probeWmsLayer`; e.g. the named folder groups of the DWD).
 
-Die Layer liegen in der Gruppe **„Eigene WMS“** (`user-wms`) direkt unter der Gruppe mit den konfigurierten
-WMS-Layern (`dataLayers/userLayers.ts`). Gruppen in `@open-pioneer/map` haben feste Kinder, deshalb wird die Gruppe
-bei jedem Hinzufügen oder Entfernen neu gebaut; Sichtbarkeit und Deckkraft der Layer werden übernommen. Der neueste
-Layer steht oben. Ohne eigene Layer verschwindet die Gruppe. Die UI erreicht die `LayerFactory` über
-`useService("map.LayerFactory")` (in `build.config.mjs` unter `ui.references`).
+The layers are placed in the group **"Eigene WMS"** (`user-wms`) directly below the group with the configured
+WMS layers (`dataLayers/userLayers.ts`). Groups in `@open-pioneer/map` have fixed children, so the group is rebuilt
+on every add or remove; visibility and opacity of the layers are carried over. The newest
+layer is on top. Without custom layers, the group disappears. The UI reaches the `LayerFactory` via
+`useService("map.LayerFactory")` (in `build.config.mjs` under `ui.references`).
 
-**WFS:** „Hinzufügen“ baut eine `WfsDataLayerConfig` mit `temporary: true`: Titel und Beschreibung wie beim WMS, die
-nächste Farbe der Palette. Abgelehnt werden doppelte Feature-Typen, Feature-Typen ohne GeoJSON- und GML-Ausgabe und
-solche, für die der Dienst kein Feature liefert (Probe-GetFeature mit einem Feature, `probeWfsFeatureType`). Die
-Layer liegen in der Gruppe **„Eigene WFS“** (`user-wfs`) direkt über dem obersten Layer mit WMS-Layern, also über den
-Kartenbildern und unter den Sensoren.
+**WFS:** "Hinzufügen" builds a `WfsDataLayerConfig` with `temporary: true`: title and description as for WMS, the
+next color of the palette. Rejected are duplicate feature types, feature types without GeoJSON and GML output and
+those for which the service delivers no feature (probe GetFeature with one feature, `probeWfsFeatureType`). The
+layers are placed in the group **"Eigene WFS"** (`user-wfs`) directly above the topmost layer with WMS layers, i.e.
+above the map images and below the sensors.
 
-Für temporäre Layer lädt `WMSLayer` keine Capabilities (`fetchCapabilities: false`), die App hat sie schon. Die
-Legende kommt dann aus der `LegendURL` der Capabilities, sonst per GetLegendGraphic. Legendenbilder, die nicht laden,
-werden ausgeblendet.
+For temporary layers, `WMSLayer` does not load capabilities (`fetchCapabilities: false`); the app already has them.
+The legend then comes from the `LegendURL` of the capabilities, otherwise via GetLegendGraphic. Legend images that do
+not load are hidden.
 
-## Proxy für Dienste ohne CORS
+## Proxy for services without CORS
 
-Der Browser gibt einem Skript die Antwort eines fremden Servers nur, wenn dieser `Access-Control-Allow-Origin`
-sendet. `@open-pioneer/map` lädt WMS-Bilder und Capabilities per `fetch`, die App ebenso FeatureInfo. Ohne den Header
-bleibt der Layer leer. Für solche Dienste fragt der Browser beim Server des Dashboards an (gleiche Herkunft, keine
-CORS-Prüfung), der die Anfrage an den Dienst weiterleitet.
+The browser only gives a script the response of a foreign server if that server sends `Access-Control-Allow-Origin`.
+`@open-pioneer/map` loads WMS images and capabilities via `fetch`, and so does the app for FeatureInfo. Without the
+header, the layer stays empty. For such services, the browser sends the request to the dashboard's server (same
+origin, no CORS check), which forwards the request to the service.
 
-- **Konfiguration:** `endpoint` relativ zur App, z. B. `./proxy/leverkusen/GCGisService`.
-- **Lokal:** `pnpm dev` und `pnpm preview` leiten `/proxy/leverkusen/` per Vite weiter (`SERVICE_PROXIES` in
+- **Configuration:** `endpoint` relative to the app, e.g. `./proxy/leverkusen/GCGisService`.
+- **Local:** `pnpm dev` and `pnpm preview` forward `/proxy/leverkusen/` via Vite (`SERVICE_PROXIES` in
   `vite.config.ts`).
-- **Produktiv:** Der Webserver, der das Dashboard ausliefert, braucht denselben Pfad relativ zur App. Im
-  Docker-Image übernimmt das `nginx_default.conf` (Dashboard unter `/umwelt-monitoring/`, siehe
-  [Deployment](#deployment)):
+- **Production:** the web server that delivers the dashboard needs the same path relative to the app. In the
+  Docker image, `nginx_default.conf` handles this (dashboard under `/umwelt-monitoring/`, pitfalls see
+  [Deployment.md](./Deployment.md#proxy-for-services-without-cors)):
 
 ```nginx
 location = /umwelt-monitoring/proxy/leverkusen/GCGisService {
@@ -336,70 +352,60 @@ location = /umwelt-monitoring/proxy/leverkusen/GCGisService {
 }
 ```
 
-- Das Ziel steht fest in der Konfiguration. Nie die Ziel-URL aus der Anfrage übernehmen, sonst ist es ein offener
-  Proxy.
-- Produktiv nur die Endpunkte freigeben, die `dataLayers.json` nutzt (exakte `location =`), nicht den ganzen Host.
-  Ein neuer Endpunkt braucht eine eigene `location` in `nginx_default.conf`.
-- Liegt vor dem nginx noch ein Load Balancer oder Ingress, muss er den Pfad durchlassen.
-- Eigene WMS (temporär) gehen nicht über den Proxy, Dienste ohne CORS lassen sich dort weiterhin nicht hinzufügen.
+- The target is fixed in the configuration. Never take the target URL from the request, otherwise it is an open
+  proxy.
+- In production, only allow the endpoints that `dataLayers.json` uses (exact `location =`), not the whole host.
+  A new endpoint needs its own `location` in `nginx_default.conf`.
+- If there is a load balancer or ingress in front of nginx, it must let the path through.
+- Custom WMS (temporary) do not go through the proxy; services without CORS still cannot be added there.
 
 ## Deployment
 
-Das Dashboard läuft unter `https://infotool.cosite.thk.52north.org/umwelt-monitoring/` hinter dem Traefik des
-InfoTool-Deployments (Compose-Projekt `cosite`). InfoTool stellt Traefik, TLS (Let's Encrypt) und das Netzwerk
-`cosite_default` bereit, alles Übrige steht in diesem Repo:
+See [Deployment.md](./Deployment.md).
 
-- `Dockerfile`: baut mit Node 24 (`pnpm build`, relative Basis `./` aus `vite.config.ts`) und kopiert `dist/www`
-  nach `/usr/share/nginx/html/umwelt-monitoring`. `.dockerignore` hält `node_modules`, `dist` und `.git` aus dem
-  Build-Kontext.
-- `nginx_default.conf`: liefert unter `/umwelt-monitoring/` aus, leitet `/umwelt-monitoring` auf den Pfad mit Slash
-  um (die App lädt ihre Dateien relativ) und enthält den Proxy für Dienste ohne CORS.
-- `compose.yml`: hängt sich als `external` in `cosite_default` ein. Traefik-Labels routen
-  ``Host(`infotool.cosite.thk.52north.org`) && PathPrefix(`/umwelt-monitoring`)`` über `websecure` an Port 8080.
-  Die Regel ist länger als die des CMS auf demselben Host (`PathPrefix(/)`) und gewinnt deshalb.
+## Language (i18n)
 
-Der Pfad `/umwelt-monitoring` steht an drei Stellen: COPY-Ziel im `Dockerfile`, `nginx_default.conf` und
-Router-Regel in `compose.yml`.
-
-Start auf dem Server, nachdem InfoTool läuft: `docker compose up -d --build`.
-Lokal ohne Traefik: `docker build -t umwelt-monitoring .` und `docker run --rm -p 8081:8080 umwelt-monitoring`,
-dann `http://localhost:8081/umwelt-monitoring/`.
-
-## Sprache (i18n)
-
-- Unterstützte Sprachen: `en`, `de` (`build.config.mjs` → `i18n`, Texte in `i18n/*.yaml`; der TOC bringt eigene Texte mit).
-- **Standardsprache Englisch**, unabhängig von der Browsersprache (`config.locale` in `app.ts`).
-- **Live-Wechsel ohne Neustart**: `advanced.enableLiveLocaleChanges` in `app.ts`. Kartenausschnitt, Auswahl und Zeitfilter bleiben erhalten.
-- **Sprachumschalter EN | DE** neben „Ebenen“ im TOC (`toc/LanguageSelector.tsx`, Chakra `SegmentGroup`, nutzt `runtime.LocaleService`).
-- Layernamen aus dem JSON werden beim Start in der aktuellen Sprache erzeugt (`MainMapProvider` bekommt den
-  `LocaleService` injiziert) und bei jedem Wechsel per `useLocalizedDataLayers()` aktualisiert (`layer.setTitle`).
-- Popup- und Diagrammtitel lesen den Layernamen live aus der Karte (`dataLayers/useLayerTitle.ts`).
-- Daten vom Server (z. B. Datastream-Name aus der STA) werden nicht übersetzt und erscheinen klein neben dem Titel.
-- Grenze: Die nativen Datumsfelder im Zeitfilter formatieren nach der Browsersprache, nicht nach der App-Sprache.
+- Supported languages: `en`, `de` (`build.config.mjs` → `i18n`, texts in `i18n/*.yaml`; the TOC brings its own
+  texts).
+- **Default language English**, regardless of the browser language (`config.locale` in `app.ts`).
+- **Live switching without restart**: `advanced.enableLiveLocaleChanges` in `app.ts`. Map extent, selection and time
+  filter are preserved.
+- **Language switcher EN | DE** next to "Ebenen" in the TOC (`toc/LanguageSelector.tsx`, Chakra `SegmentGroup`, uses
+  `runtime.LocaleService`).
+- Layer names from the JSON are created in the current language at startup (`MainMapProvider` gets the
+  `LocaleService` injected) and updated on every switch via `useLocalizedDataLayers()` (`layer.setTitle`).
+- Popup and chart titles read the layer name live from the map (`dataLayers/useLayerTitle.ts`).
+- Data from the server (e.g. datastream name from the STA) is not translated and appears in small type next to the
+  title.
+- Limitation: the native date fields in the time filter format according to the browser language, not the app
+  language.
 
 ## Services
 
-- Klasse in `services.ts` exportieren und in `build.config.mjs` registrieren:
+- Export the class in `services.ts` and register it in `build.config.mjs`:
   `services: { MainMapProvider: { provides: ["map.MapConfigProvider"] } }`.
-- Abhängigkeiten zwischen Services: `references: { name: "interface.name" }` im Service-Eintrag.
-- Services aus React heraus nutzen: in `build.config.mjs` `ui: { references: ["interface.name"] }` eintragen
-  und in der Komponente `useService<T>("interface.name")` (aus `open-pioneer:react-hooks`) aufrufen.
+- Dependencies between services: `references: { name: "interface.name" }` in the service entry.
+- Using services from React: add `ui: { references: ["interface.name"] }` in `build.config.mjs`
+  and call `useService<T>("interface.name")` (from `open-pioneer:react-hooks`) in the component.
 
-## Karte
+## Map
 
-- `MainMapProvider` implementiert `MapConfigProvider` mit `mapId = MAP_ID` und liefert `initialView`, `projection`, `baseLayers` (und später `layers`).
-- In React: `useMapModel(MAP_ID)` → `<DefaultMapProvider map={map}>` → `<MapContainer>`; UI-Elemente auf der Karte per `<MapAnchor position="top-left" | ...>`.
-- Komponenten wie `<Toc />`, `<ZoomIn />` finden die Karte über den `DefaultMapProvider` automatisch.
+- `MainMapProvider` implements `MapConfigProvider` with `mapId = MAP_ID` and provides `initialView`, `projection`,
+  `baseLayers` (and later `layers`).
+- In React: `useMapModel(MAP_ID)` → `<DefaultMapProvider map={map}>` → `<MapContainer>`; UI elements on the map via
+  `<MapAnchor position="top-left" | ...>`.
+- Components such as `<Toc />`, `<ZoomIn />` find the map automatically via the `DefaultMapProvider`.
 
-## Lokale Pakete
+## Local packages
 
-- Aktuell gibt es keine lokalen Pakete unter `src/packages/`.
-- Neues Paket unter `src/packages/<name>/` mit eigener `package.json` (+ `build.config.mjs`, falls Services/i18n/Styles).
-- In der App einbinden: `"<name>": "workspace:*"` in der App-`package.json`, `pnpm install`.
-- `typedoc.config.mjs` dokumentiert alle Pakete unter `src/packages/**`. Der CI-Schritt `pnpm build-docs` ist entfernt,
-  solange es keine lokalen Pakete gibt; danach wieder in `.github/workflows/test-and-build.yml` aufnehmen.
+- There are currently no local packages under `src/packages/`.
+- New package under `src/packages/<name>/` with its own `package.json` (+ `build.config.mjs` if it has
+  services/i18n/styles).
+- Include it in the app: `"<name>": "workspace:*"` in the app's `package.json`, `pnpm install`.
+- `typedoc.config.mjs` documents all packages under `src/packages/**`. The CI step `pnpm build-docs` is removed
+  as long as there are no local packages; add it back to `.github/workflows/test-and-build.yml` afterwards.
 
 ## Tests
 
-- Vitest mit `happy-dom`, Setup in `src/testing/global-setup.ts`; Testdateien `*.test.ts(x)` neben dem Code.
-- Siehe [How to write tests](./tutorials/HowToWriteTests.md).
+- Vitest with `happy-dom`, setup in `src/testing/global-setup.ts`; test files `*.test.ts(x)` next to the code.
+- See [How to write tests](./tutorials/HowToWriteTests.md).
