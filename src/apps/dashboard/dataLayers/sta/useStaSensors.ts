@@ -76,7 +76,7 @@ function getSensorSource(map: MapModel, dataLayerId: string | undefined): Vector
 
 /**
  * The feature of a SensorThings layer. A layer holds exactly one datastream, further features would be ignored
- * (see `docs/DashboardDecisions.md`, section 8, "Annahmen der STA-Hooks").
+ * (see `docs/DashboardDecisions.md`, section 8, "Assumptions of the STA hooks").
  */
 function datastreamFeature(source: VectorSource<FeatureLike> | undefined): FeatureLike | undefined {
     return source?.getFeatures()[0];
@@ -109,7 +109,7 @@ export function useLoadedDatastreams(map: MapModel, dataLayerIds: string[]): Sta
     // The array is new on every render, the ids rarely change.
     const idList = dataLayerIds.join("\n");
     // Looked up once per ids, not reactively: the layers must already be in the map
-    // (see `docs/DashboardDecisions.md`, section 8, "Annahmen der STA-Hooks").
+    // (see `docs/DashboardDecisions.md`, section 8, "Assumptions of the STA hooks").
     const sources = useMemo(
         () =>
             idList

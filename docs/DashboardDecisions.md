@@ -1,752 +1,768 @@
-# Dashboard: Entstehung und Entscheidungen
+# Dashboard: History and decisions
 
-Dieses Dokument hält fest, **warum** das COSITE-Dashboard so gebaut ist, wie es ist: welche Entscheidungen
-getroffen wurden, welche Alternativen verworfen wurden und wo es Stolpersteine gab.
-**Wie** die Teile technisch verdrahtet sind, steht in [DashboardWiring.md](./DashboardWiring.md).
+This document records **why** the COSITE dashboard is built the way it is: which decisions were made, which
+alternatives were rejected and where the pitfalls were.
+**How** the parts are wired technically is described in [DashboardWiring.md](./DashboardWiring.md).
 
-Jedes Element folgt demselben Schema: **Was** · **Entscheidung** · **Warum** · **Verworfen** · **Stolpersteine** ·
-**Offen/Risiken** · **Commits**. Die Markierung zeigt, wie viel Abstimmung oder Fehlersuche nötig war:
-🟢 einfach · 🟡 mittel · 🔴 schwierig.
+Every element follows the same pattern: **What** · **Decision** · **Why** · **Rejected** · **Pitfalls** ·
+**Open/Risks** · **Commits**. The marker shows how much coordination or debugging was needed:
+🟢 easy · 🟡 medium · 🔴 hard.
 
-## Überblick
+## Overview
 
-- **Ziel:** Aus dem _Open Pioneer Trails Starter_ (Mischung aus How-to und Demonstrator) eine schlanke App machen:
-  Hintergrundkarte, TOC, Panel unten mit Diagrammen nach Klick in die Karte.
-- **Branches:** Entstanden auf `dashboard` (TOC-Fork) und `toc-native` (Original-TOC). `toc-native` wurde gewählt und
-  nach `main` gemergt. Repo: `Co-Site/cosite-dashboard`. Seitdem gilt feature → `dev` → `main`, siehe
-  [Abschnitt 16](#16-branches-und-arbeitsweise).
-- **Arbeitsweise:** Ein Commit pro abgeschlossenem Schritt, Push nur nach `origin` und nur auf Wunsch. Der Pre-Commit-Hook führt `tsc`, oxfmt und
-  oxlint aus, jeder Schritt muss also für sich bauen.
-- **Grundsatz Config vor STA (2026-10-30):** Ein SensorThings-Server kann falsch oder uneinheitlich konfiguriert sein
-  (z. B. `temperature` und `Temperature` als zwei ObservedProperties, `°C` und `degC` als Einheit). Die Config rückt
-  das gerade: Wo sie etwas angibt, gilt sie vor den Angaben der STA. Was für ein Feature konfiguriert sein muss und es
-  nicht ist, wird im Zweifel nicht angezeigt, statt auf die STA-Angaben zurückzufallen.
-- **Grundsatz Die Konfiguration ist verantwortlich (2026-11-13):** Im Betrieb liegt die Korrektheit bei dem, der
-  `dataLayers.json` pflegt: Sensoren sorgfältig benennen, den richtigen Key für die Messgröße vergeben, die passende
-  Einheit eintragen. Das ist gewollt, kein Versäumnis. Das Dashboard prüft nur die Form der Angaben (Typen), nicht
-  ihren Inhalt: Es gleicht Keys nicht untereinander ab, vergleicht Einheiten nicht und rechnet nicht um.
-- **Messgröße und Einheit am Sensor (2026-11-13):** Jeder `sta-datastream` kann `observedProperty` (Key, z. B.
-  `soil_temperature`) und `unit` tragen. Die Einheit gilt vor `unitOfMeasurement` der STA.
-    - **Verworfen:** eine zentrale Liste der Messgrößen (Key, Name de/en, Einheit), auf die Sensoren verweisen. Sie
-      hätte eine einheitliche Einheit je Messgröße erzwungen und einen übersetzten Namen geliefert, die Konfiguration
-      aber um eine zweite Stelle erweitert. Alles am Sensor ist einfacher zu lesen und zu pflegen.
-    - **Folgen:** Der Name der Messgröße kommt weiter aus der STA (Detailzeile im Sensor-Popup, nicht übersetzt). Für
-      die Auswahl im Vergleich nach Messgröße gibt es noch keinen übersetzten Namen (offen, siehe `TODO.md`). Der Key
-      wird bisher nur geprüft; gelesen wird er erst vom Vergleich, über die Konfiguration am Layer.
+- **Goal:** Turn the _Open Pioneer Trails Starter_ (a mix of how-to and demonstrator) into a lean app:
+  background map, TOC, a panel at the bottom with charts after a click on the map.
+- **Branches:** Developed on `dashboard` (TOC fork) and `toc-native` (original TOC). `toc-native` was chosen and
+  merged into `main`. Repo: `Co-Site/cosite-dashboard`. Since then the flow is feature → `dev` → `main`, see
+  [section 16](#16-branches-and-workflow).
+- **Way of working:** One commit per completed step, push only to `origin` and only on request. The pre-commit hook runs `tsc`, oxfmt and
+  oxlint, so every step has to build on its own.
+- **Principle: config before STA (2026-10-30):** A SensorThings server can be configured wrongly or inconsistently
+  (e.g. `temperature` and `Temperature` as two ObservedProperties, `°C` and `degC` as the unit). The config straightens
+  this out: where it specifies something, it takes precedence over what the STA says. Whatever must be configured for a
+  feature and is not, is left out when in doubt, instead of falling back to the STA values.
+- **Principle: the configuration is responsible (2026-11-13):** In operation, correctness lies with whoever maintains
+  `dataLayers.json`: name sensors carefully, assign the right key for the observed property, enter the matching
+  unit. This is intended, not an oversight. The dashboard only checks the shape of the values (types), not their
+  content: it does not cross-check keys, does not compare units and does not convert.
+- **Observed property and unit on the sensor (2026-11-13):** Every `sta-datastream` can carry `observedProperty` (key,
+  e.g. `soil_temperature`) and `unit`. The unit takes precedence over the STA's `unitOfMeasurement`.
+    - **Rejected:** a central list of observed properties (key, name de/en, unit) that sensors refer to. It would have
+      enforced a uniform unit per observed property and provided a translated name, but it would have added a second
+      place to the configuration. Keeping everything on the sensor is simpler to read and maintain.
+    - **Consequences:** The name of the observed property still comes from the STA (detail line in the sensor popup, not
+      translated). For the selection in the comparison by observed property there is no translated name yet (open, see
+      `TODO.md`). So far the key is only validated; it is first read by the comparison, via the configuration on the
+      layer.
 
-| #   | Element                                                                             | Schwierigkeit |
-| --- | ----------------------------------------------------------------------------------- | ------------- |
-| 1   | [Aufräumen des Starters](#1-aufräumen-des-starters)                                 | 🟢            |
-| 2   | [App-Grundgerüst](#2-app-grundgerüst)                                               | 🟢            |
-| 3   | [Build und Abhängigkeiten](#3-build-und-abhängigkeiten)                             | 🟡            |
-| 4   | [Datenlayer-Konfiguration (JSON)](#4-datenlayer-konfiguration-json)                 | 🟡            |
-| 5   | [Datenquellen](#5-datenquellen)                                                     | 🟡            |
-| 6   | [Kategorien im TOC](#6-kategorien-untergruppen-im-toc)                              | 🟢            |
-| 7   | [FeatureInfo-Popup](#7-featureinfo-popup)                                           | 🟡            |
-| 8   | [Diagramme und Zeitfilter](#8-diagramme-und-zeitfilter)                             | 🟡            |
-| 9   | [TOC-Erweiterung und Transparenz-Slider](#9-toc-erweiterung-und-transparenz-slider) | 🔴            |
-| 10  | [Mehrsprachigkeit](#10-mehrsprachigkeit)                                            | 🟡            |
-| 11  | [Einklappbares TOC-Panel](#11-einklappbares-toc-panel)                              | 🔴            |
-| 12  | [WMS-Legende](#12-wms-legende)                                                      | 🔴            |
-| 13  | [Popup-Platzierung und Marker](#13-popup-platzierung-und-marker)                    | 🟡            |
-| 14  | [Testen](#14-testen)                                                                | 🟢            |
-| 15  | [Offene Punkte](#15-offene-punkte-und-ideen)                                        |               |
-| 16  | [Branches und Arbeitsweise](#16-branches-und-arbeitsweise)                          |               |
-| 17  | [Eigene WMS-Layer (temporär)](#17-eigene-wms-layer-temporär)                        | 🔴            |
-| 18  | [Geoportal Leverkusen (Proxy)](#18-geoportal-leverkusen-proxy)                      | 🟡            |
-| 19  | [Eigene WFS-Layer](#19-eigene-wfs-layer)                                            | 🟡            |
+| #   | Element                                                                           | Difficulty |
+| --- | --------------------------------------------------------------------------------- | ---------- |
+| 1   | [Cleaning up the starter](#1-cleaning-up-the-starter)                             | 🟢         |
+| 2   | [App scaffold](#2-app-scaffold)                                                   | 🟢         |
+| 3   | [Build and dependencies](#3-build-and-dependencies)                               | 🟡         |
+| 4   | [Data layer configuration (JSON)](#4-data-layer-configuration-json)               | 🟡         |
+| 5   | [Data sources](#5-data-sources)                                                   | 🟡         |
+| 6   | [Categories in the TOC](#6-categories-subgroups-in-the-toc)                       | 🟢         |
+| 7   | [FeatureInfo popup](#7-featureinfo-popup)                                         | 🟡         |
+| 8   | [Charts and time filter](#8-charts-and-time-filter)                               | 🟡         |
+| 9   | [TOC extension and transparency slider](#9-toc-extension-and-transparency-slider) | 🔴         |
+| 10  | [Multilingual support](#10-multilingual-support)                                  | 🟡         |
+| 11  | [Collapsible TOC panel](#11-collapsible-toc-panel)                                | 🔴         |
+| 12  | [WMS legend](#12-wms-legend)                                                      | 🔴         |
+| 13  | [Popup placement and marker](#13-popup-placement-and-marker)                      | 🟡         |
+| 14  | [Testing](#14-testing)                                                            | 🟢         |
+| 15  | [Open items](#15-open-items-and-ideas)                                            |            |
+| 16  | [Branches and workflow](#16-branches-and-workflow)                                |            |
+| 17  | [Custom WMS layers (temporary)](#17-custom-wms-layers-temporary)                  | 🔴         |
+| 18  | [Geoportal Leverkusen (proxy)](#18-geoportal-leverkusen-proxy)                    | 🟡         |
+| 19  | [Custom WFS layers](#19-custom-wfs-layers)                                        | 🟡         |
 
-Alle Commits auf `dashboard` (2026-10-09, älteste zuerst):
+All commits on `dashboard` (2026-10-09, oldest first):
 
-| Commit    | Inhalt                                                      |
-| --------- | ----------------------------------------------------------- |
-| `aa783cd` | Samples, Beispielpaket und Sites entfernt                   |
-| `c81b2de` | Build-Konfiguration und CI angepasst                        |
-| `a535bb3` | Dashboard-App mit Karte, TOC und einklappbarem Bottom-Panel |
-| `3268f05` | Doku: Verdrahtung                                           |
-| `d9f88b3` | Datenlayer: Schema, Parser, Laden zur Laufzeit              |
-| `6a1d0da` | Layer aus der Konfiguration erzeugen (WMS, SensorThings)    |
-| `e1415f4` | Doku: Datenlayer-Konfiguration                              |
-| `4c237a1` | Kategorien (Gruppen) in der Konfiguration                   |
-| `6268f50` | WMS-GetFeatureInfo im Popup                                 |
-| `f71ec9a` | Diagramm mit Zeitfilter im Bottom-Panel                     |
-| `3cff0ea` | Lizenz-Override für `pako` 2.2.0                            |
-| `f0eefec` | Doku: Kategorien, FeatureInfo, Diagramme, Zeitfilter        |
-| `cb6feb5` | TOC als lokales Paket `@cosite/toc` geforkt                 |
-| `58c94ff` | Transparenz-Slider im ⋮-Menü (später ersetzt)               |
-| `7acb8be` | Live-Sprachwechsel (de/en)                                  |
-| `8c3b040` | Doku: TOC-Fork, Slider, i18n                                |
-| `5c52ad7` | Transparenz-Slider direkt unter dem Layernamen              |
-| `f37ab3c` | Englisch als Standard, EN\|DE-Umschalter statt Dropdown     |
-| `3452a7a` | Doku angepasst                                              |
-| `237a773` | TOC-Panel nach links einklappbar                            |
-| `abff501` | Doku: einklappbares TOC-Panel                               |
-| `8256091` | WMS-Legende im FeatureInfo-Popup                            |
-| `0cf7594` | Popup-Kopf (✕) bleibt beim Scrollen sichtbar                |
-| `7802450` | Doku: WMS-Legende                                           |
-| `74b09ed` | Marker an der Klickposition, Popup daneben                  |
-| `2fc058c` | Doku: Marker und Popup-Platzierung                          |
+| Commit    | Content                                                  |
+| --------- | -------------------------------------------------------- |
+| `aa783cd` | Removed samples, sample package and sites                |
+| `c81b2de` | Adjusted build configuration and CI                      |
+| `a535bb3` | Dashboard app with map, TOC and collapsible bottom panel |
+| `3268f05` | Docs: wiring                                             |
+| `d9f88b3` | Data layers: schema, parser, loading at runtime          |
+| `6a1d0da` | Create layers from the configuration (WMS, SensorThings) |
+| `e1415f4` | Docs: data layer configuration                           |
+| `4c237a1` | Categories (groups) in the configuration                 |
+| `6268f50` | WMS GetFeatureInfo in the popup                          |
+| `f71ec9a` | Chart with time filter in the bottom panel               |
+| `3cff0ea` | License override for `pako` 2.2.0                        |
+| `f0eefec` | Docs: categories, FeatureInfo, charts, time filter       |
+| `cb6feb5` | Forked the TOC as local package `@cosite/toc`            |
+| `58c94ff` | Transparency slider in the ⋮ menu (replaced later)       |
+| `7acb8be` | Live language switch (de/en)                             |
+| `8c3b040` | Docs: TOC fork, slider, i18n                             |
+| `5c52ad7` | Transparency slider directly below the layer name        |
+| `f37ab3c` | English as default, EN\|DE toggle instead of dropdown    |
+| `3452a7a` | Docs updated                                             |
+| `237a773` | TOC panel collapsible to the left                        |
+| `abff501` | Docs: collapsible TOC panel                              |
+| `8256091` | WMS legend in the FeatureInfo popup                      |
+| `0cf7594` | Popup header (✕) stays visible while scrolling           |
+| `7802450` | Docs: WMS legend                                         |
+| `74b09ed` | Marker at the click position, popup next to it           |
+| `2fc058c` | Docs: marker and popup placement                         |
 
-Zusätzlich auf Branch `toc-native` (abgezweigt von `dashboard`, Variante ohne TOC-Fork, siehe Abschnitt 9):
+Additionally on branch `toc-native` (branched off `dashboard`, variant without the TOC fork, see section 9):
 
-| Commit                          | Inhalt                                                      |
-| ------------------------------- | ----------------------------------------------------------- |
-| `22b279a`                       | TOC-Fork entfernt, Original `@open-pioneer/toc` eingebunden |
-| `9dc52cb`                       | Transparenz-Slider über die öffentliche TOC-API             |
-| `f3cfda7`                       | Datenquellen: DWD-Radar (RADOLAN-RW), STA Datastream 15     |
-| `0e89ebd`                       | Sensorliste und Auswahl für das Analyse-Panel               |
-| `f6dfa00`                       | Tabs „Einzelsensor“ / „Sensorvergleich“ im Analyse-Panel    |
-| `448bffa`                       | Popup mit allen Sensoren an der Klickposition               |
-| `bfce880`                       | Zeitfilter: „Gesamter Zeitraum“                             |
-| `20d9667`                       | Diagrammtyp-Auswahl, Balkendiagramm                         |
-| `0331716`                       | Boxplot (`@sgratzl/chartjs-chart-boxplot`)                  |
-| `d9e9148`                       | Windrose (Grundgerüst)                                      |
-| `aac34f9`                       | Doku: Diagrammtypen, Gesamter Zeitraum                      |
-| `77ef99f`                       | TOC: Info-Icon statt ⋮ (per CSS)                            |
-| `dcc943e`                       | Analyse-Panel: größere Tabs, Zeitfilter darunter            |
-| `80c4910`                       | Analyse-Panel klappt zu einem Icon ein                      |
-| `ed1f5ef`, `d0e4c24`, `c83ad6a` | Diagrammtypen als Icons mit Tooltip                         |
-| `b938ba9`                       | Doku: Designänderungen                                      |
-| `d0e4c24`                       | Analyse-Panel: Tabs `lg`, keine Überschrift                 |
-| `c83ad6a`                       | Analyse-Panel: Höhe 45 % der App                            |
+| Commit                          | Content                                                           |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `22b279a`                       | Removed the TOC fork, integrated the original `@open-pioneer/toc` |
+| `9dc52cb`                       | Transparency slider via the public TOC API                        |
+| `f3cfda7`                       | Data sources: DWD radar (RADOLAN-RW), STA Datastream 15           |
+| `0e89ebd`                       | Sensor list and selection for the analysis panel                  |
+| `f6dfa00`                       | Tabs „Einzelsensor“ / „Sensorvergleich“ in the analysis panel     |
+| `448bffa`                       | Popup with all sensors at the click position                      |
+| `bfce880`                       | Time filter: „Gesamter Zeitraum“                                  |
+| `20d9667`                       | Chart type selection, bar chart                                   |
+| `0331716`                       | Box plot (`@sgratzl/chartjs-chart-boxplot`)                       |
+| `d9e9148`                       | Wind rose (scaffold)                                              |
+| `aac34f9`                       | Docs: chart types, entire period                                  |
+| `77ef99f`                       | TOC: info icon instead of ⋮ (via CSS)                             |
+| `dcc943e`                       | Analysis panel: larger tabs, time filter below                    |
+| `80c4910`                       | Analysis panel collapses to an icon                               |
+| `ed1f5ef`, `d0e4c24`, `c83ad6a` | Chart types as icons with tooltip                                 |
+| `b938ba9`                       | Docs: design changes                                              |
+| `d0e4c24`                       | Analysis panel: tabs `lg`, no heading                             |
+| `c83ad6a`                       | Analysis panel: height 45 % of the app                            |
 
 ---
 
-## 1. Aufräumen des Starters
+## 1. Cleaning up the starter
 
-🟢 **Was:** Alles entfernen, was nichts mit dem Dashboard zu tun hat.
+🟢 **What:** Remove everything that has nothing to do with the dashboard.
 
-- **Entscheidung:** `src/samples/` (map-sample, i18n-howto), `src/packages/sample-package/`, `src/apps/empty/` und
-  `src/sites/` gelöscht. Behalten: `docs/**` als Wissensspeicher, `support/**`, `patches/**`, Tooling-Konfiguration.
-  Die Root-Seite `src/index.html` hostet direkt das Dashboard (`pnpm dev` öffnet es sofort).
-- **Warum:** Die Samples zeigten, wie man etwas macht, waren aber kein Teil des Produkts. Die Docs sind als
-  Nachschlagewerk weiter nützlich.
-- **Stolpersteine:** Ohne Pakete unter `src/packages/` hat Typedoc nichts zu dokumentieren, deshalb flog der CI-Schritt
-  `build-docs` raus. Mit dem TOC-Fork (Abschnitt 9, Branch `dashboard`) gab es wieder ein Paket und den Schritt; auf
-  `toc-native` gibt es kein lokales Paket mehr und der Schritt ist wieder entfernt.
+- **Decision:** Deleted `src/samples/` (map-sample, i18n-howto), `src/packages/sample-package/`, `src/apps/empty/` and
+  `src/sites/`. Kept: `docs/**` as a knowledge base, `support/**`, `patches/**`, tooling configuration.
+  The root page `src/index.html` hosts the dashboard directly (`pnpm dev` opens it right away).
+- **Why:** The samples showed how to do things but were not part of the product. The docs remain useful as a
+  reference.
+- **Pitfalls:** Without packages under `src/packages/`, Typedoc has nothing to document, so the CI step
+  `build-docs` was removed. With the TOC fork (section 9, branch `dashboard`) there was a package and the step again; on
+  `toc-native` there is no local package any more and the step is removed again.
 - **Commits:** `aa783cd`, `c81b2de`
 
-## 2. App-Grundgerüst
+## 2. App scaffold
 
-🟢 **Was:** Neue App `src/apps/dashboard` mit OSM-Karte, TOC oben links, Zoom-Buttons und einklappbarem Panel unten.
+🟢 **What:** New app `src/apps/dashboard` with an OSM map, TOC at the top left, zoom buttons and a collapsible panel at
+the bottom.
 
-- **Entscheidung:** Aufbau nach dem Muster des entfernten Map-Samples (`MapConfigProvider` als Service,
-  `useMapModel` → `DefaultMapProvider` → `MapContainer`). Das Panel unten nutzt Chakra `Collapsible`.
-- **Stolpersteine:** `SectionHeading` aus `@open-pioneer/react-utils` wirft einen Fehler, wenn es nicht innerhalb einer
-  `TitledSection` steht. Das fiel erst beim Lesen des Quellcodes auf und ist jetzt in Panel und TOC berücksichtigt.
+- **Decision:** Structure follows the pattern of the removed map sample (`MapConfigProvider` as a service,
+  `useMapModel` → `DefaultMapProvider` → `MapContainer`). The bottom panel uses Chakra `Collapsible`.
+- **Pitfalls:** `SectionHeading` from `@open-pioneer/react-utils` throws an error if it is not inside a
+  `TitledSection`. This only came up while reading the source code and is now taken into account in the panel and TOC.
 - **Commits:** `a535bb3`
 
-## 3. Build und Abhängigkeiten
+## 3. Build and dependencies
 
-🟡 **Was:** Probleme, die beim Umbau mit dem Paketmanager und der CI auftraten.
+🟡 **What:** Problems with the package manager and CI that came up during the rebuild.
 
-- **pnpm-Trust-Policy:** `pnpm install` brach ab mit „Missing time for version 1.3.1 of tinyexec“. Die Registry hat den
-  Zeitstempel, nur die lokal gecachten Metadaten nicht. Lösung: `pnpm cache delete tinyexec`. An den
-  Sicherheitsrichtlinien wurde nichts geändert.
-- **`resize-observer-polyfill`:** wird in `src/testing/global-setup.ts` gebraucht, kam aber nur transitiv über die
-  Kartenpakete der Samples. Nach deren Löschen scheiterte der Pre-Commit-`tsc`. Mit den Kartenpaketen der neuen App
-  ist es wieder da. Deshalb liegt das Lockfile damals in einem späteren Commit.
-- **`pako`-Lizenz:** Beim Neuaufbau des Lockfiles stieg `pako` von 2.1.0 auf 2.2.0. Der Lizenzreport (CI) kannte nur
-  die Ausnahme für 2.1.0. Lizenz unverändert (MIT und Zlib), nur die Version in `support/license-config.yaml` angepasst.
-- **Offen:** `CHANGELOG.md` hat einen Formatfehler (`pnpm fmt:check`), der schon auf `main` besteht und bewusst nicht
-  angefasst wurde.
-- **Neue Abhängigkeit:** `@sgratzl/chartjs-chart-boxplot` ^4.4.5 im Catalog (MIT, Boxplot, siehe Abschnitt 8).
-  Lizenzreport und Duplikatprüfung ohne Befund.
+- **pnpm trust policy:** `pnpm install` aborted with "Missing time for version 1.3.1 of tinyexec". The registry has the
+  timestamp, only the locally cached metadata did not. Fix: `pnpm cache delete tinyexec`. Nothing was changed in the
+  security policies.
+- **`resize-observer-polyfill`:** is needed in `src/testing/global-setup.ts` but only came in transitively via the
+  map packages of the samples. After deleting them, the pre-commit `tsc` failed. With the map packages of the new app
+  it is back. That is why the lockfile landed in a later commit back then.
+- **`pako` license:** When the lockfile was rebuilt, `pako` went from 2.1.0 to 2.2.0. The license report (CI) only knew
+  the exception for 2.1.0. License unchanged (MIT and Zlib), only the version in `support/license-config.yaml` adjusted.
+- **Open:** `CHANGELOG.md` has a formatting error (`pnpm fmt:check`) that already exists on `main` and was deliberately
+  left untouched.
+- **New dependency:** `@sgratzl/chartjs-chart-boxplot` ^4.4.5 in the catalog (MIT, box plot, see section 8).
+  License report and duplicate check found nothing.
 - **Commits:** `c81b2de`, `a535bb3`, `3cff0ea`, `0331716`
 
-## 4. Datenlayer-Konfiguration (JSON)
+## 4. Data layer configuration (JSON)
 
-🟡 **Was:** Datenlayer stehen nicht im Code, sondern in `src/public/config/dataLayers.json`
-(Name, Beschreibung, Endpunkt, Typ …).
+🟡 **What:** Data layers are not in the code but in `src/public/config/dataLayers.json`
+(name, description, endpoint, type …).
 
-- **Entscheidung:** Die Datei wird **zur Laufzeit** per `fetch` geladen, nicht beim Build importiert.
-- **Warum:** Wunsch, Layer nach dem Deployment ändern zu können, ohne neu zu bauen. Ein Backend ist dafür nicht nötig:
-  Vite kopiert `src/public` unverändert nach `dist/www`, der Webserver liefert die Datei statisch aus, der Browser parst
-  sie mit `response.json()`. Über `VITE_DATA_LAYERS_URL` kann sie später auch aus einem Bucket oder einer API kommen
-  (dann muss der Server CORS erlauben).
-- **Verworfen:** Import beim Build (typgeprüft, aber jede Änderung braucht einen Neubau).
-- **Robustheit:** `parseDataLayers` prüft jeden Eintrag und überspringt ungültige mit Warnung. Fehlt die Datei oder ist
-  sie kaputt, startet die Karte nur mit der Basemap. Beides getestet.
+- **Decision:** The file is loaded **at runtime** via `fetch`, not imported at build time.
+- **Why:** The wish was to be able to change layers after deployment without rebuilding. No backend is needed for that:
+  Vite copies `src/public` unchanged to `dist/www`, the web server serves the file statically, the browser parses
+  it with `response.json()`. Via `VITE_DATA_LAYERS_URL` it can later also come from a bucket or an API
+  (then the server must allow CORS).
+- **Rejected:** Import at build time (type-checked, but every change needs a rebuild).
+- **Robustness:** `parseDataLayers` checks every entry and skips invalid ones with a warning. If the file is missing or
+  broken, the map starts with the basemap only. Both are tested.
 - **Commits:** `d9f88b3`, `6a1d0da`, `e1415f4`
 
-## 5. Datenquellen
+## 5. Data sources
 
-🟡 **Was:** Ein DWD-Dienst mit 2-m-Temperatur und der vorgegebene SensorThings-Datastream.
+🟡 **What:** A DWD service with 2 m temperature and the given SensorThings datastream.
 
-- **DWD:** Gewählt wurde der WMS-Layer `Icon_reg025_fd_sl_T2M` („Lufttemperatur in 2m aus ICON“, Vorhersage, stündliche
-  Zeitdimension, ohne `TIME` liefert der Server den Standardzeitpunkt). Zur Wahl stand auch `RBSN_T2m` (gemessene Werte
-  an DWD-Stationen). Entscheidung des Nutzers: ICON. Nachteil: Das Raster ist grob (0,25°).
-- **SensorThings:** `https://cosite.thk.52north.org/sensordata/v1.1/Datastreams(14)` ist **Boden**temperatur
-  (SMT100, Köln-Kalk), keine Lufttemperatur in 2 m. So ist es auch benannt. CORS ist erlaubt.
-- **Startansicht:** Köln statt Münster, damit Sensorpunkt und Temperaturraster sofort sichtbar sind.
-- **Auffällig in den Daten:** Am 06.10. stehen zwei Messwerte mit genau `0` (12:34 und 12:37 UTC), vermutlich
-  Sensor-Ausreißer. Bewusst nicht gefiltert, das wäre eine fachliche Entscheidung.
-- **Ergänzt (Demo):** DWD-Layer `RADOLAN-RW` („angeeichtes Radarkomposit“, gemessene Niederschlagssumme der letzten
-  Stunde, nur Deutschland; GetFeatureInfo liefert `RW_HDF5` in mm und `TIME`). Gewählt statt der ICON-Vorhersage
-  `Icon_reg025_fd_sl_TOTPREC`, die seit Modellstart aufsummiert und schwer zu deuten ist. Startete zunächst
-  ausgeblendet, damit er die Temperatur nicht verdeckt. Seit 20.10. sind auf Wunsch alle Layer beim Start sichtbar
-  (RADOLAN mit 30 % Transparenz). Dazu Datastream 15 (SMT100 Bodenfeuchte in %, gleicher Knoten und Standort wie
+- **DWD:** The chosen WMS layer is `Icon_reg025_fd_sl_T2M` („Lufttemperatur in 2m aus ICON“, air temperature at 2 m
+  from ICON; forecast, hourly time dimension; without `TIME` the server returns the default time). `RBSN_T2m` (measured
+  values at DWD stations) was also an option. User's decision: ICON. Drawback: the grid is coarse (0.25°).
+- **SensorThings:** `https://cosite.thk.52north.org/sensordata/v1.1/Datastreams(14)` is **soil** temperature
+  (SMT100, Köln-Kalk), not air temperature at 2 m. It is named accordingly. CORS is allowed.
+- **Initial view:** Cologne instead of Münster, so that the sensor point and the temperature grid are visible right
+  away.
+- **Notable in the data:** On 06.10. there are two values of exactly `0` (12:34 and 12:37 UTC), probably sensor
+  outliers. Deliberately not filtered, that would be a domain decision.
+- **Added (demo):** DWD layer `RADOLAN-RW` („angeeichtes Radarkomposit“, gauge-adjusted radar composite; measured
+  precipitation total of the last hour, Germany only; GetFeatureInfo returns `RW_HDF5` in mm and `TIME`). Chosen instead
+  of the ICON forecast `Icon_reg025_fd_sl_TOTPREC`, which accumulates since the model start and is hard to interpret.
+  Initially it started hidden so it would not cover the temperature. Since 20.10., on request, all layers are visible
+  at startup (RADOLAN with 30 % transparency). Plus Datastream 15 (SMT100 soil moisture in %, same node and location as
   Datastream 14).
-- **Ergänzt (2026-11-13):** Datastream 16 (SMT100 Bodentemperatur, Thing „ESP32 Node Test“, liefert seit 30.10.2026).
-  Ein Demo-Aufbau, etwa 800 m westlich des Knotens in Kalk. Er dient als zweite Station, gegen die der Vergleich nach
-  Messgröße entwickelt wird.
+- **Added (2026-11-13):** Datastream 16 (SMT100 soil temperature, Thing "ESP32 Node Test", delivering since
+  30.10.2026). A demo setup about 800 m west of the node in Kalk. It serves as a second station against which the
+  comparison by observed property is developed.
 - **Commits:** `6a1d0da`
 
-## 6. Kategorien (Untergruppen) im TOC
+## 6. Categories (subgroups) in the TOC
 
-🟢 **Was:** Layer in der JSON-Datei in Kategorien gruppieren, im TOC als Gruppen anzeigen (aktuell „WMS“ und
+🟢 **What:** Group layers into categories in the JSON file and show them as groups in the TOC (currently „WMS“ and
 „Sensoren (STA)“).
 
-- **Entscheidung:** Ein Eintrag mit `"type": "group"` hat eine eigene `layers`-Liste und darf verschachtelt werden.
-  Daraus wird ein `GroupLayer`, im TOC mit `collapsibleGroups` einklappbar (beim Start zugeklappt, `initiallyCollapsed`) und als Ganzes schaltbar.
-- **Warum so:** Kategorien sind damit derselbe Mechanismus wie Layer (gleiche Felder, gleicher Parser), statt einer
-  zweiten Struktur daneben.
-- **Zu wissen:** Die Reihenfolge in der Datei ist die Zeichenreihenfolge: spätere Einträge liegen auf der Karte oben und
-  stehen im TOC weiter oben. IDs müssen über die ganze Datei eindeutig sein.
+- **Decision:** An entry with `"type": "group"` has its own `layers` list and may be nested.
+  It becomes a `GroupLayer`, collapsible in the TOC with `collapsibleGroups` (collapsed at startup, `initiallyCollapsed`) and switchable as a whole.
+- **Why this way:** Categories use the same mechanism as layers (same fields, same parser) instead of a
+  second structure alongside.
+- **Good to know:** The order in the file is the drawing order: later entries are on top on the map and
+  appear higher in the TOC. IDs must be unique across the whole file.
 - **Commits:** `4c237a1`
 
-## 7. FeatureInfo-Popup
+## 7. FeatureInfo popup
 
-🟡 **Was:** Klick in die Karte zeigt die Werte des DWD-Layers an dieser Stelle.
+🟡 **What:** A click on the map shows the values of the DWD layer at that location.
 
-- **Entscheidung:** `GetFeatureInfo` als GeoJSON (`INFO_FORMAT=application/json`). Welche Felder mit welcher
-  Beschriftung und Einheit erscheinen, steht pro Layer in `wms.featureInfo.fields`. Ohne Angabe werden alle Rohattribute
-  gezeigt.
-- **Warum:** Die Rohdaten des DWD heißen z. B. `Temperature_height_level_above_ground` und haben viele Nachkommastellen.
-  Mit Feldkonfiguration steht dort „Lufttemperatur 2 m: 8,3 °C“.
-- **Zu wissen:** Abgefragt werden nur Layer, die wirklich sichtbar sind, also auch alle übergeordneten Gruppen.
-  Zeitstempel werden in Ortszeit angezeigt.
+- **Decision:** `GetFeatureInfo` as GeoJSON (`INFO_FORMAT=application/json`). Which fields appear with which
+  label and unit is defined per layer in `wms.featureInfo.fields`. Without it, all raw attributes are
+  shown.
+- **Why:** The DWD raw data is named e.g. `Temperature_height_level_above_ground` and has many decimal places.
+  With a field configuration it reads „Lufttemperatur 2 m: 8,3 °C“ (air temperature 2 m: 8.3 °C).
+- **Good to know:** Only layers that are actually visible are queried, i.e. including all parent groups.
+  Timestamps are shown in local time.
 - **Commits:** `6268f50`
 
-## 8. Diagramme und Zeitfilter
+## 8. Charts and time filter
 
-🟡 **Was:** Klick auf den Sensorpunkt lädt die Messwerte und zeichnet sie im Panel unten. Zeitfilter mit Presets
-(24 Stunden, 7 Tage, 30 Tage) und eigenem Zeitraum von/bis.
+🟡 **What:** A click on the sensor point loads the observations and draws them in the bottom panel. Time filter with
+presets (24 hours, 7 days, 30 days) and a custom from/to range.
 
-- **Entscheidung:** Chart.js.
-- **Warum / verworfen:** Auf dem alten Branch `origin/test/charts` wurde recharts (über `@chakra-ui/charts`) getestet und
-  musste gepatcht werden: recharts sucht Elemente über `document`, Trails rendert die App aber im Shadow DOM.
-  Chart.js zeichnet auf Canvas und braucht das nicht.
+- **Decision:** Chart.js.
+- **Why / rejected:** On the old branch `origin/test/charts`, recharts (via `@chakra-ui/charts`) was tested and
+  had to be patched: recharts looks up elements via `document`, but Trails renders the app in the shadow DOM.
+  Chart.js draws on a canvas and does not need that.
 - **Details:**
-    - Lücken in den Daten (z. B. ca. 17.09.–05.10.) bleiben Lücken statt einer geraden Linie, die Messwerte vortäuscht.
-    - Die x-Achse zeigt genau den gewählten Zeitraum.
-    - `degC` aus der STA wird als `°C` angezeigt.
-    - Höchstens 20.000 Werte, danach Hinweis „gekürzt“.
-    - Ungültiger Zeitraum (von ≥ bis) wird markiert, der letzte gültige bleibt aktiv.
-- **Abfrage der Messwerte** (`dataLayers/sta/sta.ts`): Zeitraum und neuester Wert bauen ihre URL mit demselben Helfer
-  (`observationsQueryUrl`) und laden Seiten mit `fetchObservationPage`. Sie unterscheiden sich nur in Richtung,
-  Seitengröße und Zeitraum.
-    - **Sortiert und gefiltert wird nach `phenomenonTime`**, dem Zeitpunkt der Messung. Eine Observation hat in der STA
-      zwei Zeiten: `phenomenonTime` (wann gemessen wurde) und `resultTime` (wann das Ergebnis entstand). Bei
-      Messsensoren ist das praktisch dasselbe, bei Vorhersagen nicht (Gültigkeitszeit vs. Modelllauf). Auf unserem
-      Server ist `resultTime` leer (`null`); nach ihr zu sortieren liefert eine zufällige Reihenfolge (geprüft
+    - Gaps in the data (e.g. approx. 17.09.–05.10.) stay gaps instead of a straight line that fakes observations.
+    - The x-axis shows exactly the selected time range.
+    - `degC` from the STA is displayed as `°C`.
+    - At most 20,000 values, after that the note „gekürzt“ (truncated).
+    - An invalid range (from ≥ to) is highlighted, the last valid one stays active.
+- **Querying the observations** (`dataLayers/sta/sta.ts`): The time range query and the latest value query build their
+  URL with the same helper (`observationsQueryUrl`) and load pages with `fetchObservationPage`. They differ only in
+  direction, page size and time range.
+    - **Sorting and filtering use `phenomenonTime`**, the time of the measurement. In the STA an observation has
+      two times: `phenomenonTime` (when it was measured) and `resultTime` (when the result was produced). For
+      measuring sensors these are practically the same, for forecasts they are not (validity time vs. model run). On our
+      server `resultTime` is empty (`null`); sorting by it returns a random order (checked
       2026-10-21).
-    - **Mögliche Falle:** Setzt ein anderer Server oder Datenlieferant die eigentliche Zeit nur in `resultTime`, zeigen
-      Diagramm und Kacheln falsche oder keine Werte. Dann ist `observationsQueryUrl` (Filter und Sortierung) und
-      `parseObservation` (welche Zeit auf der x-Achse landet) anzupassen.
-    - **Bewusst kein `@iot.id` als zweites Sortierkriterium:** Damit blättert FROST nicht mehr über `$skip`, sondern
-      über `$skipFilter=(phenomenonTime gt <letzte Zeit der Seite>)`, auch wenn die ID im `$select` steht (geprüft
-      2026-10-21). Liegen zwei Messungen mit gleicher Zeit an einer Seitengrenze, ginge die zweite verloren. Ohne
-      ID blättert der Server über `$skip`; bei gleicher Zeit ist die Reihenfolge dann nicht festgelegt, verloren
-      geht aber nichts systematisch.
-    - **Nur die Richtung (`asc`/`desc`) ist einstellbar**, keine freie Sortierung: Für eine Zeitreihe ist nur die
-      Messzeit sinnvoll, Min/Max und Statistik rechnet die App selbst. Kommt eine weitere STA-Abfrage dazu, wird der
-      Schnitt neu geprüft.
-- **Grenze:** Die nativen Datumsfelder formatieren nach der Browsersprache, nicht nach der App-Sprache.
-- **Tabs (Branch `toc-native`):** Oben im Panel „Einzelsensor“ und „Sensorvergleich“.
-    - Einzelsensor: Dropdown mit allen STA-Sensoren (auch ausgeblendeten), darunter das Diagramm.
-    - Sensorvergleich: zwei Hälften nebeneinander (schmal: untereinander), jede mit eigenem Dropdown.
-    - Der Zeitfilter gilt für beide Tabs, damit der Vergleich denselben Zeitraum zeigt.
-    - Vorauswahl: erster Sensor bzw. erster und zweiter Sensor. Ausgewählt wird über die Layer-ID, die Daten des
-      Datastreams kommen aus dem Feature des Layers (`dataLayers/sta/useStaSensors.ts`).
-    - Dropdown als natives `<select>` (`NativeSelect`), damit kein Popup im Shadow DOM positioniert werden muss.
-    - Nur der aktive Tab lädt Messwerte (`lazyMount`, `unmountOnExit`).
-- **Sensor nicht verfügbar** (`createStaDatastreamLayer` in `dataLayers/sta/staLayer.ts`, `useSensorLoadFailed` in
-  `dataLayers/sta/useStaSensors.ts`): Statt eines endlosen Spinners steht im Panel in Rot „Sensor nicht verfügbar …“.
-  Das TOC markiert den Layer wie jeden anderen nicht verfügbaren Layer.
-    - **Auslöser:** Das Laden des Datastreams scheitert, dauert länger als 30 s (`DATASTREAM_TIMEOUT_MS`), der
-      Datastream hat keinen Standort, oder der `healthCheck` des Endpoints schlägt fehl.
-    - **Mechanik:** Die Quelle des Layers durchläuft die Zustände `loading` → `ready` bzw. `error`.
-      `@open-pioneer/map` leitet daraus (zusammen mit dem Health-Check) `layer.loadState` ab. Das TOC zeigt bei
-      `error` von sich aus einen roten Hinweis und deaktiviert den Layer.
-    - **Fehler statt reinem Zeitlimit:** Ein Fehler ist sofort bekannt. Das Zeitlimit fängt nur Anfragen ab, die nie
-      antworten. Ein Zeitlimit allein würde langsame Server fälschlich als Fehler zeigen.
-    - **Ohne Standort kein Sensor** (Entscheidung des Nutzers, 2026-10-21): Das Dashboard wird über die Karte
-      erkundet, es geht darum, _wo_ ein Sensor steht. Ein Datastream ohne Standort wird deshalb nicht ohne
-      Kartenpunkt angezeigt, sondern gilt als nicht verfügbar. So fällt der Konfigurationsfehler auf.
-- **Annahmen der STA-Hooks** (`dataLayers/sta/useStaSensors.ts`):
-    - **Ein Layer, ein Datastream:** Die Hooks lesen nur das erste Feature der Quelle (`datastreamFeature`). Wird
-      künftig z. B. ein ganzes Thing mit mehreren Datastreams als _ein_ Layer importiert, zeigen Dropdown, Diagramm
-      und Kacheln stillschweigend nur den ersten. Dann entweder pro Datastream einen eigenen Layer erzeugen
-      (`createStaDatastreamLayer`) oder `datastreamFeature` und `useLoadedDatastreams` anpassen (darauf stützen
-      sich `useDatastreamProperties`, `useColocatedSensors` und `useStationColors`).
-    - **`useLoadedDatastreams` (und damit `useDatastreamProperties`) sucht die Quellen nur einmal pro Layer-ID**, nicht reaktiv. Heute unkritisch,
-      weil die ID immer aus der Liste vorhandener Layer kommt (`useStaSensors`). Wird der Hook mit einer festen ID
-      aufgerufen, solange die Konfiguration noch lädt, bleibt das Ergebnis `undefined`. `useColocatedSensors` ist
-      über `useStaSensors` reaktiv und nicht betroffen.
-- **Sensor-Popup:** Ein Klick auf einen Sensorpunkt wählt nicht mehr direkt aus, sondern zeigt ein Popup mit **allen**
-  Sensoren an der Stelle. Datastream 14 und 15 liegen am selben Ort, vorher war nur der zuletzt gezeichnete
-  erreichbar. Der Button „In Auswertung anzeigen“ wählt den Sensor in der Einzelansicht und öffnet das Panel.
-  Der Popup-Rahmen ist mit dem FeatureInfo-Popup geteilt (`mapClick/PopupFrame.tsx`).
-- **Diagrammtypen:** Linie, Balken, Boxplot, Windrose. Jede Ansicht wählt ihren Typ selbst, im Vergleich also jede
-  Hälfte unabhängig, weil dort auch unterschiedliche Messgrößen nebeneinanderstehen können.
-    - **Balken:** Mittelwert je Abschnitt. Die Länge richtet sich nach dem Zeitraum: bis 2 Tage je Stunde, bis 45 Tage
-      je Tag, darüber je Woche (ab Montag, Ortszeit). Leere Abschnitte bleiben leer. Ob für Niederschlag später eine
-      Summe statt des Mittelwerts gebraucht wird, ist offen.
-    - **Boxplot:** eine Box über alle Werte des gewählten Zeitraums (Quartile, Median, Whisker 1,5 × IQR,
-      Ausreißer). Chart.js kann das nicht selbst, daher das Plugin `@sgratzl/chartjs-chart-boxplot` (MIT, Chart.js-4-
-      Plugin des Boxplot-Standardautors). Selbst bauen wäre ca. 100 Zeilen mehr ohne Tooltips gewesen.
-    - **Windrose (Grundgerüst):** Häufigkeit je Richtung in 16 Sektoren (Nord oben mittig), Chart.js `polarArea`.
-      Genutzt werden nur Daten mit Winkeleinheit (`°`, `deg`) und Werten von 0–360. Sonst bleibt die Rose leer mit
-      Hinweis. Winddaten gibt es noch keine.
-- **Zeitfilter „Gesamter Zeitraum“:** fragt ab 1970 ab (also alles) und zeichnet die Achse ab dem ersten Messwert.
-  Das Feld „von“ bleibt dabei leer. Aktuell ca. 3.800 Werte je Datastream, weit unter der Grenze von 20.000.
-- **Darstellung:** Tabs in Größe `lg`, der Zeitfilter darunter, beides linksbündig. Im Chakra-Rezept haben `sm` und
-  `md` dieselbe Schrift (14px), nur `lg` ist größer (16px). Die Überschrift „Auswertung“ ist entfallen, der
-  Einklapp-Button steht rechts neben den Tabs, der Bereich behält seinen Namen als `aria-label`. Höhe: 45 % der App
-  (`45cqh`, die App-Wurzel ist `container-type: size`), mindestens 320px. Bezug ist also die App, nicht das
-  Browserfenster. Die Diagrammtypen stehen als
-  Icons (`LuChartLine`, `LuChartColumn`, `LuChartCandlestick`, `LuWind`). Lucide hat kein Boxplot-Icon, Kerzen kommen
-  dem am nächsten. Der Name erscheint als Tooltip und ist `aria-label`. Der Tooltip übernimmt die Element-ID des
-  Segments (`ids`), weil die Segment-Gruppe ihre Einträge über die ID findet.
-- **Weitere Sensoren am Standort (Feedback, Branch `feature/colocated_sensors`):** Neben dem Diagramm stehen die
-  anderen Sensoren desselben Standorts als Kacheln untereinander, in der Einzelansicht und in jeder Vergleichshälfte.
-  Eine Kachel zeigt den Layernamen (lokalisiert, wie im Dropdown), den **neuesten** Wert mit Einheit und dessen
-  Zeitpunkt. Ein Klick schaltet das Diagramm auf diesen Sensor um. Bewusst keine zusätzliche Linie im Diagramm.
-    - **Gruppierung:** Nicht aus der Klick-Liste des Popups, sondern aus allen STA-Layern. So funktioniert sie auch bei
-      Auswahl über das Dropdown, und der Auswahl-Zustand bleibt eine einzelne Layer-ID.
-    - **Standard ist der Ort**, nicht das Thing: Es ist nicht sicher, dass jeder Server Stationen sauber als Things
-      modelliert. Gleicher Ort heißt: Die Punktkoordinaten (EPSG:4326 aus dem GeoJSON, `position` in
-      `dataLayers/sta/sta.ts`) liegen höchstens `VITE_SENSOR_GROUPING_RADIUS` Meter auseinander (Standard 1 m,
-      Großkreisabstand mit `getDistance` aus `ol/sphere`). Andere Geometrien werden nie gruppiert.
-    - **Abstand statt gerundeter Koordinaten:** Früher wurde der auf 6 Nachkommastellen gerundete Koordinaten-String
-      verglichen. Dabei wurden leicht versetzt eingetragene Sensoren nie gruppiert, und fast gleiche Punkte fielen an
-      Rundungskanten auseinander (`7.6284004` → `…400`, `7.6284006` → `…401`). Ein Abstand ist dasselbe wie ein
-      Buffer um den Punkt, eine Projektion ist nicht nötig. Die Gruppierung gilt relativ zum gewählten Sensor und ist
-      nicht transitiv: Liegen A–B und B–C je 0,8 m auseinander, zeigt A nur B, B zeigt A und C.
-    - **Umschaltbar** über `VITE_SENSOR_GROUPING` (`location`, `thing`, `location-or-thing`,
-      `dataLayers/sta/colocation.ts`). Bei Datastream 14 und 15 liefern alle drei dasselbe (gleicher Ort, Thing 2).
-    - **Offen/Risiko (2026-10-30):** Die Gruppierung bleibt vorerst beim Radius von 1 m. In der Realität können die
-      Sensoren einer Station mehr als 1 m auseinanderstehen (sie werden dann getrennt), und nahe Sensoren können zu
-      verschiedenen Stationen gehören (sie werden dann zusammengelegt); STA-Modell und Praxis können auseinandergehen.
-      Bisher gibt es nur eine Station mit zwei Sensoren. Treten solche Fälle auf, wird neu entschieden. Zurückgestellt:
-      eine ausdrückliche Zuordnung von Sensoren zu Stationen in `dataLayers.json`.
-    - **Neuester Wert:** eigene Abfrage `$orderby=phenomenonTime desc&$top=1`, unabhängig vom Zeitfilter. Der
-      „letzte Wert“ in der Zeile über dem Diagramm ist dagegen der letzte im Zeitraum.
-    - **Viele Sensoren:** Die Spalte ist so hoch wie das Diagramm und scrollt. Platz für die Scrollbar ist von Anfang
-      an reserviert (`scrollbar-gutter: stable`), damit die Kacheln nicht schmaler werden, wenn sie erscheint. Unten
-      blendet ein Verlauf ein, solange noch Kacheln folgen (macOS zeigt Scrollbars erst beim Scrollen). Eine Kachel ist
-      ca. 78 px hoch, bei 950 px Fensterhöhe sind gut 3 sichtbar.
-    - **Stolperstein:** Die Zeitstempel des STA-Servers liegen ca. 2 h in der Zukunft (vermutlich Ortszeit mit `Z`
-      geschrieben). Die neuesten Werte fallen daher aus „bis jetzt“ heraus, die Kachel zeigt einen späteren Wert und
-      Zeitpunkt als das Diagramm.
+    - **Possible trap:** If another server or data provider puts the actual time only in `resultTime`, the chart
+      and tiles show wrong values or none. Then `observationsQueryUrl` (filter and sorting) and
+      `parseObservation` (which time ends up on the x-axis) need to be adjusted.
+    - **Deliberately no `@iot.id` as a second sort key:** With it, FROST no longer pages via `$skip` but
+      via `$skipFilter=(phenomenonTime gt <last time of the page>)`, even if the ID is in `$select` (checked
+      2026-10-21). If two observations with the same time sit on a page boundary, the second one would be lost. Without
+      the ID the server pages via `$skip`; for equal times the order is then undefined, but nothing is lost
+      systematically.
+    - **Only the direction (`asc`/`desc`) is configurable**, no free sorting: for a time series only the
+      measurement time makes sense, min/max and statistics are computed by the app itself. If another STA query is
+      added, the shared interface is reviewed again.
+- **Limitation:** The native date fields format according to the browser language, not the app language.
+- **Tabs (branch `toc-native`):** At the top of the panel „Einzelsensor“ (single sensor) and „Sensorvergleich“
+  (sensor comparison).
+    - Single sensor: dropdown with all STA sensors (including hidden ones), the chart below it.
+    - Sensor comparison: two halves side by side (narrow: stacked), each with its own dropdown.
+    - The time filter applies to both tabs so that the comparison shows the same time range.
+    - Preselection: first sensor, or first and second sensor. Selection is by layer ID, the datastream data
+      comes from the layer's feature (`dataLayers/sta/useStaSensors.ts`).
+    - Dropdown as a native `<select>` (`NativeSelect`), so that no popup has to be positioned in the shadow DOM.
+    - Only the active tab loads observations (`lazyMount`, `unmountOnExit`).
+- **Sensor not available** (`createStaDatastreamLayer` in `dataLayers/sta/staLayer.ts`, `useSensorLoadFailed` in
+  `dataLayers/sta/useStaSensors.ts`): Instead of an endless spinner, the panel shows „Sensor nicht verfügbar …“
+  (sensor not available) in red. The TOC marks the layer like any other unavailable layer.
+    - **Triggers:** Loading the datastream fails, takes longer than 30 s (`DATASTREAM_TIMEOUT_MS`), the
+      datastream has no location, or the endpoint's `healthCheck` fails.
+    - **Mechanics:** The layer's source goes through the states `loading` → `ready` or `error`.
+      `@open-pioneer/map` derives `layer.loadState` from this (together with the health check). On
+      `error` the TOC shows a red note on its own and disables the layer.
+    - **Errors instead of only a timeout:** An error is known immediately. The timeout only catches requests that never
+      respond. A timeout alone would wrongly show slow servers as errors.
+    - **No location, no sensor** (user's decision, 2026-10-21): The dashboard is explored via the map, it is about
+      _where_ a sensor is. A datastream without a location is therefore not shown without a
+      map point but counts as unavailable. That way the configuration error gets noticed.
+- **Assumptions of the STA hooks** (`dataLayers/sta/useStaSensors.ts`):
+    - **One layer, one datastream:** The hooks read only the first feature of the source (`datastreamFeature`). If
+      in the future e.g. a whole Thing with several datastreams is imported as _one_ layer, the dropdown, chart
+      and tiles silently show only the first one. Then either create a separate layer per datastream
+      (`createStaDatastreamLayer`) or adjust `datastreamFeature` and `useLoadedDatastreams` (which
+      `useDatastreamProperties`, `useColocatedSensors` and `useStationColors` rely on).
+    - **`useLoadedDatastreams` (and therefore `useDatastreamProperties`) looks up the sources only once per layer ID**, not reactively. Not a problem today,
+      because the ID always comes from the list of existing layers (`useStaSensors`). If the hook is called with a fixed ID
+      while the configuration is still loading, the result stays `undefined`. `useColocatedSensors` is
+      reactive via `useStaSensors` and not affected.
+- **Sensor popup:** A click on a sensor point no longer selects directly but shows a popup with **all**
+  sensors at that location. Datastreams 14 and 15 are at the same place; before, only the one drawn last was
+  reachable. The button „In Auswertung anzeigen“ (show in analysis) selects the sensor in the single view and opens the
+  panel. The popup frame is shared with the FeatureInfo popup (`mapClick/PopupFrame.tsx`).
+- **Chart types:** Line, bar, box plot, wind rose. Each view chooses its type itself, so in the comparison each
+  half independently, because different observed properties can appear side by side there.
+    - **Bar:** Mean per interval. The interval length depends on the time range: up to 2 days per hour, up to 45 days
+      per day, beyond that per week (starting Monday, local time). Empty intervals stay empty. Whether precipitation
+      will later need a sum instead of the mean is open.
+    - **Box plot:** one box over all values of the selected time range (quartiles, median, whiskers 1.5 × IQR,
+      outliers). Chart.js cannot do this itself, hence the plugin `@sgratzl/chartjs-chart-boxplot` (MIT, Chart.js 4
+      plugin by the standard box plot author). Building it ourselves would have been approx. 100 more lines without
+      tooltips.
+    - **Wind rose (scaffold):** Frequency per direction in 16 sectors (north at the top center), Chart.js `polarArea`.
+      Only data with an angle unit (`°`, `deg`) and values from 0–360 is used. Otherwise the rose stays empty with a
+      note. There is no wind data yet.
+- **Time filter „Gesamter Zeitraum“ (entire period):** queries from 1970 (i.e. everything) and draws the axis from the
+  first observation. The "from" field stays empty. Currently approx. 3,800 values per datastream, far below the limit
+  of 20,000.
+- **Layout:** Tabs in size `lg`, the time filter below, both left-aligned. In the Chakra recipe `sm` and
+  `md` have the same font (14px), only `lg` is larger (16px). The heading „Auswertung“ (analysis) was dropped, the
+  collapse button sits to the right of the tabs, the area keeps its name as `aria-label`. Height: 45 % of the app
+  (`45cqh`, the app root is `container-type: size`), at least 320px. So the reference is the app, not the
+  browser window. The chart types are shown as
+  icons (`LuChartLine`, `LuChartColumn`, `LuChartCandlestick`, `LuWind`). Lucide has no box plot icon, candlesticks come
+  closest. The name appears as a tooltip and is the `aria-label`. The tooltip takes over the element ID of the
+  segment (`ids`), because the segment group finds its items by ID.
+- **Other sensors at the site (feedback, branch `feature/colocated_sensors`):** Next to the chart, the
+  other sensors of the same site are shown as stacked tiles, in the single view and in each comparison half.
+  A tile shows the layer name (localized, as in the dropdown), the **latest** value with unit and its
+  time. A click switches the chart to that sensor. Deliberately no additional line in the chart.
+    - **Grouping:** Not from the click list of the popup but from all STA layers. That way it also works when
+      selecting via the dropdown, and the selection state remains a single layer ID.
+    - **The default is the location**, not the Thing: it is not certain that every server models stations cleanly as
+      Things. Same location means: the point coordinates (EPSG:4326 from the GeoJSON, `position` in
+      `dataLayers/sta/sta.ts`) are at most `VITE_SENSOR_GROUPING_RADIUS` meters apart (default 1 m,
+      great-circle distance with `getDistance` from `ol/sphere`). Other geometries are never grouped.
+    - **Distance instead of rounded coordinates:** Previously the coordinate string rounded to 6 decimal places was
+      compared. Sensors entered slightly offset were never grouped, and almost identical points fell apart at
+      rounding edges (`7.6284004` → `…400`, `7.6284006` → `…401`). A distance is the same as a
+      buffer around the point, no projection is needed. The grouping is relative to the selected sensor and is
+      not transitive: if A–B and B–C are each 0.8 m apart, A shows only B, B shows A and C.
+    - **Switchable** via `VITE_SENSOR_GROUPING` (`location`, `thing`, `location-or-thing`,
+      `dataLayers/sta/colocation.ts`). For Datastreams 14 and 15 all three give the same result (same location, Thing 2).
+    - **Open/risk (2026-10-30):** For now the grouping stays at a radius of 1 m. In reality the
+      sensors of a station can be more than 1 m apart (they are then separated), and nearby sensors can belong to
+      different stations (they are then merged); the STA model and practice can diverge.
+      So far there is only one station with two sensors. If such cases occur, this will be decided again. Deferred:
+      an explicit assignment of sensors to stations in `dataLayers.json`.
+    - **Latest value:** separate query `$orderby=phenomenonTime desc&$top=1`, independent of the time filter. The
+      "last value" in the line above the chart, on the other hand, is the last one in the time range.
+    - **Many sensors:** The column is as tall as the chart and scrolls. Space for the scrollbar is reserved from the
+      start (`scrollbar-gutter: stable`) so that the tiles do not get narrower when it appears. At the bottom
+      a gradient fades in as long as more tiles follow (macOS only shows scrollbars while scrolling). A tile is
+      approx. 78 px tall, at a window height of 950 px a good 3 are visible.
+    - **Pitfall:** The timestamps of the STA server are approx. 2 h in the future (probably local time written with
+      `Z`). The latest values therefore fall outside "until now", and the tile shows a later value and
+      time than the chart.
 - **Commits:** `f71ec9a`, `0e89ebd`, `f6dfa00`, `448bffa`, `bfce880`, `20d9667`, `0331716`, `d9e9148`, `dcc943e`,
-  `ed1f5ef`; Kacheln: `8e7b250`, `ca2ea99`, `dd9d284`, `00c71ae`, `0c02156`, `3a1829e`
+  `ed1f5ef`; tiles: `8e7b250`, `ca2ea99`, `dd9d284`, `00c71ae`, `0c02156`, `3a1829e`
 
-## 9. TOC-Erweiterung und Transparenz-Slider
+## 9. TOC extension and transparency slider
 
-🔴 **Was:** Ein Transparenz-Slider für jeden WMS-Layer, direkt unter dem Layernamen im TOC.
+🔴 **What:** A transparency slider for every WMS layer, directly below the layer name in the TOC.
 
-- **Problem:** `@open-pioneer/toc` bietet keinen Prop und keine Children für eigene Inhalte pro Layer. Die
-  Unterkomponenten (`LayerList`, `LayerItem`, `LayerItemMenu`) und der interne Kontext sind nicht exportiert
-  (`package.json` gibt nur `"."` frei), austauschen ließe sich ohnehin nichts.
-- **Betrachtete Wege:**
-    1. Eigener TOC: volle Kontrolle, aber alle TOC-Funktionen nachbauen.
-    2. Original-TOC über seine öffentliche API erweitern (DOM-Element des Eintrags + React-Portal).
-    3. Slider-Bereich unter dem TOC: robust, aber nicht beim jeweiligen Layer.
-    4. TOC forken und um einen Slot erweitern.
-    5. `pnpm patch` auf das kompilierte Paket (Mechanismus im Repo vorhanden, siehe [WaysToPatchAPackage.md](./WaysToPatchAPackage.md)).
-    6. Slot-Prop als Pull Request upstream vorschlagen.
-- **Erste Lösung (Branch `dashboard`): Fork.** `src/packages/toc` (`@cosite/toc`) aus dem Upstream-Tag
-  `@open-pioneer/toc@1.5.0` mit neuem Prop. Erst als Schnittstelle im ⋮-Menü (`layerMenuContent`), dort wurde der
-  Slider übersehen, dann `layerItemContent(layer)` direkt unter dem Titel.
+- **Problem:** `@open-pioneer/toc` offers no prop and no children for custom content per layer. The
+  subcomponents (`LayerList`, `LayerItem`, `LayerItemMenu`) and the internal context are not exported
+  (`package.json` only exposes `"."`), and nothing could be swapped out anyway.
+- **Options considered:**
+    1. Own TOC: full control, but all TOC features have to be rebuilt.
+    2. Extend the original TOC via its public API (DOM element of the item + React portal).
+    3. Slider area below the TOC: robust, but not next to the respective layer.
+    4. Fork the TOC and add a slot.
+    5. `pnpm patch` on the compiled package (mechanism exists in the repo, see [WaysToPatchAPackage.md](./WaysToPatchAPackage.md)).
+    6. Propose a slot prop upstream as a pull request.
+- **First solution (branch `dashboard`): fork.** `src/packages/toc` (`@cosite/toc`) from the upstream tag
+  `@open-pioneer/toc@1.5.0` with a new prop. First as an interface in the ⋮ menu (`layerMenuContent`), where the
+  slider was overlooked, then `layerItemContent(layer)` directly below the title.
   Commits: `cb6feb5`, `58c94ff`, `5c52ad7`.
-- **Neubewertung:** Der Fork kopierte ~20 Dateien für ~50 geänderte Zeilen und muss bei jedem Upstream-Update von Hand
-  abgeglichen werden. Vorgabe danach: kein Fork, kein Patch, kein PR, die bestehende Komponente soll erweitert werden.
-  Weg 2 war beim Fork übersehen worden, weil nur Props und Unterkomponenten geprüft wurden, nicht die imperative API.
-- **Aktuelle Lösung (Branch `toc-native`): Erweiterung über die öffentliche API** (`toc/TocItemExtensions.tsx`):
-    - `Toc` liefert in `onReady` eine `TocApi`. `api.getItems()` liefert alle Einträge, jeder `TocItem` hat
-      `htmlElement`, das DOM-Element des Eintrags. Beides ist dokumentiert und **reaktiv** (`reactive()` bzw.
-      `reactiveMap`), Neu-Rendern und Entfernen von Einträgen werden also gemeldet.
-    - Angehängt wird ein eigenes `<div class="toc-layer-item-extra">` als letztes Kind von
-      `<li class="toc-layer-item layer-<id>">`. Der Slider wird per `createPortal` hineingerendert und bleibt damit Teil
-      des React-Baums der App (Chakra, i18n, Zustand).
-    - Im Browser geprüft: genau ein Slider, am Titel ausgerichtet, funktioniert nach Gruppe ein/aus, Sprachwechsel,
-      TOC-Panel ein/aus und Layer an/aus.
-- **Risiken der aktuellen Lösung:**
-    - Ein fremdes Element in einem Bereich, den der TOC selbst rendert. React lässt unbekannte Kinder in Ruhe, es ist
-      aber nicht der vorgesehene Zweck von `htmlElement` (die TOC-Doku nennt „z. B. zum Scrollen“).
-    - Inhalt nur am Ende des Eintrags: bei WMS-Layern (Sublayer ausgeblendet) direkt unter dem Titel, bei Gruppen
-      stünde er unter den Kindern. Fügt der TOC einem Eintrag später neue Kinder hinzu, landen sie hinter dem Container.
-    - Ändert Upstream das Markup, kann der Slider anders sitzen. Die API selbst ist öffentlich.
-- **Info-Icon statt ⋮:** Der ⋮-Button des TOC öffnet nur die Beschreibung, soll daher wie ⓘ aussehen. Der TOC rendert
-  das Icon fest, ohne Prop. Deshalb wird es per CSS ersetzt (`toc/TocPanel.tsx`): Das SVG im Button
-  `.toc-layer-item-details-button` wird ausgeblendet, an seiner Stelle zeichnet ein `::before` das Lucide-Icon „info“
-  als Maske in der Textfarbe des Buttons. Die Regel gilt nur innerhalb des TOC, nicht für das ✕ im Popover (Portal).
-  Risiko: Die Klasse ist laut TOC-README nicht garantiert. Fällt sie weg, erscheint wieder ⋮, es geht nichts kaputt.
+- **Reassessment:** The fork copied ~20 files for ~50 changed lines and has to be reconciled by hand on every upstream
+  update. Requirement after that: no fork, no patch, no PR, the existing component is to be extended.
+  Option 2 had been overlooked when forking, because only props and subcomponents were checked, not the imperative API.
+- **Current solution (branch `toc-native`): extension via the public API** (`toc/TocItemExtensions.tsx`):
+    - `Toc` provides a `TocApi` in `onReady`. `api.getItems()` returns all items, each `TocItem` has
+      `htmlElement`, the DOM element of the item. Both are documented and **reactive** (`reactive()` and
+      `reactiveMap`), so re-rendering and removal of items are reported.
+    - A separate `<div class="toc-layer-item-extra">` is appended as the last child of
+      `<li class="toc-layer-item layer-<id>">`. The slider is rendered into it via `createPortal` and thus stays part
+      of the app's React tree (Chakra, i18n, state).
+    - Checked in the browser: exactly one slider, aligned with the title, works after group on/off, language switch,
+      TOC panel open/closed and layer on/off.
+- **Risks of the current solution:**
+    - A foreign element in an area the TOC renders itself. React leaves unknown children alone, but it is
+      not the intended purpose of `htmlElement` (the TOC docs say "e.g. for scrolling").
+    - Content only at the end of the item: for WMS layers (sublayers hidden) directly below the title, for groups
+      it would be below the children. If the TOC later adds new children to an item, they end up after the container.
+    - If upstream changes the markup, the slider may sit differently. The API itself is public.
+- **Info icon instead of ⋮:** The TOC's ⋮ button only opens the description, so it should look like ⓘ. The TOC renders
+  the icon hard-coded, without a prop. That is why it is replaced via CSS (`toc/TocPanel.tsx`): the SVG in the button
+  `.toc-layer-item-details-button` is hidden, and in its place a `::before` draws the Lucide icon "info"
+  as a mask in the button's text color. The rule applies only inside the TOC, not to the ✕ in the popover (portal).
+  Risk: According to the TOC README the class is not guaranteed. If it disappears, ⋮ shows up again, nothing breaks.
   Commit: `77ef99f`.
-- **Ausführliche Begründung** für die Team-Diskussion: [TocExtensionDecision.md](./TocExtensionDecision.md).
-- **Status:** Entschieden für `toc-native` (Erweiterung über die öffentliche API, kein Fork). Nach `main` gemergt.
-  `dashboard` mit dem Fork bleibt als Referenz bestehen, wird aber nicht weiterentwickelt.
+- **Detailed reasoning** for the team discussion: [TocExtensionDecision.md](./TocExtensionDecision.md).
+- **Status:** Decided in favor of `toc-native` (extension via the public API, no fork). Merged into `main`.
+  `dashboard` with the fork is kept as a reference but is no longer developed.
 - **Commits (`toc-native`):** `22b279a`, `9dc52cb`
 
-## 10. Mehrsprachigkeit
+## 10. Multilingual support
 
-🟡 **Was:** Oberfläche und Layertexte auf Englisch und Deutsch, umschaltbar.
+🟡 **What:** UI and layer texts in English and German, switchable.
 
-- **Entscheidung:** Live-Wechsel ohne Neustart (`advanced.enableLiveLocaleChanges` in `app.ts`). Kartenausschnitt,
-  Auswahl und Zeitfilter bleiben beim Wechsel erhalten. Im Standardmodus von Trails würde die App neu starten.
-- **Texte im JSON:** `name`, `description` und Popup-Beschriftungen dürfen `{ "de": …, "en": … }` sein. Fehlt eine
-  Sprache, wird Englisch genommen, sonst der erste Eintrag.
-- **Technik:** Der `MapConfigProvider` bekommt den `LocaleService` injiziert und erzeugt die Layer in der aktuellen
-  Sprache. Bei jedem Wechsel setzt `useLocalizedDataLayers()` die Titel neu. Popup- und Diagrammtitel lesen den Titel
-  live aus der Karte.
-- **Verlauf:** Erst Dropdown mit Browsersprache als Standard. Auf Wunsch geändert zu: **Englisch als Standard**
-  (`config.locale`), unabhängig vom Browser, und ein **EN|DE-Umschalter** (Chakra `SegmentGroup`) statt Dropdown.
-- **Grenze:** Daten vom Server (z. B. der STA-Name „SMT100 Soil Temperature“) werden nicht übersetzt und stehen klein
-  neben dem übersetzten Titel.
+- **Decision:** Live switch without restart (`advanced.enableLiveLocaleChanges` in `app.ts`). Map extent,
+  selection and time filter are kept when switching. In Trails' default mode the app would restart.
+- **Texts in the JSON:** `name`, `description` and popup labels may be `{ "de": …, "en": … }`. If a
+  language is missing, English is used, otherwise the first entry.
+- **Technique:** The `MapConfigProvider` gets the `LocaleService` injected and creates the layers in the current
+  language. On every switch `useLocalizedDataLayers()` sets the titles again. Popup and chart titles read the title
+  live from the map.
+- **History:** First a dropdown with the browser language as default. Changed on request to: **English as default**
+  (`config.locale`), independent of the browser, and an **EN|DE toggle** (Chakra `SegmentGroup`) instead of a dropdown.
+- **Limitation:** Data from the server (e.g. the STA name "SMT100 Soil Temperature") is not translated and is shown
+  small next to the translated title.
 - **Commits:** `7acb8be`, `f37ab3c`
 
-## 11. Einklappbares TOC-Panel
+## 11. Collapsible TOC panel
 
-🔴 **Was:** Die Ebenen-Box (TOC) gleitet nach links aus dem Bild, ein kleiner Ebenen-Button bleibt zum Öffnen.
+🔴 **What:** The layers box (TOC) slides out of view to the left, a small layers button remains to open it.
 
-- **Stolperstein 1:** Die Trails-`MapAnchor` hat eine eigene Größe und nimmt Klicks an. Ein nur verschobenes Panel
-  hinterließ einen unsichtbaren Bereich, in dem Kartenklicks nicht ankamen.
-- **Stolperstein 2:** Die `MapAnchor` hat `overflow: hidden`. Mit absolut positioniertem Inhalt schrumpfte sie auf null,
-  und Panel und Button waren abgeschnitten, also unsichtbar.
-- **Entscheidung:** Das Panel sitzt nicht mehr in einer `MapAnchor`, sondern als eigene Ebene über der Karte. Der Rahmen
-  hat `pointer-events: none`, nur Panel und Button nehmen Klicks an. Eingeklappt ist das Panel `inert` (nicht per Tab
-  erreichbar), der Fokus springt beim Umschalten auf den jeweils sichtbaren Button.
-- **Analyse-Panel genauso:** Eingeklappt verschwindet das Analyse-Panel unten ganz, unten links über der Karte bleibt
-  ein Liniendiagramm-Button (`LuChartLine`) zum Öffnen. Die Karte wird dabei höher. Gleiche Fokusführung wie beim TOC.
+- **Pitfall 1:** The Trails `MapAnchor` has its own size and accepts clicks. A panel that was only moved
+  left behind an invisible area in which map clicks did not arrive.
+- **Pitfall 2:** The `MapAnchor` has `overflow: hidden`. With absolutely positioned content it shrank to zero,
+  and the panel and button were clipped, i.e. invisible.
+- **Decision:** The panel no longer sits in a `MapAnchor` but as a separate layer above the map. The frame
+  has `pointer-events: none`, only the panel and button accept clicks. When collapsed the panel is `inert` (not
+  reachable via Tab), and on toggling the focus jumps to whichever button is visible.
+- **Analysis panel the same way:** When collapsed, the analysis panel at the bottom disappears completely; at the
+  bottom left above the map a line chart button (`LuChartLine`) remains to open it. The map gets taller. Same focus
+  handling as for the TOC.
 - **Commits:** `237a773`, `80c4910`
 
-## 12. WMS-Legende
+## 12. WMS legend
 
-🔴 **Was:** Die Legende des WMS-Layers im FeatureInfo-Popup. Legenden waren der aufwendigste Teil.
+🔴 **What:** The legend of the WMS layer in the FeatureInfo popup. Legends were the most laborious part.
 
-- **Stolperstein 1, Upstream-Fehler:** `@open-pioneer/map` 1.5.0 fragt die Capabilities fest mit `LANGUAGE=ger` an
-  (`WMSLayer.js`). Der DWD-GeoServer antwortet darauf mit einem Fehler („no international content defined“). Die Karte
-  ignoriert das stillschweigend: Der Layer gilt als geladen, aber es gibt keine Legenden-URL.
-- **Lösung:** Fehlt die URL aus den Capabilities, baut die App eine Standard-Anfrage
+- **Pitfall 1, upstream bug:** `@open-pioneer/map` 1.5.0 requests the capabilities with a hard-coded `LANGUAGE=ger`
+  (`WMSLayer.js`). The DWD GeoServer responds to that with an error ("no international content defined"). The map
+  silently ignores this: the layer counts as loaded, but there is no legend URL.
+- **Solution:** If the URL from the capabilities is missing, the app builds a standard request
   `{endpoint}?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER={name}`
-  (`getLegendGraphicUrl` in `mapClick/legendUrls.ts`). Bei Servern mit funktionierenden Capabilities wird deren URL genommen.
-- **Stolperstein 2, Bildformat:** Die Standardlegende ist 88×505 px hochkant, die querliegende Variante 1544 px breit.
-  Beides passt schlecht in ein Popup.
-- **Versuche:**
-    1. Popup je nach Platz ober- oder unterhalb öffnen: verworfen, zu aufwendig für das Problem.
-    2. Bild im Browser verkleinern (100 px, dann 80 px Höhe): erst verzerrt (Breite blieb stehen), dann proportional,
-       aber unlesbar.
-    3. **Serverseitig klein zeichnen lassen:** `LEGEND_OPTIONS=columns:4;fontSize:9` und `WIDTH/HEIGHT=12` ergeben
-       242×77 px, scharf und lesbar. Das ist die aktuelle Lösung, konfiguriert pro Layer in `wms.legend.params`.
-- **Risiken bei anderen Layern** (bewusst vorerst so gelassen):
-    - `GetLegendGraphic` ist eine Erweiterung, kein Pflichtteil des WMS-Standards. GeoServer, MapServer, QGIS Server und
-      ArcGIS können es, andere eventuell nicht. Dann erscheint ein kaputtes Bild, Ladefehler werden nicht abgefangen.
-    - `LEGEND_OPTIONS` versteht nur GeoServer. Andere Server ignorieren den Parameter meist, ein sehr strenger könnte ihn
-      ablehnen. Betrifft nur Layer, bei denen man ihn bewusst setzt.
-    - Konfigurierte Parameter werden mit `searchParams.set` gesetzt. Enthält eine Capabilities-URL schon `width=20`, steht
-      danach zusätzlich `WIDTH=12` in der URL, statt den Wert zu ersetzen. Welcher gilt, hängt vom Server ab.
-    - Die Ersatz-URL fragt immer den Standardstil an. Wird ein Layer mit einem bestimmten Stil eingebunden, kann die
-      Legende abweichen.
-    - Sehr hohe Legenden passen über den Scroll im Popup trotzdem hinein.
+  (`getLegendGraphicUrl` in `mapClick/legendUrls.ts`). For servers with working capabilities, their URL is used.
+- **Pitfall 2, image format:** The default legend is 88×505 px portrait, the landscape variant 1544 px wide.
+  Neither fits well into a popup.
+- **Attempts:**
+    1. Open the popup above or below depending on space: rejected, too much effort for the problem.
+    2. Scale the image down in the browser (100 px, then 80 px height): first distorted (the width stayed), then
+       proportional, but unreadable.
+    3. **Have the server draw it small:** `LEGEND_OPTIONS=columns:4;fontSize:9` and `WIDTH/HEIGHT=12` produce
+       242×77 px, sharp and readable. This is the current solution, configured per layer in `wms.legend.params`.
+- **Risks with other layers** (deliberately left as is for now):
+    - `GetLegendGraphic` is an extension, not a mandatory part of the WMS standard. GeoServer, MapServer, QGIS Server and
+      ArcGIS support it, others may not. Then a broken image appears, load errors are not caught.
+    - Only GeoServer understands `LEGEND_OPTIONS`. Other servers usually ignore the parameter, a very strict one could
+      reject it. This only affects layers where it is set deliberately.
+    - Configured parameters are set with `searchParams.set`. If a capabilities URL already contains `width=20`, the URL
+      then additionally contains `WIDTH=12` instead of the value being replaced. Which one applies depends on the server.
+    - The fallback URL always requests the default style. If a layer is integrated with a specific style, the
+      legend can differ.
+    - Very tall legends still fit thanks to the scrolling in the popup.
 - **Commits:** `8256091`, `7802450`
 
-## 13. Popup-Platzierung und Marker
+## 13. Popup placement and marker
 
-🟡 **Was:** Wo das FeatureInfo-Popup erscheint und wie man sieht, wohin geklickt wurde.
+🟡 **What:** Where the FeatureInfo popup appears and how you can see where you clicked.
 
-- **Verlauf:**
-    1. Anfangs öffnete sich das Popup über dem Klickpunkt. Mit der Legende wurde es höher und ragte oben aus der Karte.
-    2. Ein Kopf mit ✕, der beim Scrollen stehen bleibt, kam auf Wunsch dazu (`0cf7594`).
-    3. Wunsch des Nutzers: Marker an der Klickstelle, Popup daneben, Oberkante unterhalb des Klicks. Passt es unten nicht
-       hin, soll es zwischen Analyse-Panel und Oberkante sichtbar bleiben.
-- **Entscheidung:** Blauer Pin über `map.highlights` (`mapClick/clickMarker.ts`). Das Popup steht rechts neben dem
-  Marker (am rechten Rand links davon), mit der Oberkante 8 px unter dem Klick. Reicht der Platz nach unten nicht, wird es
-  gerade so weit hochgeschoben, dass es ganz sichtbar ist (`mapClick/popupPlacement.ts`). Weil die Popup-Größe sich
-  beim Laden und durch die nachladende Legende ändert, wird die Position per `ResizeObserver` und bei Größenänderung der
-  Karte neu berechnet.
-- **Höhe und Scroll:** Das Popup ist höchstens Kartenhöhe minus 16 px, maximal 400 px hoch. Erst wenn der Inhalt höher
-  ist, scrollt er. Mit der kompakten DWD-Legende (Inhalt ca. 250 px) passt meist alles, ein Scrollbalken erscheint dann
-  nicht.
-- **Ausgewählter Sensor:** Ein Klick auf einen Sensorpunkt markiert ihn mit einem blauen Ring, das Popup sitzt am
-  Sensor statt an der Klickposition. Der nächste Klick in die Karte (oder ✕ im Popup) hebt die Markierung auf.
-  „In Auswertung anzeigen“ schließt nur das Popup, der Sensor bleibt markiert, solange er im Panel gezeigt wird.
+- **History:**
+    1. Initially the popup opened above the click point. With the legend it got taller and stuck out at the top of
+       the map.
+    2. A header with ✕ that stays in place while scrolling was added on request (`0cf7594`).
+    3. User's wish: marker at the click location, popup next to it, top edge below the click. If it does not fit
+       below, it should stay visible between the analysis panel and the top edge.
+- **Decision:** Blue pin via `map.highlights` (`mapClick/clickMarker.ts`). The popup sits to the right of the
+  marker (at the right edge, to its left), with its top edge 8 px below the click. If there is not enough space
+  downwards, it is pushed up just far enough to be fully visible (`mapClick/popupPlacement.ts`). Because the popup size
+  changes while loading and when the legend loads later, the position is recalculated via `ResizeObserver` and when
+  the map is resized.
+- **Height and scrolling:** The popup is at most the map height minus 16 px, at most 400 px tall. Only when the content
+  is taller does it scroll. With the compact DWD legend (content approx. 250 px) everything usually fits, and no
+  scrollbar appears.
+- **Selected sensor:** A click on a sensor point marks it with a blue ring, and the popup sits at the
+  sensor instead of the click position. The next click on the map (or ✕ in the popup) removes the marking.
+  „In Auswertung anzeigen“ (show in analysis) only closes the popup; the sensor stays marked as long as it is shown in
+  the panel.
 - **Commits:** `0cf7594`, `74b09ed`, `2fc058c`
 
-## 14. Testen
+## 14. Testing
 
-🟢 **Was:** Wie die Änderungen geprüft wurden.
+🟢 **What:** How the changes were checked.
 
-- **Vitest** (`pnpm vitest run`): Parser der Konfiguration inkl. Gruppen, Mehrsprachigkeit, FeatureInfo- und
-  Legenden-Optionen; Zeitfilter; Lücken im Diagramm; Legenden-URL; Popup-Platzierung.
-- **Im Browser:** Jede UI-Änderung wurde mit Headless-Chromium gegen `pnpm preview` geprüft, gesteuert über das Chrome
-  DevTools Protocol (Klicks, Screenshots, Netzwerk-Requests, Konsolenfehler). Die Skripte liegen nicht im Repo.
+- **Vitest** (`pnpm vitest run`): configuration parser incl. groups, multilingual texts, FeatureInfo and
+  legend options; time filter; gaps in the chart; legend URL; popup placement.
+- **In the browser:** Every UI change was checked with headless Chromium against `pnpm preview`, driven via the Chrome
+  DevTools Protocol (clicks, screenshots, network requests, console errors). The scripts are not in the repo.
 - **CI-relevant:** `pnpm lint`, `pnpm check-types`, `pnpm build`, `pnpm build-docs`, `pnpm build-license-report`.
 
-## 15. Offene Punkte und Ideen
+## 15. Open items and ideas
 
-- **Upstream-Issue:** Fest eingebautes `LANGUAGE=ger` in `@open-pioneer/map` melden (dazu: eine Endpoint-URL mit
-  `?` ergibt eine kaputte Capabilities-URL). Wird es behoben, nutzt die App automatisch die Legenden-URLs aus den
-  Capabilities. Für eigene WMS umgeht die App das schon (Abschnitt 17).
-- **Eigene WMS ausbauen:** FeatureInfo für Dienste ohne GeoJSON (GML über `ol/format/WMSGetFeatureInfo`; HTML nur
-  bereinigt), Style-Auswahl (z. B. barrierefreier RADOLAN-Style), Zeitdimension, Zoom auf die Ausdehnung des Layers.
-- **Weitere Diagramme:** Linie, Balken, Boxplot und Windrose gibt es (Abschnitt 8). Weitere nach Bedarf.
-- **CI-Deploy:** Der Job `deploy` in `.github/workflows/test-and-build.yml` ist noch an das Repository
-  `open-pioneer/trails-starter` gebunden (`github.repository == …`) und läuft daher auch in `Co-Site/cosite-dashboard`
-  nie. Build und Tests laufen dort bei jedem Push. Ob ein Deploy auf GitHub Pages gewünscht ist, ist offen.
-- **Daten:** Umgang mit Sensor-Ausreißern (z. B. `0`-Werte) fachlich klären. Zeitstempel des STA-Servers ca. 2 h in
-  der Zukunft (siehe Abschnitt 8, Kacheln), beim Betreiber klären. Bei weiteren STA-Servern prüfen, ob die Messzeit
-  in `phenomenonTime` steht und nicht nur in `resultTime` (Abschnitt 8, Abfrage der Messwerte).
-- **Überlagerte Sensorpunkte:** Sensoren am selben Ort sind auf der Karte ein Punkt. Das Popup listet sie, im Panel
-  stehen sie als Kacheln neben dem Diagramm. Eine Darstellung auf der Karte (z. B. Gruppierung oder Versatz) steht
-  noch aus.
-- **Ganzes Thing als Layer:** Gut möglich, dass einmal ein Thing mit allen Datastreams importiert wird. Dann die
-  Annahme „ein Layer, ein Datastream“ beachten (Abschnitt 8, Annahmen der STA-Hooks).
-- **Windrose fachlich klären:** Welche Datastreams (Richtung, Geschwindigkeit), Geschwindigkeitsklassen gestapelt pro
-  Sektor, Anzahl der Sektoren. Für gestapelte Klassen reicht `polarArea` nicht, dann eigene Zeichnung oder Plugin.
-- **Balken für Niederschlag:** Summe statt Mittelwert je Abschnitt, ggf. pro Datastream in der Konfiguration.
+- **Upstream issue:** Report the hard-coded `LANGUAGE=ger` in `@open-pioneer/map` (also: an endpoint URL with
+  `?` results in a broken capabilities URL). Once it is fixed, the app automatically uses the legend URLs from the
+  capabilities. For custom WMS the app already works around it (section 17).
+- **Extend custom WMS:** FeatureInfo for services without GeoJSON (GML via `ol/format/WMSGetFeatureInfo`; HTML only
+  sanitized), style selection (e.g. an accessible RADOLAN style), time dimension, zoom to the layer's extent.
+- **More charts:** Line, bar, box plot and wind rose exist (section 8). More as needed.
+- **CI deploy:** The `deploy` job in `.github/workflows/test-and-build.yml` is still bound to the repository
+  `open-pioneer/trails-starter` (`github.repository == …`) and therefore never runs in `Co-Site/cosite-dashboard`
+  either. Build and tests run there on every push. Whether a deploy to GitHub Pages is wanted is open.
+- **Data:** Clarify the handling of sensor outliers (e.g. `0` values) from a domain point of view. STA server timestamps
+  are approx. 2 h in the future (see section 8, tiles), clarify with the operator. For further STA servers check whether
+  the measurement time is in `phenomenonTime` and not only in `resultTime` (section 8, Querying the observations).
+- **Overlapping sensor points:** Sensors at the same location are one point on the map. The popup lists them, in the
+  panel they appear as tiles next to the chart. A representation on the map (e.g. clustering or offset) is still
+  pending.
+- **Whole Thing as a layer:** It is quite possible that a Thing with all its datastreams will be imported at some
+  point. Then keep the assumption "one layer, one datastream" in mind (section 8, Assumptions of the STA hooks).
+- **Clarify the wind rose from a domain point of view:** Which datastreams (direction, speed), speed classes stacked per
+  sector, number of sectors. For stacked classes `polarArea` is not enough, then a custom drawing or a plugin.
+- **Bars for precipitation:** Sum instead of mean per interval, possibly per datastream in the configuration.
 
-## 16. Branches und Arbeitsweise
+## 16. Branches and workflow
 
-**Was:** Wie ab dem Merge von `toc-native` nach `main` entwickelt wird.
+**What:** How development works since `toc-native` was merged into `main`.
 
-| Branch       | Rolle                                                                   |
-| ------------ | ----------------------------------------------------------------------- |
-| `main`       | Stabiler Stand. Bekommt nur Merges aus `dev`.                           |
-| `dev`        | Integrationsstand. Bekommt Merges aus Feature-Branches.                 |
-| `<feature>`  | Ein Branch pro Feature, abgezweigt von `dev`, z. B. `feature/windrose`. |
-| `toc-native` | Gewählte TOC-Variante, nach `main` gemergt. Bleibt als Historie.        |
-| `dashboard`  | TOC-Fork-Variante. Nicht gemergt, bleibt nur als Referenz.              |
+| Branch       | Role                                                                 |
+| ------------ | -------------------------------------------------------------------- |
+| `main`       | Stable state. Only receives merges from `dev`.                       |
+| `dev`        | Integration state. Receives merges from feature branches.            |
+| `<feature>`  | One branch per feature, branched off `dev`, e.g. `feature/windrose`. |
+| `toc-native` | Chosen TOC variant, merged into `main`. Kept as history.             |
+| `dashboard`  | TOC fork variant. Not merged, kept only as a reference.              |
 
-- **Ablauf:** Feature-Branch von `dev` → ein Commit pro Schritt → `git merge --no-ff <feature>` nach `dev` → wenn
-  `dev` stabil ist, `git merge --no-ff dev` nach `main`. `--no-ff`, damit jedes Feature als Merge-Commit sichtbar
-  bleibt. Danach `dev` mit `git merge --ff-only main` auf `main` nachziehen, damit beide auf demselben Commit stehen
-  (der Merge-Commit entsteht sonst nur auf `main`).
-- **Nachziehen:** Einen Feature-Branch vor dem Merge auf das aktuelle `dev` zu rebasen ist in Ordnung (er ist noch
-  nicht geteilt). Kommt etwas direkt auf `main` (Hotfix), wird `main` in `dev` **gemergt**, nicht rebased: Ein Rebase
-  würde die Commits von `dev` neu schreiben und passt dann nicht mehr zu den schon gemergten Feature-Branches.
+- **Flow:** Feature branch from `dev` → one commit per step → `git merge --no-ff <feature>` into `dev` → when
+  `dev` is stable, `git merge --no-ff dev` into `main`. `--no-ff` so that every feature stays visible as a merge
+  commit. Afterwards bring `dev` up to `main` with `git merge --ff-only main` so that both are on the same commit
+  (otherwise the merge commit only exists on `main`).
+- **Catching up:** Rebasing a feature branch onto the current `dev` before the merge is fine (it is not
+  shared yet). If something lands directly on `main` (hotfix), `main` is **merged** into `dev`, not rebased: a rebase
+  would rewrite the commits of `dev` and then no longer match the feature branches already merged.
 - **Remotes:**
-    - `origin` = `git@github.com:Co-Site/cosite-dashboard.git`, das eigene Repo. `main` und `dev` werden dorthin
-      gepusht, Feature-Branches nur bei Bedarf.
-    - `upstream` = `open-pioneer/trails-starter`, nur zum Abholen. Push ist deaktiviert (`git remote set-url --push
-upstream no-push`). Updates vom Starter bei Bedarf mit `git fetch upstream` holen und in einem Feature-Branch
-      mergen.
-    - `toc-native` und `dashboard` liegen nur lokal.
+    - `origin` = `git@github.com:Co-Site/cosite-dashboard.git`, our own repo. `main` and `dev` are pushed
+      there, feature branches only when needed.
+    - `upstream` = `open-pioneer/trails-starter`, fetch only. Push is disabled (`git remote set-url --push
+upstream no-push`). Fetch updates from the starter when needed with `git fetch upstream` and merge them in a
+      feature branch.
+    - `toc-native` and `dashboard` exist only locally.
 
-## 17. Eigene WMS-Layer (temporär)
+## 17. Custom WMS layers (temporary)
 
-🔴 **Was:** Kundenwunsch: WMS-Layer für die aktuelle Sitzung hinzufügen, ohne etwas zu speichern, mit möglichst
-wenig Eingaben (höchstens ein Titel, nicht mehrere Textfelder).
+🔴 **What:** Customer request: add WMS layers for the current session without saving anything, with as few
+inputs as possible (at most a title, not several text fields).
 
-- **Entscheidung:** Ein Formular unter dem TOC-Titel mit zwei Feldern: URL des Dienstes, dann ein Suchfeld mit
-  Vorschlägen für den Layer. Der Titel kommt aus den Capabilities, getippt wird er nie.
-- **Warum Suchfeld statt Layername-Feld:** Technische Namen wie `Icon_reg025_fd_sl_T2M` kennt kaum jemand. Die
-  Capabilities müssen ohnehin geladen werden (Titel, FeatureInfo-Format, Fehlermeldungen), die Suche ist nur die
-  Oberfläche darüber. Profis tippen den exakten Namen und drücken Enter.
-- **Liste statt nur Suche (Nachbesserung):** Zuerst zeigte die Liste nur Suchtreffer (höchstens 30). Wunsch des
-  Nutzers: auch ohne Suchbegriff blättern können. Jetzt stehen ohne Eingabe alle Layer in Dokumentreihenfolge in
-  einer scrollbaren Liste (`min(22rem, 40vh)` hoch), die Suche filtert sie nur. Kein Baum: DWD hat 206 Layer (ca.
-  1 MB Capabilities), der Pfad (übergeordnete Titel) steht klein unter jedem Eintrag. Benannte Gruppenlayer (z. B.
-  „Fachlayer“) erscheinen mit, sie zeigen beim Hinzufügen alle ihre Unterlayer.
-- **Was die Capabilities liefern** (geprüft an DWD, BKG TopPlusOpen, NRW DOP, BGR BÜK200, BfN, LANUV):
-    - Ja: Layerliste, Titel, `queryable`, GetFeatureInfo-Formate, Legenden-URL, CRS, Zeitdimension, Ausdehnung.
-    - Teilweise: Abstract (oft leer oder gleich dem Titel), Anbieter, Nutzungsbedingungen.
-    - Nein: englische Texte (kein Dienst ist mehrsprachig, DWD antwortet auf jedes `LANGUAGE` mit einem Fehler), brauchbare
-      Attribution (bei keinem Dienst vorhanden, nur langer Freitext in `Fees`/`AccessConstraints`), Feldlabels
-      (nur rohe Namen wie `RW_HDF5`), verlässliche Einheiten.
-    - Folge für die Konfiguration: `name` ist bei WMS optional (Titel aus den Capabilities), `featureInfo.format`
-      neu. Gepflegte Texte auf Deutsch und Englisch, Attribution, Feldlabels und Legendenparameter bleiben manuell.
-- **Wo die Layer landen:** Gewünscht war die bestehende Gruppe „WMS“. Geht nicht: Gruppen in
-  `@open-pioneer/map` 1.5.0 haben ein festes Kinder-Array (`GroupLayerCollection`), und ein Layer verlässt eine
-  Gruppe nur, wenn sie zerstört wird (mitsamt Kindern). Die WMS-Gruppe neu zu bauen hätte den Zustand der
-  konfigurierten Layer zurückgesetzt. Stattdessen eigene Gruppe „Eigene WMS“ direkt darunter, die bei jeder Änderung
-  neu gebaut wird; Sichtbarkeit und Deckkraft der eigenen Layer werden übernommen, sie laden dabei kurz neu.
-- **FeatureInfo:** Bisher war `INFO_FORMAT=application/json` fest eingebaut. Das kann nur GeoServer; ArcGIS und
-  MapServer liefern `application/geo+json`, manche Dienste gar kein JSON (4 von 5 getesteten fremden Diensten wären
-  gescheitert). Jetzt wird das Format aus den Capabilities gewählt, ohne passendes Format wird der Layer nicht
-  abgefragt (statt bei jedem Klick „Anfrage fehlgeschlagen“).
-- **Attribution:** `@open-pioneer/map` setzt ohne eigene Attribution `AccessConstraints` oder `Fees` als
-  Quellenangabe (DWD: nackte URL, BfN: „Nicht für Planungszwecke geeignet“). Die App setzt sie jetzt immer selbst
-  (leer, wenn nicht konfiguriert). Anbieter und Nutzungsbedingungen eigener Layer stehen in der Layerbeschreibung.
-- **Stolpersteine:**
-    - `ol/format/WMSCapabilities` vererbt CRS nur über eine Ebene (die Zwischenebene wird erst nach ihren Kindern
-      ergänzt). Bei DWD stehen die CRS nur an der Wurzel, die Layer liegen drei Ebenen tiefer. Die App vererbt die
-      CRS deshalb selbst.
-    - Der XML-Parser von happy-dom (Tests) bricht das DWD-Dokument nach 74 Layern ab, im Browser sind es alle 206.
-      Die Unit-Tests nutzen ein kleines Beispieldokument.
-    - Die Legenden-URL der Capabilities wird nur für eigene Layer genutzt: Bei DWD enthält sie schon
-      `width=20&height=20`, die konfigurierten Legendenparameter (`WIDTH=12`) kamen zusätzlich dazu. Parameter werden
-      jetzt unabhängig von Groß-/Kleinschreibung ersetzt, Legendenbilder mit Ladefehler ausgeblendet (BGR liefert eine
-      Legenden-URL mit `%26` statt `&`).
-    - Dienste ohne CORS lassen sich nicht hinzufügen (Fehlermeldung im Formular, kein Proxy).
-    - **DWD-Gruppen mit Namen sind nicht abrufbar:** 16 Ordnergruppen (Fachlayer, Wetter, Radar, Satellit, Warnungen,
-      Klima, Basislayer, …) haben in den Capabilities einen `<Name>`, GetMap antwortet aber mit HTTP 200 und
-      `ServiceException code="LayerNotDefined"` (auch mit `dwd:`-Präfix und über `/geoserver/wms`). Nach WMS 1.3.0
-      §7.2.4.6.3 hat ein Layer genau dann einen Namen, wenn er abrufbar ist; das ist also ein Fehler beim DWD
-      (vermutlich Konfiguration der Layergruppen in GeoServer). Folge in der App war ein leerer Layer und nur
-      „Image load error“ in der Konsole.
-    - **Rückmeldung an den Nutzer** (deshalb, und für ausgefallene Dienste):
-        - Vor dem Hinzufügen fragt die App ein 1 × 1-Pixel-Bild ab (`probeWmsLayer`). Nur eine Bild-Antwort zählt;
-          sonst erscheint die Meldung des Dienstes im Formular und nichts wird hinzugefügt. Gruppen sind in der Liste
-          markiert.
-        - Im TOC zeigt jeder WMS-Layer (auch konfigurierte) einen Hinweis, solange sein Kartenbild nicht lädt
-          (`toc/LayerLoadWarning.tsx`, Ereignisse `imageloaderror`/`imageloadend` der OpenLayers-Quelle). Der
-          `loadState` des Layers hilft nicht, `@open-pioneer/map` setzt ihn nur bei Fehlern der Initialisierung.
-        - Stolperstein: Bei HTTP-Fehlern (z. B. 500) loggt `@open-pioneer/map` nur und lässt das Bild unvollendet,
-          OpenLayers meldet dann nichts. Die App umhüllt die Ladefunktion der Quelle und lässt ein solches Bild
-          scheitern (`reportFailedImageRequests` in `ows/wmsLayer.ts`).
-- **Offen:** siehe Abschnitt 15 (GML-FeatureInfo, Styles, Zeitdimension, Zoom auf den Layer).
-- **Commits:** `fd05554`, `2b15b8b`, `ac864aa`, `ba0a99a`, `d5ca6bb`; Rückmeldung: `20f6df2`, `ba62eac`
+- **Decision:** A form below the TOC title with two fields: the service URL, then a search field with
+  suggestions for the layer. The title comes from the capabilities, it is never typed.
+- **Why a search field instead of a layer name field:** Hardly anyone knows technical names like
+  `Icon_reg025_fd_sl_T2M`. The capabilities have to be loaded anyway (title, FeatureInfo format, error messages), the
+  search is just the UI on top. Experts type the exact name and press Enter.
+- **List instead of search only (follow-up):** At first the list showed only search hits (at most 30). User's
+  wish: be able to browse without a search term too. Now, without input, all layers are shown in document order in
+  a scrollable list (`min(22rem, 40vh)` tall), the search only filters them. No tree: DWD has 206 layers (approx.
+  1 MB of capabilities), the path (parent titles) is shown small below each entry. Named group layers (e.g.
+  „Fachlayer“) are included, when added they show all their sublayers.
+- **What the capabilities provide** (checked against DWD, BKG TopPlusOpen, NRW DOP, BGR BÜK200, BfN, LANUV):
+    - Yes: layer list, title, `queryable`, GetFeatureInfo formats, legend URL, CRS, time dimension, extent.
+    - Partly: abstract (often empty or the same as the title), provider, terms of use.
+    - No: English texts (no service is multilingual, DWD responds to any `LANGUAGE` with an error), usable
+      attribution (not present in any service, only long free text in `Fees`/`AccessConstraints`), field labels
+      (only raw names like `RW_HDF5`), reliable units.
+    - Consequence for the configuration: `name` is optional for WMS (title from the capabilities), `featureInfo.format`
+      is new. Curated texts in German and English, attribution, field labels and legend parameters remain manual.
+- **Where the layers end up:** The existing group „WMS“ was requested. That does not work: groups in
+  `@open-pioneer/map` 1.5.0 have a fixed children array (`GroupLayerCollection`), and a layer only leaves a
+  group when the group is destroyed (along with its children). Rebuilding the WMS group would have reset the state of the
+  configured layers. Instead there is a separate group „Eigene WMS“ (custom WMS) directly below it, which is rebuilt on
+  every change; visibility and opacity of the custom layers are carried over, and they briefly reload in the process.
+- **FeatureInfo:** Until now `INFO_FORMAT=application/json` was hard-coded. Only GeoServer supports that; ArcGIS and
+  MapServer return `application/geo+json`, some services no JSON at all (4 of 5 tested third-party services would have
+  failed). Now the format is chosen from the capabilities; without a suitable format the layer is not
+  queried (instead of „Anfrage fehlgeschlagen“ (request failed) on every click).
+- **Attribution:** Without its own attribution, `@open-pioneer/map` uses `AccessConstraints` or `Fees` as the
+  source credit (DWD: a bare URL, BfN: „Nicht für Planungszwecke geeignet“, not suitable for planning purposes). The
+  app now always sets it itself (empty if not configured). Provider and terms of use of custom layers are in the layer
+  description.
+- **Pitfalls:**
+    - `ol/format/WMSCapabilities` inherits CRS only across one level (the intermediate level is only filled in after
+      its children). At DWD the CRS are only at the root, and the layers are three levels deeper. The app therefore
+      inherits the CRS itself.
+    - The XML parser of happy-dom (tests) stops the DWD document after 74 layers, in the browser all 206 are there.
+      The unit tests use a small sample document.
+    - The legend URL from the capabilities is only used for custom layers: at DWD it already contains
+      `width=20&height=20`, and the configured legend parameters (`WIDTH=12`) were added on top. Parameters are
+      now replaced case-insensitively, and legend images with a load error are hidden (BGR returns a
+      legend URL with `%26` instead of `&`).
+    - Services without CORS cannot be added (error message in the form, no proxy).
+    - **Named DWD groups cannot be requested:** 16 folder groups (Fachlayer, Wetter, Radar, Satellit, Warnungen,
+      Klima, Basislayer, …) have a `<Name>` in the capabilities, but GetMap responds with HTTP 200 and
+      `ServiceException code="LayerNotDefined"` (also with the `dwd:` prefix and via `/geoserver/wms`). According to
+      WMS 1.3.0 §7.2.4.6.3 a layer has a name if and only if it can be requested; so this is a bug at DWD
+      (probably the configuration of the layer groups in GeoServer). The result in the app was an empty layer and only
+      "Image load error" in the console.
+    - **Feedback to the user** (because of this, and for services that are down):
+        - Before adding, the app requests a 1 × 1 pixel image (`probeWmsLayer`). Only an image response counts;
+          otherwise the service's message appears in the form and nothing is added. Groups are marked in the
+          list.
+        - In the TOC every WMS layer (configured ones too) shows a note as long as its map image does not load
+          (`toc/LayerLoadWarning.tsx`, events `imageloaderror`/`imageloadend` of the OpenLayers source). The
+          layer's `loadState` does not help, `@open-pioneer/map` only sets it on initialization errors.
+        - Pitfall: On HTTP errors (e.g. 500), `@open-pioneer/map` only logs and leaves the image unfinished,
+          and OpenLayers then reports nothing. The app wraps the source's load function and lets such an image
+          fail (`reportFailedImageRequests` in `ows/wmsLayer.ts`).
+- **Open:** see section 15 (GML FeatureInfo, styles, time dimension, zoom to the layer).
+- **Commits:** `fd05554`, `2b15b8b`, `ac864aa`, `ba0a99a`, `d5ca6bb`; feedback: `20f6df2`, `ba62eac`
 
-## 18. Geoportal Leverkusen (Proxy)
+## 18. Geoportal Leverkusen (proxy)
 
-🟡 **Was:** Kundenwunsch: die wichtigsten Layer aus dem Geoportal Leverkusen (Thema „Natur, Umwelt und Mobilität“)
-standardmäßig sichtbar: Stadtklimaprojektionen, Hochwasser, Starkregen, Grundwassernutzungsverbot.
+🟡 **What:** Customer request: the most important layers from the Geoportal Leverkusen (topic „Natur, Umwelt und
+Mobilität“, nature, environment and mobility) visible by default: urban climate projections, flooding, heavy rain,
+groundwater use ban.
 
-- **Dienst:** `https://geoportal.leverkusen.de/GCGisService` (GC OSIRIS auf GeoServer, WMS 1.1.1/1.3.0, öffentlich,
-  EPSG:3857, GetFeatureInfo als `application/json`). Gefunden über die Netzwerk-Requests des Geoportals; die
-  Themen-Links auf leverkusen.de/service/geoportal enthalten die Layernamen.
-- **Namensabgleich** (Capabilities vom 2026-10-26):
-    - Stadtklima: `LEV:Heisse_Tage_…`, `LEV:Sommertage_…`, `LEV:Tropennaechte_…` je für `1971_bis_2000`,
-      `2031_bis_2060`, `2071_bis_2100`. Alle drei Zeiträume aufgenommen, je Indikator ein Eintrag mit drei Unterlayern.
-    - Hochwasser: `LEV:hw_<gewässer>_<ueg|gg>_hq_<10|100|extrem>` (`ueg` Überschwemmungsgebiet, `gg` geschütztes
-      Gebiet, `hq_10` = „HQ häufig“). Je Gewässer (Dhünn, Mutzbach, Rhein, Wiembach) ein Eintrag mit allen vorhandenen
-      Kombinationen. Die Wupper gibt es auch, sie stand nicht auf der Kundenliste und fehlt bewusst.
-    - Starkregen: `LEV:Starkregen_T50`, `LEV:Starkregen_T100`, `LEV:Starkregen_hN90mm` (Blockregen 90 mm, das „sehr
-      seltene Ereignis“).
-    - Grundwasser: `LEV:Grundwassernutzungsverbot GL` (diesen nutzt das Geoportal).
-- **Kein CORS:** Der Dienst sendet keinen `Access-Control-Allow-Origin` (DWD sendet `*`). `@open-pioneer/map` lädt
-  Bilder und Capabilities per `fetch`, also blieben die Layer leer, lokal wie produktiv.
-- **Entscheidung: Proxy auf dem eigenen Server.** Verworfen:
-    - Bilder per `<img>` laden: ginge ohne CORS, aber ohne Capabilities, FeatureInfo und Legende (die Legende steht nur
-      im FeatureInfo-Popup), Unterlayer nur mit technischen Namen, Canvas „tainted“.
-    - Stadt um CORS bitten: richtig, aber Zeitpunkt offen. Setzt die Stadt den Header, kann der Proxy entfallen
-      (Endpoint wieder absolut).
-- **Umsetzung:** Relative Endpoints werden gegen die App-URL aufgelöst, Vite leitet `/proxy/leverkusen/` weiter,
-  produktiv braucht nginx denselben Pfad (Beispiel in `DashboardWiring.md`). Mehrere Layer pro Eintrag (ein GetMap
-  statt 31), die Unterlayer-Titel kommen aus den Capabilities.
-- **Stolpersteine:**
-    - GetLegendGraphic der Stadtklima-Layer antwortet mit einer `NullPointerException`; die `*_dummy`-Layer, die das
-      Geoportal dafür nutzt, liefern leere Bilder. Legende für Stadtklima deshalb aus.
-    - Die drei Zeiträume eines Indikators decken jeweils die ganze Stadt ab. Sind alle sichtbar, sieht man nur den
-      obersten (2071–2100). Noch offen.
+- **Service:** `https://geoportal.leverkusen.de/GCGisService` (GC OSIRIS on GeoServer, WMS 1.1.1/1.3.0, public,
+  EPSG:3857, GetFeatureInfo as `application/json`). Found via the network requests of the geoportal; the
+  topic links on leverkusen.de/service/geoportal contain the layer names.
+- **Name matching** (capabilities of 2026-10-26):
+    - Urban climate: `LEV:Heisse_Tage_…`, `LEV:Sommertage_…`, `LEV:Tropennaechte_…` each for `1971_bis_2000`,
+      `2031_bis_2060`, `2071_bis_2100`. All three periods included, one entry per indicator with three sublayers.
+    - Flooding: `LEV:hw_<gewässer>_<ueg|gg>_hq_<10|100|extrem>` (`ueg` flood area, `gg` protected
+      area, `hq_10` = „HQ häufig“, frequent flood). One entry per water body (Dhünn, Mutzbach, Rhein, Wiembach) with all
+      available combinations. The Wupper exists too; it was not on the customer's list and is deliberately missing.
+    - Heavy rain: `LEV:Starkregen_T50`, `LEV:Starkregen_T100`, `LEV:Starkregen_hN90mm` (block rain 90 mm, the „sehr
+      seltene Ereignis“, very rare event).
+    - Groundwater: `LEV:Grundwassernutzungsverbot GL` (this is the one the geoportal uses).
+- **No CORS:** The service sends no `Access-Control-Allow-Origin` (DWD sends `*`). `@open-pioneer/map` loads
+  images and capabilities via `fetch`, so the layers stayed empty, locally as well as in production.
+- **Decision: proxy on our own server.** Rejected:
+    - Load images via `<img>`: would work without CORS, but without capabilities, FeatureInfo and legend (the legend is
+      only in the FeatureInfo popup), sublayers only with technical names, canvas "tainted".
+    - Ask the city for CORS: correct, but timing unknown. If the city sets the header, the proxy can be dropped
+      (endpoint absolute again).
+- **Implementation:** Relative endpoints are resolved against the app URL, Vite forwards `/proxy/leverkusen/`,
+  in production nginx needs the same path (example in `DashboardWiring.md`). Several layers per entry (one GetMap
+  instead of 31), the sublayer titles come from the capabilities.
+- **Pitfalls:**
+    - GetLegendGraphic of the urban climate layers responds with a `NullPointerException`; the `*_dummy` layers that the
+      geoportal uses for this return empty images. Legend for urban climate therefore off.
+    - The three periods of an indicator each cover the whole city. If all are visible, you only see the
+      topmost one (2071–2100). Still open.
 - **Commits:** `a32bf8e`, `2e4777f`, `2bf530b`, `1d735c6`
 
-## 19. Eigene WFS-Layer
+## 19. Custom WFS layers
 
-🟡 **Was:** Wie bei WMS (Abschnitt 17) sollen WFS-Dienste für die Sitzung hinzugefügt und dauerhaft in
-`dataLayers.json` eingetragen werden können (`TODO.md`, besprochen am 2026-10-30).
+🟡 **What:** As with WMS (section 17), it should be possible to add WFS services for the session and to enter them
+permanently in `dataLayers.json` (`TODO.md`, discussed on 2026-10-30).
 
-- **Entscheidung:** Eigene Zeile „WFS hinzufügen“ unter „WMS hinzufügen“ mit demselben Ablauf (URL laden, Feature-Typ
-  suchen, hinzufügen). WFS 2.0.0 und 1.1.0, GeoJSON und GML (3.2, 3.1, 2) gleich von Anfang an. Gruppe „Eigene WFS“
-  (`user-wfs`) über dem obersten Layer mit WMS, also über den Kartenbildern und unter den Sensoren. Eine Farbe pro
-  Layer aus einer festen Palette (`dataLayers/ows/wfsStyle.ts`), kein Style-Picker. Beim Kartenklick stehen die Attribute
-  im vorhandenen Popup vor den WMS-Ergebnissen, das Feature wird hervorgehoben. Kein allgemeiner Proxy.
-- **Gemeinsam mit WMS statt kopiert:** Session-Gruppe (`dataLayers/userLayers.ts`), Laden der Capabilities
-  (`toc/useServiceCapabilities.ts`), Suche (`toc/LayerSearch.tsx`) und Formular
-  (`toc/AddServiceLayer.tsx`) sind generisch. Was je Diensttyp anders ist, beschreibt `toc/userServices.ts`
-  (Capabilities, Einträge, Prüfung, Config). URL-Normalisierung, der Fehler „nicht erreichbar“, Session-Cache,
-  Exception-Meldungen und die Beschreibung eigener Layer liegen in `dataLayers/ows/owsService.ts`. Texte: gemeinsame unter `addService.*`, typspezifische unter `addWms.*` und
-  `addWfs.*`. Der Titel aus den Capabilities (`applyCapabilitiesTitle`) und `FeatureInfoConfig` gelten für beide.
-- **Capabilities:** OpenLayers hat keinen Parser für WFS-Capabilities (`ol/format/WFS` liest nur GetFeature-Antworten).
-  Eigener Parser in `dataLayers/ows/wfsCapabilities.ts`, der Elemente nur über den lokalen Namen liest, weil sich die
-  Präfixe je Server unterscheiden. Ausgabeformate stehen je Feature-Typ (deegree) oder nur an `GetFeature` in
-  `OperationsMetadata` (GeoServer). Gefragt wird mit `ACCEPTVERSIONS=2.0.0,1.1.0`, der Dienst antwortet mit der neuesten
-  Version, die er kann (Hamburg, DWD und NRW antworten mit 2.0.0).
-- **KBS (Abweichung vom Plan):** Geplant war EPSG:3857, dann 4326, dann 25832/25833. Gewählt werden jetzt nur
-  projizierte Systeme: 3857, 25832, 25833. Listet ein Feature-Typ keins davon, wird trotzdem 3857 angefragt.
-    - Warum: Bei EPSG:4326 hängt die Achsenreihenfolge (Lat/Lon oder Lon/Lat) von Server, Version und Schreibweise ab.
-      Ein Fehler legt die Features ohne jede Meldung an die falsche Stelle. Projizierte Systeme sind immer Rechts-/Hochwert.
-    - DWD listet nur EPSG:4258, liefert auf Anfrage aber 3857. Dienste, die das nicht können, fängt die Prüfung vor
-      dem Hinzufügen ab.
-- **Laden:** `bbox`-Strategie (nur der Kartenausschnitt), höchstens `maxFeatures` (Standard 1000) pro Anfrage. Liefert
-  eine Anfrage genau so viele Features, zeigt das TOC „Nicht alle Features geladen“. Ein Exception-Report mit HTTP 200
-  zählt als Fehler, das TOC warnt dann wie beim WMS (`featuresloaderror`, `toc/LayerLoadWarning.tsx`).
-- **Prüfung vor dem Hinzufügen:** GetFeature mit einem Feature im gewählten Format und KBS (`probeWfsFeatureType`).
-  Nur eine FeatureCollection zählt. Feature-Typen ohne GeoJSON- und GML-Ausgabe werden mit Meldung abgelehnt.
-- **Stolpersteine:**
-    - deegree (Hamburg) lässt bei leerem Ergebnis `features` im GeoJSON weg (`{"type":"FeatureCollection"}`), daran
-      bricht `ol/format/GeoJSON` ab. Die App liest das JSON vorher selbst.
-    - Nach einem Fehler ließ `removeLoadedExtent` den Ausschnitt sofort neu laden: eine Anfrage-Schleife. Ein
-      fehlgeschlagener Ausschnitt gilt jetzt als geladen und wird erst bei einem neuen Ausschnitt wieder angefragt.
-    - happy-dom (Tests) kennt `lookupNamespaceURI` nicht und keine XML-Deklaration mit einfachen Anführungszeichen. Der
-      Namespace des Feature-Typs (für GML) wird deshalb über die `xmlns:`-Attribute selbst gesucht.
-- **Im Browser geprüft:** Hamburg Verwaltungsgrenzen (deegree; 2.0 mit GeoJSON und 1.1 mit GML 3.1.1 deckungsgleich),
-  DWD GeoServer (61 Feature-Typen, Hinzufügen und Entfernen, Obergrenze), Leverkusen direkt (ohne CORS:
-  Fehlermeldung), ein falscher Feature-Typ (Ladewarnung). „WMS hinzufügen“ nach dem Umbau unverändert.
-- **Aufräumen vor dem Merge** (Grilling am 2026-10-30, Maßstab: einfach, wo es einfach sein kann, genau bei KBS/Achsen,
-  Formaterkennung und Config-Prüfung):
-    - Ordner: `dataLayers/config/` (Schema, Laden, Texte), `ows/` (WMS, WFS), `sta/` (SensorThings). Die Erzeugung
-      pro Typ liegt im Ordner (`ows/wmsLayer.ts`, `ows/wfsLayer.ts`, `sta/staLayer.ts`), `createDataLayer.ts` verteilt
-      nur noch. Was alle teilen, steht in `dataLayerBase.ts`, sonst entstünden Import-Zyklen zwischen den Ordnern.
-      `userLayers.ts` bleibt oben als allgemeiner Baustein (kann später auch andere Diensttypen aufnehmen).
-    - Vereinfacht: Session-Gruppen ohne Generics (eine Klasse, zwei `switch`), GetFeature aus einem Settings-Objekt
-      (`resolveWfsRequest` liefert `undefined` statt zu werfen), Prüfungen liefern nur die Meldung des Dienstes, nur
-      noch „nicht erreichbar“ als eigene Fehlerklasse, eine Anfrage mit `ACCEPTVERSIONS` statt einer pro Version,
-      ein Hook für die Ladewarnung, ungenutzte Felder und Exports und triviale Tests entfernt.
-    - Bewusst behalten: `wfs.version` und `wfs.outputFormat` in der Config (Grundsatz Config vor Dienst), Style je
-      Geometrietyp und Farbe aus der Layer-ID.
-- **Offen:** Paging statt fester Obergrenze, Style-Picker, Legende. Ein dauerhafter WFS-Layer ist in
-  `dataLayers.json` noch nicht eingetragen.
-- **Commits:** `96b332d`, `e83aab9`, `9e60605`, `abad3d4`, `cd69e8e`, `c532ca8`, `c3a701b`, `ca342b2`; Doku: `3113d55`; Aufräumen: `5996bac`, `8591894`, `4040c3c`, `3da326f`, `27cd718`, `387c7c3`,
+- **Decision:** A separate row „WFS hinzufügen“ (add WFS) below „WMS hinzufügen“ (add WMS) with the same flow (load URL,
+  search feature type, add). WFS 2.0.0 and 1.1.0, GeoJSON and GML (3.2, 3.1, 2) right from the start. Group „Eigene WFS“
+  (custom WFS, `user-wfs`) above the topmost layer with WMS, i.e. above the map images and below the sensors. One color
+  per layer from a fixed palette (`dataLayers/ows/wfsStyle.ts`), no style picker. On a map click the attributes appear
+  in the existing popup before the WMS results, and the feature is highlighted. No general proxy.
+- **Shared with WMS instead of copied:** Session group (`dataLayers/userLayers.ts`), loading the capabilities
+  (`toc/useServiceCapabilities.ts`), search (`toc/LayerSearch.tsx`) and form
+  (`toc/AddServiceLayer.tsx`) are generic. What differs per service type is described by `toc/userServices.ts`
+  (capabilities, entries, check, config). URL normalization, the "not reachable" error, session cache,
+  exception messages and the description of custom layers are in `dataLayers/ows/owsService.ts`. Texts: shared ones under `addService.*`, type-specific ones under `addWms.*` and
+  `addWfs.*`. The title from the capabilities (`applyCapabilitiesTitle`) and `FeatureInfoConfig` apply to both.
+- **Capabilities:** OpenLayers has no parser for WFS capabilities (`ol/format/WFS` only reads GetFeature responses).
+  Own parser in `dataLayers/ows/wfsCapabilities.ts` that reads elements by local name only, because the
+  prefixes differ per server. Output formats are listed per feature type (deegree) or only on `GetFeature` in
+  `OperationsMetadata` (GeoServer). The request uses `ACCEPTVERSIONS=2.0.0,1.1.0`, and the service responds with the
+  newest version it supports (Hamburg, DWD and NRW respond with 2.0.0).
+- **CRS (deviation from the plan):** The plan was EPSG:3857, then 4326, then 25832/25833. Now only
+  projected systems are chosen: 3857, 25832, 25833. If a feature type lists none of them, 3857 is requested anyway.
+    - Why: With EPSG:4326 the axis order (lat/lon or lon/lat) depends on the server, version and notation.
+      A mistake puts the features in the wrong place without any message. Projected systems are always easting/northing.
+    - DWD lists only EPSG:4258 but delivers 3857 on request. Services that cannot do this are caught by the check
+      before adding.
+- **Loading:** `bbox` strategy (only the map extent), at most `maxFeatures` (default 1000) per request. If
+  a request returns exactly that many features, the TOC shows „Nicht alle Features geladen“ (not all features loaded).
+  An exception report with HTTP 200 counts as an error, and the TOC then warns as for WMS (`featuresloaderror`,
+  `toc/LayerLoadWarning.tsx`).
+- **Check before adding:** GetFeature with one feature in the chosen format and CRS (`probeWfsFeatureType`).
+  Only a FeatureCollection counts. Feature types without GeoJSON and GML output are rejected with a message.
+- **Pitfalls:**
+    - deegree (Hamburg) omits `features` from the GeoJSON for an empty result (`{"type":"FeatureCollection"}`), which
+      makes `ol/format/GeoJSON` fail. The app reads the JSON itself first.
+    - After an error, `removeLoadedExtent` made the extent reload immediately: a request loop. A
+      failed extent now counts as loaded and is only requested again for a new extent.
+    - happy-dom (tests) does not know `lookupNamespaceURI` nor an XML declaration with single quotes. The
+      namespace of the feature type (for GML) is therefore looked up via the `xmlns:` attributes by the app itself.
+- **Checked in the browser:** Hamburg administrative boundaries (deegree; 2.0 with GeoJSON and 1.1 with GML 3.1.1
+  congruent), DWD GeoServer (61 feature types, adding and removing, upper limit), Leverkusen directly (without CORS:
+  error message), a wrong feature type (load warning). „WMS hinzufügen“ (add WMS) unchanged after the rework.
+- **Cleanup before the merge** (grilling on 2026-10-30, yardstick: simple where it can be simple, precise for CRS/axes,
+  format detection and config validation):
+    - Folders: `dataLayers/config/` (schema, loading, texts), `ows/` (WMS, WFS), `sta/` (SensorThings). Creation
+      per type lives in the folder (`ows/wmsLayer.ts`, `ows/wfsLayer.ts`, `sta/staLayer.ts`), `createDataLayer.ts` only
+      dispatches. What all of them share is in `dataLayerBase.ts`, otherwise there would be import cycles between the
+      folders. `userLayers.ts` stays at the top level as a general building block (can later take other service types
+      too).
+    - Simplified: session groups without generics (one class, two `switch`es), GetFeature from a settings object
+      (`resolveWfsRequest` returns `undefined` instead of throwing), checks only return the service's message, only
+      "not reachable" remains as its own error class, one request with `ACCEPTVERSIONS` instead of one per version,
+      one hook for the load warning, unused fields and exports and trivial tests removed.
+    - Deliberately kept: `wfs.version` and `wfs.outputFormat` in the config (principle: config before service), style
+      per geometry type and color from the layer ID.
+- **Open:** Paging instead of a fixed upper limit, style picker, legend. No permanent WFS layer has been entered in
+  `dataLayers.json` yet.
+- **Commits:** `96b332d`, `e83aab9`, `9e60605`, `abad3d4`, `cd69e8e`, `c532ca8`, `c3a701b`, `ca342b2`; docs: `3113d55`; cleanup: `5996bac`, `8591894`, `4040c3c`, `3da326f`, `27cd718`, `387c7c3`,
   `5f30255`, `971d8d2`, `e9b51ed`, `e4cdc46`, `f882a36`
 
-## 20. Messgrößenvergleich
+## 20. Observed property comparison
 
-🟡 **Was:** Ein dritter Tab im Analyse-Panel vergleicht alle Sensoren einer Messgröße in einem Diagramm
-(`TODO.md`, Grilling am 2026-11-13). Grundlage ist der Key `observedProperty` am Sensor (siehe Überblick).
+🟡 **What:** A third tab in the analysis panel compares all sensors of one observed property in one chart
+(`TODO.md`, grilling on 2026-11-13). It is based on the key `observedProperty` on the sensor (see Overview).
 
-- **Auswahl:** Zur Wahl stehen nur Messgrößen, die mindestens zwei konfigurierte Sensoren tragen, in der Reihenfolge
-  der Konfiguration; die erste ist vorgewählt. Im TOC ausgeblendete Layer zählen mit. Gibt es keine solche
-  Messgröße, bleibt der Tab sichtbar und zeigt einen Hinweis.
-- **Name der Messgröße:** Übersetzung aus den i18n-Dateien der App (`observedProperty.<key>`), sonst der rohe Key.
-  Eine neue Messgröße braucht für einen schönen Namen also einen Eintrag in `i18n/de.yaml` und `en.yaml` (und einen
-  Neubau). Verworfen: ein Namensfeld in `dataLayers.json`.
-- **Reihen:** Eine Linie je Sensor, beschriftet mit dem Layernamen aus der Konfiguration (vorläufig). Achse und
-  Tooltip nutzen die Einheit des ersten Sensors; geprüft wird nichts (Grundsatz „Die Konfiguration ist
-  verantwortlich“, bisher gibt es nur °C).
-- **Kacheln statt Legende:** Die Sensoren stehen wie im Einzel-Tab als Kacheln mit neuestem Wert neben dem Diagramm,
-  der Rand hat die Farbe der Linie. Ein Klick blendet die Reihe aus oder ein, anfangs sind alle an. Gemerkt werden
-  die ausgeblendeten Sensoren, damit neue von selbst erscheinen; die Auswahl übersteht den Tab-Wechsel.
-- **Laden:** Jeder Sensor lädt einzeln und parallel (max. 20.000 Werte je Sensor). Ein Fehler betrifft nur seine
-  Kachel („nicht verfügbar“). Geladen werden auch ausgeblendete Sensoren, damit das Einblenden sofort wirkt.
-- **Weggelassen:** die Zeile mit Anzahl, Min, Max und letztem Wert; der Hinweis auf abgeschnittene Daten bei mehr
-  als 20.000 Werten.
-- **Vereinfacht (2026-11-13, Maßstab Einfachheit):** Messgrößen als `Record` (Key → Sensoren) statt eigenem Typ,
-  Messwerte je Sensor als Liste oder `"error"` statt Zustands-Union, keine Prüfung „gewählte Messgröße noch
-  vorhanden“ (die Konfiguration ändert sich zur Laufzeit nicht). Ein Liniendiagramm (`SeriesChart`) für alle Tabs;
-  sein Tooltip nennt immer die Reihe, auch im Einzel-Tab. Sind Reihen geladen, aber ohne Werte im Zeitraum, bleibt
-  das Diagramm leer (kein eigener Text). Bei „Gesamter Zeitraum“ beginnt die Achse beim ersten Wert der sichtbaren
-  Reihen. Bewusst behalten: die Formprüfung von `observedProperty` und `unit` und die Kachel „nicht verfügbar“.
-- **Nur Linie:** Balken und Boxplot für mehrere Reihen kommen später (`TODO.md`), die Windrose entfällt im Vergleich.
-- **Farben:** Linien und Kachelränder haben die Farbe der Station des Sensors (Abschnitt 21).
-- **Im Browser geprüft:** Datastream 14 und 16 als zwei Linien, Tooltip, Ausblenden über die Kachel, Tab-Wechsel,
-  Sprachwechsel.
+- **Selection:** Only observed properties carried by at least two configured sensors can be chosen, in the order
+  of the configuration; the first one is preselected. Layers hidden in the TOC count too. If there is no such
+  observed property, the tab stays visible and shows a note.
+- **Name of the observed property:** Translation from the app's i18n files (`observedProperty.<key>`), otherwise the
+  raw key. So a new observed property needs an entry in `i18n/de.yaml` and `en.yaml` (and a rebuild) for a nice name.
+  Rejected: a name field in `dataLayers.json`.
+- **Series:** One line per sensor, labeled with the layer name from the configuration (provisional). Axis and
+  tooltip use the unit of the first sensor; nothing is checked (principle "the configuration is
+  responsible", so far there is only °C).
+- **Tiles instead of a legend:** As in the single tab, the sensors appear as tiles with the latest value next to the
+  chart, and the border has the color of the line. A click hides or shows the series; initially all are on. The
+  hidden sensors are remembered so that new ones appear on their own; the selection survives switching tabs.
+- **Loading:** Each sensor loads individually and in parallel (max. 20,000 values per sensor). An error only affects
+  its tile („nicht verfügbar“, not available). Hidden sensors are loaded too, so that showing them takes effect
+  immediately.
+- **Left out:** the line with count, min, max and last value; the note about truncated data with more
+  than 20,000 values.
+- **Simplified (2026-11-13, yardstick: simplicity):** Observed properties as a `Record` (key → sensors) instead of a
+  dedicated type, observations per sensor as a list or `"error"` instead of a state union, no check "selected observed
+  property still exists" (the configuration does not change at runtime). One line chart (`SeriesChart`) for all tabs;
+  its tooltip always names the series, also in the single tab. If series are loaded but have no values in the time
+  range, the chart stays empty (no text of its own). With „Gesamter Zeitraum“ (entire period) the axis starts at the
+  first value of the visible series. Deliberately kept: the shape check of `observedProperty` and `unit` and the tile
+  „nicht verfügbar“ (not available).
+- **Line only:** Bars and box plots for several series come later (`TODO.md`), the wind rose is dropped in the
+  comparison.
+- **Colors:** Lines and tile borders have the color of the sensor's station (section 21).
+- **Checked in the browser:** Datastreams 14 and 16 as two lines, tooltip, hiding via the tile, switching tabs,
+  switching language.
 
-## 21. Stationsfarben
+## 21. Station colors
 
-🟡 **Was:** Jede Station hat eine Farbe, die sich durch die ganze App zieht (Grilling am 2026-11-13). So erkennt
-man im TOC, auf der Karte und in den Diagrammen, welche Sensoren zusammengehören.
+🟡 **What:** Every station has a color that runs through the whole app (grilling on 2026-11-13). That way you can
+see in the TOC, on the map and in the charts which sensors belong together.
 
-- **Station:** Sensoren am selben Standort nach der bestehenden Gruppierung (`VITE_SENSOR_GROUPING`, Radius 1 m).
-  Ein Sensor ohne Nachbarn ist eine Station mit einem Sensor und bekommt ebenfalls eine eigene Farbe, sonst wären
-  zwei einzelne Sensoren im Vergleich nicht zu unterscheiden.
-- **Vergabe:** In der Reihenfolge der Konfiguration, aus einer festen Palette mit 20 Farben (es wird nicht viele
-  Stationen geben); danach wiederholen sie sich. Die Farbe steht nicht in `dataLayers.json`.
-- **Wo:** Sensorpunkt auf der Karte (vorher alle orange), Punkt vor dem Sensor im TOC, Rand der Kacheln, Linien,
-  Balken, Boxen und Windrose in allen drei Tabs (vorher festes Blau).
-- **Palette:** Die ersten acht Farben sind die bisherige Diagrammpalette. Geprüft mit dem Validator des
-  dataviz-Skills: Benachbarte Farben der Liste bleiben auch bei Farbfehlsichtigkeit unterscheidbar, weit
-  auseinanderliegende können sich ähneln. Bei 20 Farben geht es nicht besser.
-- **Bewusst nicht behandelt:** Ketten (A–B und B–C nah, A–C nicht): Ein Sensor kommt zur ersten Station, deren
-  erster Sensor am selben Standort liegt. Zwei Sensoren derselben Station mit derselben Messgröße hätten im
-  Vergleich dieselbe Linienfarbe. Beides kommt laut Nutzer nicht vor.
-- **Eigenheit:** Die Station ergibt sich aus dem Standort, und den kennt die App erst, wenn der Datastream geladen
-  ist. Die Farben erscheinen also mit den Sensoren; lädt ein früherer Sensor später als ein späterer, kann eine
-  Farbe beim Start einmal wechseln. Ein Sensor, der nicht lädt, hat keine Farbe.
-- **TOC-Punkt:** Das TOC erlaubt Inhalt nur unter der Titelzeile (`TocItemExtensions`). Der Punkt wird mit negativen
-  Abständen in die Zeile gezogen, an den freien Platz des Aufklapp-Pfeils. Bei mehrzeiligen Titeln sitzt er dadurch
-  etwas unter der Mitte der Zeile.
-- **Im Browser geprüft:** Datastream 14 und 15 (Köln-Kalk) blau, Datastream 16 (Demo-Knoten) orange, jeweils auf der
-  Karte, im TOC, an den Kacheln und in den Liniendiagrammen aller drei Tabs.
+- **Station:** Sensors at the same site according to the existing grouping (`VITE_SENSOR_GROUPING`, radius 1 m).
+  A sensor without neighbors is a station with one sensor and also gets its own color; otherwise
+  two single sensors could not be told apart in the comparison.
+- **Assignment:** In the order of the configuration, from a fixed palette of 20 colors (there will not be many
+  stations); after that they repeat. The color is not in `dataLayers.json`.
+- **Where:** Sensor point on the map (previously all orange), dot in front of the sensor in the TOC, tile borders,
+  lines, bars, boxes and wind rose in all three tabs (previously a fixed blue).
+- **Palette:** The first eight colors are the previous chart palette. Checked with the validator of the
+  dataviz skill: neighboring colors in the list stay distinguishable even with color vision deficiency, colors far
+  apart in the list can look similar. With 20 colors it cannot be done better.
+- **Deliberately not handled:** Chains (A–B and B–C close, A–C not): a sensor joins the first station whose
+  first sensor is at the same site. Two sensors of the same station with the same observed property would have the
+  same line color in the comparison. According to the user, neither occurs.
+- **Quirk:** The station follows from the location, and the app only knows that once the datastream is loaded.
+  So the colors appear together with the sensors; if an earlier sensor loads later than a later one, a
+  color can change once at startup. A sensor that does not load has no color.
+- **TOC dot:** The TOC only allows content below the title row (`TocItemExtensions`). The dot is pulled into the row
+  with negative margins, into the free space of the expand arrow. With multi-line titles it therefore sits
+  slightly below the middle of the row.
+- **Checked in the browser:** Datastreams 14 and 15 (Köln-Kalk) blue, Datastream 16 (demo node) orange, in each case on
+  the map, in the TOC, on the tiles and in the line charts of all three tabs.
