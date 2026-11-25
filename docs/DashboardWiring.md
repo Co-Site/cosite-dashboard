@@ -330,14 +330,16 @@ CORS-Prüfung), der die Anfrage an den Dienst weiterleitet.
   [Deployment](#deployment)):
 
 ```nginx
-location /umwelt-monitoring/proxy/leverkusen/ {
-    proxy_pass https://geoportal.leverkusen.de/;
+location = /umwelt-monitoring/proxy/leverkusen/GCGisService {
+    proxy_pass https://geoportal.leverkusen.de/GCGisService;
     proxy_ssl_server_name on;
 }
 ```
 
 - Das Ziel steht fest in der Konfiguration. Nie die Ziel-URL aus der Anfrage übernehmen, sonst ist es ein offener
   Proxy.
+- Produktiv nur die Endpunkte freigeben, die `dataLayers.json` nutzt (exakte `location =`), nicht den ganzen Host.
+  Ein neuer Endpunkt braucht eine eigene `location` in `nginx_default.conf`.
 - Liegt vor dem nginx noch ein Load Balancer oder Ingress, muss er den Pfad durchlassen.
 - Eigene WMS (temporär) gehen nicht über den Proxy, Dienste ohne CORS lassen sich dort weiterhin nicht hinzufügen.
 
